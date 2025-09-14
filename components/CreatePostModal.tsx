@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef } from 'react';
 import Icon from './Icon';
 import type { Post, User } from '../types';
@@ -6,7 +7,8 @@ import type { Post, User } from '../types';
 interface CreatePostModalProps {
   currentUser: User;
   onClose: () => void;
-  onCreatePost: (post: Omit<Post, 'id' | 'likes' | 'likedByUser' | 'comments' | 'timestamp'>) => void;
+  // Fix: Add savedByUser to Omit to match Post type
+  onCreatePost: (post: Omit<Post, 'id' | 'likes' | 'likedByUser' | 'comments' | 'timestamp' | 'savedByUser'>) => void;
 }
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ currentUser, onClose, onCreatePost }) => {
@@ -19,7 +21,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ currentUser, onClose,
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -38,7 +45,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ currentUser, onClose,
       <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h2 className="text-lg font-semibold">Create new post</h2>
-          <button onClick={handleSubmit} className="font-semibold text-red-500 hover:text-red-400">Share</button>
+          <button onClick={handleSubmit} className="font-semibold text-red-500 hover:text-red-400 disabled:opacity-50" disabled={!imagePreview}>Share</button>
         </div>
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           <div className={`w-full md:w-3/5 flex-shrink-0 bg-black flex items-center justify-center ${imagePreview ? '' : 'p-8'}`}>
@@ -65,7 +72,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ currentUser, onClose,
             <textarea
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Write a caption..."
+              placeholder="Write a caption... (optional, AI can generate one for you!)"
               className="w-full h-48 bg-transparent focus:outline-none text-white resize-none"
               maxLength={2200}
             />

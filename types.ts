@@ -1,12 +1,13 @@
-
+// Fix: Create full type definitions for the application.
 export interface User {
   id: string;
   username: string;
   avatar: string;
-  isOnline?: boolean;
-  // Fix: Changed highlights to be of type StoryHighlight[] to support stories and match usage in components.
   highlights?: StoryHighlight[];
+  isOnline?: boolean;
 }
+
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'search' | 'notifications' | 'create';
 
 export interface Comment {
   id: string;
@@ -16,21 +17,21 @@ export interface Comment {
 }
 
 export interface Post {
-  id:string;
+  id: string;
   user: User;
   image: string;
   caption: string;
   likes: number;
-  likedByUser: boolean;
-  savedByUser?: boolean;
   comments: Comment[];
   timestamp: string;
+  likedByUser: boolean;
+  savedByUser: boolean;
 }
 
 export interface StoryItem {
   id: string;
   image: string;
-  duration: number; // in milliseconds
+  duration: number; // in ms
 }
 
 export interface Story {
@@ -43,9 +44,7 @@ export interface StoryHighlight {
   id: string;
   title: string;
   cover: string;
-  stories: StoryItem[];
 }
-
 
 export interface Reel {
     id: string;
@@ -56,15 +55,18 @@ export interface Reel {
     comments: number;
 }
 
-export type MessageContentType = 'text' | 'image' | 'voice';
+export interface Reaction {
+  emoji: string;
+  userId: string;
+}
 
 export interface Message {
-  id: string;
+  id:string;
   senderId: string;
   content: string;
   timestamp: string;
-  type: MessageContentType;
-  reactions?: { [emoji: string]: string[] }; // emoji -> userIds
+  type: 'text' | 'image' | 'voice';
+  reactions?: Reaction[];
   replyTo?: Message;
 }
 
@@ -76,19 +78,14 @@ export interface Conversation {
   typingUserIds?: string[];
 }
 
-export interface Notification {
+export type ActivityType = 'like' | 'comment' | 'follow' | 'mention';
+
+export interface Activity {
   id: string;
+  type: ActivityType;
   user: User;
-  action: 'liked' | 'commented' | 'followed';
+  post?: Post;
+  commentText?: string;
   timestamp: string;
-  postImage?: string;
-  isRead: boolean;
+  read: boolean;
 }
-
-// Fix: Removed 'id' from Highlight interface to resolve type errors indicating it was an unknown property.
-export interface Highlight {
-  title: string;
-  cover: string;
-}
-
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings';
