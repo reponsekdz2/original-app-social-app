@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import type { Story } from '../types';
 import Icon from './Icon';
@@ -32,18 +33,19 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ story, onClose }) => {
     });
   };
 
+  // Fix: Use window.setTimeout and window.clearTimeout to ensure the browser's timer implementation is used, which returns a number.
   useEffect(() => {
     if (timerRef.current) {
-      clearTimeout(timerRef.current);
+      window.clearTimeout(timerRef.current);
     }
     const currentStoryItem = story.stories[currentIndex];
     if(currentStoryItem) {
-        timerRef.current = setTimeout(goToNext, currentStoryItem.duration);
+        timerRef.current = window.setTimeout(goToNext, currentStoryItem.duration);
     }
 
     return () => {
       if (timerRef.current) {
-        clearTimeout(timerRef.current);
+        window.clearTimeout(timerRef.current);
       }
     };
   }, [currentIndex, story]);

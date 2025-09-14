@@ -1,87 +1,72 @@
 import React, { useState } from 'react';
 import type { Conversation, User, Message } from './types';
-import Icon from './components/Icon';
 import ChatWindow from './components/ChatWindow';
+import Icon from './components/Icon';
 
 interface MessagesViewProps {
   currentUser: User;
   conversations: Conversation[];
-  onSendMessage: (convoId: string, content: string, type: 'text' | 'image' | 'voice', replyTo?: Message) => void;
-  onDeleteMessage: (convoId: string, messageId: string) => void;
-  onReact: (convoId: string, messageId: string, emoji: string) => void;
 }
 
-const ConversationListItem: React.FC<{ convo: Conversation, isActive: boolean, currentUser: User, onClick: () => void }> = ({ convo, isActive, currentUser, onClick }) => {
-    const otherParticipant = convo.participants.find(p => p.id !== currentUser.id)!;
-    const lastMessage = convo.messages[convo.messages.length - 1];
-    const isTyping = convo.typingUserIds?.includes(otherParticipant.id);
+const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations: initialConversations }) => {
+  const [conversations, setConversations] = useState(initialConversations);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  
+  const handleSendMessage = (content: string, type: 'text' | 'image' | 'voice', replyTo?: Message) => {
+    // This is a mock implementation
+  };
 
-    return (
-        <button onClick={onClick} className={`w-full text-left p-3 flex items-center space-x-4 hover:bg-gray-800 transition-colors rounded-lg ${isActive ? 'bg-gray-800' : ''}`}>
-            <div className="relative flex-shrink-0">
-                <img src={otherParticipant.avatar} alt={otherParticipant.username} className="w-14 h-14 rounded-full object-cover" />
-                {otherParticipant.isOnline && <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>}
-            </div>
-            <div className="flex-1 overflow-hidden">
-                <div className="flex justify-between items-center">
-                    <p className="font-semibold text-white truncate">{otherParticipant.username}</p>
-                    {lastMessage && <p className="text-xs text-gray-500 flex-shrink-0">{lastMessage.timestamp}</p>}
-                </div>
-                 <div className="flex justify-between items-start">
-                    {isTyping ? (
-                        <p className="text-sm text-red-400 animate-pulse truncate">typing...</p>
-                    ) : (
-                        <p className="text-sm text-gray-400 truncate">{lastMessage?.content}</p>
-                    )}
-                    {convo.unreadCount > 0 && <span className="bg-red-600 text-white text-xs rounded-full px-2 py-0.5 ml-2">{convo.unreadCount}</span>}
-                </div>
-            </div>
-        </button>
-    );
-};
+  const handleDeleteMessage = (messageId: string) => {
+    // Implement delete logic
+  };
 
-const MessagesView: React.FC<MessagesViewProps> = (props) => {
-    const { currentUser, conversations } = props;
-    const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
+  const handleReact = (messageId: string, emoji: string) => {
+    // Implement reaction logic
+  };
 
-    const selectedConvo = conversations.find(c => c.id === selectedConvoId);
+  const otherUser = selectedConversation?.participants.find(p => p.id !== currentUser.id);
 
   return (
-    <div className="flex w-full h-full">
-        <div className="w-full md:w-1/3 border-r border-gray-800 flex-shrink-0 flex flex-col">
-           <div className="p-4 border-b border-gray-800">
-                <h2 className="text-2xl font-bold text-center md:text-left">{currentUser.username}</h2>
+    <div className="flex h-screen md:h-[calc(100vh-4rem)] border-t md:border-t-0 md:border-x border-gray-800">
+        <div className={`w-full md:w-96 border-r border-gray-800 flex-shrink-0 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center flex-shrink-0">
+                <h2 className="text-xl font-bold">{currentUser.username}</h2>
+                <Icon className="w-6 h-6"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></Icon>
             </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                <h3 className="px-2 text-lg font-bold">Messages</h3>
-                {conversations.map(convo => (
-                    <ConversationListItem 
-                        key={convo.id}
-                        convo={convo}
-                        isActive={selectedConvoId === convo.id}
-                        currentUser={currentUser}
-                        onClick={() => setSelectedConvoId(convo.id)}
-                    />
-                ))}
+            <div className="p-2 flex-shrink-0">
+                <h3 className="font-semibold px-2">Messages</h3>
+            </div>
+            <div className="overflow-y-auto flex-1">
+                {conversations.map(conv => {
+                    const otherUser = conv.participants.find(p => p.id !== currentUser.id)!;
+                    const lastMessage = conv.messages[conv.messages.length - 1];
+                    return (
+                        <button key={conv.id} onClick={() => setSelectedConversation(conv)} className={`w-full text-left p-3 flex items-center space-x-3 hover:bg-gray-800 transition-colors ${selectedConversation?.id === conv.id ? 'bg-gray-900' : ''}`}>
+                             <img src={otherUser.avatar} alt={otherUser.username} className="w-14 h-14 rounded-full" />
+                             <div className="overflow-hidden">
+                                <p>{otherUser.username}</p>
+                                <p className="text-sm text-gray-400 truncate">{lastMessage?.content}</p>
+                             </div>
+                        </button>
+                    )
+                })}
             </div>
         </div>
-        <div className="hidden md:flex w-2/3 flex-1 flex-col">
-            {selectedConvo ? (
-                <ChatWindow
-                    key={selectedConvo.id}
-                    currentUser={currentUser}
-                    conversation={selectedConvo}
-                    onSendMessage={(content, type, replyTo) => props.onSendMessage(selectedConvo.id, content, type, replyTo)}
-                    onDeleteMessage={(messageId) => props.onDeleteMessage(selectedConvo.id, messageId)}
-                    onReact={(messageId, emoji) => props.onReact(selectedConvo.id, messageId, emoji)}
+        <div className={`flex-1 ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+            {selectedConversation ? (
+                <ChatWindow 
+                    currentUser={currentUser} 
+                    conversation={selectedConversation}
+                    onSendMessage={handleSendMessage}
+                    onDeleteMessage={handleDeleteMessage}
+                    onReact={handleReact}
+                    onBack={() => setSelectedConversation(null)}
                 />
             ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8 text-center">
-                    <div className="border-2 border-gray-500 rounded-full p-6">
-                        <Icon className="w-16 h-16"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></Icon>
-                    </div>
-                    <h2 className="text-3xl mt-6 text-white">Your Messages</h2>
-                    <p className="mt-2">Select a chat to start messaging.</p>
+                <div className="h-full flex-col items-center justify-center hidden md:flex">
+                    <Icon className="w-24 h-24 border-2 border-white rounded-full p-6"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 01-2.53-.388m-5.18-3.468a9.75 9.75 0 01-1.12-3.468c0-4.556 4.03-8.25 9-8.25a9.75 9.75 0 018.825 5.567" /></Icon>
+                    <h2 className="text-2xl mt-4">Your Messages</h2>
+                    <p className="text-gray-400">Send private photos and messages to a friend or group.</p>
                 </div>
             )}
         </div>

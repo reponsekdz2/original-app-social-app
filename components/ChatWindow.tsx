@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-// Fix: Use Message interface directly, remove alias to avoid name collision.
 import type { Conversation, User, Message } from '../types';
 import Icon from './Icon';
 import MessageComponent from '../Message';
@@ -11,16 +10,17 @@ interface ChatWindowProps {
   onSendMessage: (content: string, type: 'text' | 'image' | 'voice', replyTo?: Message) => void;
   onDeleteMessage: (messageId: string) => void;
   onReact: (messageId: string, emoji: string) => void;
+  onBack: () => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, conversation, onSendMessage, onDeleteMessage, onReact }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, conversation, onSendMessage, onDeleteMessage, onReact, onBack }) => {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const otherParticipant = conversation.participants.find(p => p.id !== currentUser.id)!;
   
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   }, [conversation.messages]);
 
   const handleReply = (message: Message) => {
@@ -40,6 +40,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, conversation, onSe
     <div className="h-full flex flex-col bg-black">
       <div className="p-3 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center space-x-3">
+          <button onClick={onBack} className="md:hidden">
+            <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></Icon>
+          </button>
           <div className="relative">
             <img src={otherParticipant.avatar} alt={otherParticipant.username} className="w-10 h-10 rounded-full" />
              {otherParticipant.isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>}

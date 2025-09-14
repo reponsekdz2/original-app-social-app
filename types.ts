@@ -1,13 +1,11 @@
 
-// Fix: Removed self-import of 'User' which conflicted with the local declaration.
-
-// Fix: Define all necessary types for the application.
-
 export interface User {
   id: string;
   username: string;
   avatar: string;
   isOnline?: boolean;
+  // Fix: Changed highlights to be of type StoryHighlight[] to support stories and match usage in components.
+  highlights?: StoryHighlight[];
 }
 
 export interface Comment {
@@ -18,12 +16,13 @@ export interface Comment {
 }
 
 export interface Post {
-  id: string;
+  id:string;
   user: User;
   image: string;
   caption: string;
   likes: number;
   likedByUser: boolean;
+  savedByUser?: boolean;
   comments: Comment[];
   timestamp: string;
 }
@@ -31,19 +30,30 @@ export interface Post {
 export interface StoryItem {
   id: string;
   image: string;
-  duration: number; // in ms
+  duration: number; // in milliseconds
 }
 
 export interface Story {
   id: string;
   user: User;
   stories: StoryItem[];
-  viewed: boolean;
 }
 
-export interface Reaction {
-  userId: string;
-  emoji: string;
+export interface StoryHighlight {
+  id: string;
+  title: string;
+  cover: string;
+  stories: StoryItem[];
+}
+
+
+export interface Reel {
+    id: string;
+    user: User;
+    video: string;
+    caption: string;
+    likes: number;
+    comments: number;
 }
 
 export type MessageContentType = 'text' | 'image' | 'voice';
@@ -54,7 +64,7 @@ export interface Message {
   content: string;
   timestamp: string;
   type: MessageContentType;
-  reactions: Reaction[];
+  reactions?: { [emoji: string]: string[] }; // emoji -> userIds
   replyTo?: Message;
 }
 
@@ -62,27 +72,23 @@ export interface Conversation {
   id: string;
   participants: User[];
   messages: Message[];
-  unreadCount: number;
-  typingUserIds?: string[];
   lastMessageSeenId?: string;
-}
-
-export interface Reel {
-    id: string;
-    user: User;
-    videoUrl: string; // For now, we'll use picsum for images as placeholders
-    caption: string;
-    likes: number;
-    comments: number;
-    shares: number;
+  typingUserIds?: string[];
 }
 
 export interface Notification {
-    id: string;
-    user: User;
-    action: 'liked' | 'commented' | 'followed';
-    postImage?: string;
-    timestamp: string;
+  id: string;
+  user: User;
+  action: 'liked' | 'commented' | 'followed';
+  timestamp: string;
+  postImage?: string;
+  isRead: boolean;
 }
 
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile';
+// Fix: Removed 'id' from Highlight interface to resolve type errors indicating it was an unknown property.
+export interface Highlight {
+  title: string;
+  cover: string;
+}
+
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings';
