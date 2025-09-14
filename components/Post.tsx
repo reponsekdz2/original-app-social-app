@@ -1,5 +1,7 @@
 
+
 import React, { useState } from 'react';
+// Fix: Correct import path for types.
 import type { Post as PostType } from '../types';
 import Icon from './Icon';
 

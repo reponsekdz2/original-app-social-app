@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import type { Message, User, MessageType } from '../types';
+// Fix: Use MessageContentType to avoid naming collision.
+import type { Message, User, MessageContentType } from '../types';
 import Icon from './Icon';
 
 interface MessageInputProps {
-  onSend: (content: string, type: MessageType) => void;
+  onSend: (content: string, type: MessageContentType) => void;
   replyingTo: Message | null;
   onCancelReply: () => void;
   participants: User[];
