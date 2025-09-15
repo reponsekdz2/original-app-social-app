@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Post, Story, User, View } from '../types.ts';
+import type { Post, Story, User, View, FeedActivity, SponsoredContent, Conversation } from '../types.ts';
 import PostComponent from './Post.tsx';
 import StoryBubble from './StoryBubble.tsx';
 import Sidebar from './Sidebar.tsx';
@@ -11,6 +11,9 @@ interface HomeViewProps {
   currentUser: User;
   suggestedUsers: User[];
   trendingTopics: string[];
+  feedActivities: FeedActivity[];
+  sponsoredContent: SponsoredContent[];
+  conversations: Conversation[];
   onToggleLike: (postId: string) => void;
   onToggleSave: (postId: string) => void;
   onComment: (postId: string, text: string) => void;
@@ -30,8 +33,8 @@ interface HomeViewProps {
 
 const HomeView: React.FC<HomeViewProps> = (props) => {
   return (
-    <div className="flex justify-center container mx-auto gap-8">
-      <main className="w-full max-w-lg">
+    <div className="flex justify-center container mx-auto gap-8 lg:gap-16 xl:gap-24">
+      <main className="w-full max-w-xl">
         <div className="py-4 border-b border-gray-800">
           <div className="flex items-center space-x-4 px-4 overflow-x-auto scrollbar-hide">
             <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={props.onCreateStory}>
@@ -68,6 +71,9 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
         trendingTopics={props.trendingTopics}
         suggestedUsers={props.suggestedUsers}
         currentUser={props.currentUser}
+        feedActivities={props.feedActivities}
+        sponsoredContent={props.sponsoredContent}
+        conversations={props.conversations}
         onShowSearch={props.onShowSearch}
         onShowSuggestions={props.onShowSuggestions}
         onShowTrends={props.onShowTrends}

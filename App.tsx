@@ -1,3 +1,5 @@
+
+
 // Fix: Create the main App component.
 import React, { useState, useEffect } from 'react';
 
@@ -223,6 +225,9 @@ const App: React.FC = () => {
                     currentUser={currentUser}
                     suggestedUsers={users.filter(u => u.id !== currentUser.id && !currentUser.following.some(f => f.id === u.id))}
                     trendingTopics={MOCK_TRENDING_TOPICS}
+                    feedActivities={MOCK_FEED_ACTIVITIES}
+                    sponsoredContent={MOCK_ADS}
+                    conversations={conversations}
                     onToggleLike={handleToggleLike}
                     onToggleSave={handleToggleSave}
                     onComment={() => {}}

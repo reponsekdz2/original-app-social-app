@@ -1,5 +1,7 @@
+
+
 import React from 'react';
-import type { User, View } from '../types.ts';
+import type { User, View, FeedActivity, SponsoredContent, Conversation } from '../types.ts';
 import Icon from './Icon.tsx';
 import FollowButton from './FollowButton.tsx';
 
@@ -7,6 +9,9 @@ interface SidebarProps {
   trendingTopics: string[];
   suggestedUsers: User[];
   currentUser: User;
+  feedActivities: FeedActivity[];
+  sponsoredContent: SponsoredContent[];
+  conversations: Conversation[];
   onShowSearch: () => void;
   onShowSuggestions: () => void;
   onShowTrends: () => void;
@@ -20,6 +25,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   trendingTopics,
   suggestedUsers,
   currentUser,
+  feedActivities,
+  sponsoredContent,
+  conversations,
   onShowSearch,
   onShowSuggestions,
   onShowTrends,
@@ -29,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onViewProfile,
 }) => {
   return (
-    <aside className="w-80 flex-shrink-0 p-4 hidden lg:block space-y-4">
+    <aside className="w-80 flex-shrink-0 p-4 hidden lg:block space-y-4 self-start sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-hide">
       {/* Search Bar */}
       <div className="sticky top-0 z-10 pt-2 bg-black -mt-2">
         <div className="relative">
@@ -51,11 +59,33 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <h3 className="font-extrabold text-xl mb-1">Subscribe to Premium</h3>
           <p className="text-sm text-gray-300 mb-3">Subscribe to unlock new features and if eligible, receive a share of ads revenue.</p>
-          <button onClick={() => onNavigate('premium')} className="bg-white text-black font-bold py-2 px-4 rounded-full text-sm hover:bg-gray-200 transition-colors">
-            Get Premium
+          <button onClick={() => onNavigate('premium')} className="bg-red-600 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-red-700 transition-colors">
+            Subscribe
           </button>
         </div>
       )}
+
+      {/* What's Happening */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl">
+        <h3 className="font-extrabold text-xl p-4">What's Happening</h3>
+        <div className="space-y-1">
+          {feedActivities.slice(0, 3).map((activity) => (
+             <div key={activity.id} className="px-4 py-3 hover:bg-gray-800/50 cursor-pointer transition-colors" onClick={() => onViewProfile(activity.user)}>
+                <div className="flex items-center gap-3">
+                    <img src={activity.user.avatar} alt={activity.user.username} className="w-8 h-8 rounded-full"/>
+                    <p className="text-sm text-gray-300 leading-tight">
+                        <span className="font-bold text-white">{activity.user.name}</span>
+                        {activity.action === 'liked' ? ` liked a post by ` : ` is now following `}
+                        <span className="font-bold text-white">{activity.action === 'liked' ? activity.targetPost?.user.name : activity.targetUser?.name}</span>
+                    </p>
+                </div>
+             </div>
+          ))}
+        </div>
+        <button onClick={() => onNavigate('activity')} className="w-full text-left p-4 text-red-500 hover:bg-gray-800/50 rounded-b-xl text-sm transition-colors">
+          Show more
+        </button>
+      </div>
 
       {/* Trends for you */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl">
@@ -105,6 +135,52 @@ const Sidebar: React.FC<SidebarProps> = ({
           Show more
         </button>
       </div>
+
+      {/* Messages */}
+      {conversations.length > 0 && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl">
+          <h3 className="font-extrabold text-xl p-4">Messages</h3>
+          <div className="space-y-1">
+            {conversations.slice(0, 2).map((convo) => {
+              const otherUser = convo.participants.find(p => p.id !== currentUser.id);
+              if (!otherUser) return null;
+              const lastMessage = convo.messages[convo.messages.length - 1];
+              return (
+                <div key={convo.id} className="px-4 py-3 hover:bg-gray-800/50 cursor-pointer transition-colors" onClick={() => onNavigate('messages')}>
+                  <div className="flex justify-between items-center mb-1">
+                      <p className="font-bold text-sm">{otherUser.name}</p>
+                      <p className="text-xs text-gray-500">{lastMessage.timestamp}</p>
+                  </div>
+                  <p className="text-sm text-gray-400 truncate">{lastMessage.content}</p>
+                </div>
+              );
+            })}
+          </div>
+          <button onClick={() => onNavigate('messages')} className="w-full text-left p-4 text-red-500 hover:bg-gray-800/50 rounded-b-xl text-sm transition-colors">
+            View all in Messages
+          </button>
+        </div>
+      )}
+
+      {/* Sponsored */}
+      {sponsoredContent.length > 0 && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl">
+          <h3 className="font-extrabold text-xl p-4">Sponsored</h3>
+          <div className="space-y-4 p-4 pt-0">
+            {sponsoredContent.map(ad => (
+              <a key={ad.id} href={ad.link} target="_blank" rel="noopener noreferrer" className="block group">
+                <div className="flex items-center gap-3">
+                  <img src={ad.media} alt={ad.company} className="w-16 h-16 rounded-lg object-cover" />
+                  <div>
+                      <p className="font-semibold group-hover:underline text-sm">{ad.company}</p>
+                      <p className="text-xs text-gray-400">{ad.callToAction}</p>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+       )}
       
       {/* Footer */}
       <footer className="text-xs text-gray-500 space-x-2 px-4 flex flex-wrap gap-y-1">

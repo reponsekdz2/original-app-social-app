@@ -80,7 +80,7 @@ const Post: React.FC<PostProps> = ({
 
   return (
     <article className="border-b border-gray-800 py-4">
-      <div className="flex items-center justify-between px-4 mb-3">
+      <div className="flex items-center justify-between px-2 sm:px-4 mb-3">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onViewProfile(post.user)}>
           <img src={post.user.avatar} alt={post.user.username} className="w-9 h-9 rounded-full object-cover" />
           <p className="font-semibold text-sm flex items-center">{post.user.username} {post.user.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />} <span className="text-gray-500 font-normal ml-2 text-xs">· {post.timestamp}</span></p>
@@ -90,11 +90,11 @@ const Post: React.FC<PostProps> = ({
         </button>
       </div>
 
-      <div className="relative aspect-square bg-black">
+      <div className="relative bg-black">
         {currentMedia.type === 'image' ? (
-          <img src={currentMedia.url} alt={`Post by ${post.user.username}`} className="w-full h-full object-contain" />
+          <img src={currentMedia.url} alt={`Post by ${post.user.username}`} className="w-full h-auto max-h-[80vh] object-contain" />
         ) : (
-          <video src={currentMedia.url} controls className="w-full h-full object-contain" />
+          <video src={currentMedia.url} controls className="w-full h-auto max-h-[80vh] object-contain" />
         )}
         {hasMultipleMedia && (
             <>
@@ -117,7 +117,7 @@ const Post: React.FC<PostProps> = ({
         )}
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="px-2 sm:px-4 pt-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => onToggleLike(post.id)}>

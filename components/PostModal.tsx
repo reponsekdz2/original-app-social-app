@@ -64,8 +64,8 @@ const PostModal: React.FC<PostModalProps> = (props) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-900 shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col md:flex-row" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-md md:max-w-3xl lg:max-w-5xl max-h-[90vh] flex flex-col md:flex-row overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="relative w-full md:w-3/5 bg-black flex items-center justify-center">
             {currentMedia.type === 'image' ? (
                 <img src={currentMedia.url} alt="Post" className="max-h-full max-w-full object-contain" />
