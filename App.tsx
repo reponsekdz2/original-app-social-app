@@ -12,6 +12,7 @@ import ProfileView from './components/ProfileView';
 import SavedView from './components/SavedView';
 import SettingsView from './components/SettingsView';
 import PremiumView from './components/PremiumView';
+import ArchiveView from './components/ArchiveView';
 
 // Import components
 import Header from './components/Header';
@@ -26,6 +27,8 @@ import SearchView from './components/SearchView';
 import NotificationsPanel from './components/NotificationsPanel';
 import CreateStoryModal from './components/CreateStoryModal';
 import GetVerifiedModal from './components/GetVerifiedModal';
+import EditProfileModal from './components/EditProfileModal';
+import FollowListModal from './components/FollowListModal';
 // Fix: Import the 'Sidebar' component to resolve the 'Cannot find name' error.
 import Sidebar from './components/Sidebar';
 
@@ -35,6 +38,11 @@ type PostData = {
     mediaType: 'image' | 'video';
     caption: string;
 };
+
+type FollowListModalData = {
+    type: 'followers' | 'following';
+    users: User[];
+}
 
 const App: React.FC = () => {
     // State management...
@@ -56,7 +64,9 @@ const App: React.FC = () => {
     const [isSearchVisible, setSearchVisible] = useState(false);
     const [isNotificationsPanelVisible, setNotificationsPanelVisible] = useState(false);
     const [isVerifiedModalOpen, setVerifiedModalOpen] = useState(false);
-    
+    const [isEditProfileModalOpen, setEditProfileModalOpen] = useState(false);
+    const [followListModalData, setFollowListModalData] = useState<FollowListModalData | null>(null);
+
     // Handlers...
     const handleLike = (postId: string) => {
         setPosts(posts.map(p => p.id === postId ? { ...p, likedByUser: !p.likedByUser, likes: p.likedByUser ? p.likes - 1 : p.likes + 1 } : p));
@@ -128,6 +138,47 @@ const App: React.FC = () => {
       setCurrentUser(prevUser => ({...prevUser, isPremium: true}));
     };
 
+    const handleUpdateUser = (updatedUser: User) => {
+        setCurrentUser(updatedUser);
+        setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+        setEditProfileModalOpen(false);
+    };
+
+    const handleUnfollow = (userIdToUnfollow: string) => {
+        // Update current user's following list
+        const updatedCurrentUser = {
+            ...currentUser,
+            following: currentUser.following.filter(id => id !== userIdToUnfollow)
+        };
+        setCurrentUser(updatedCurrentUser);
+
+        // Update the unfollowed user's followers list
+        setUsers(prevUsers => prevUsers.map(user => {
+            if (user.id === currentUser.id) {
+                return updatedCurrentUser;
+            }
+            if (user.id === userIdToUnfollow) {
+                return {
+                    ...user,
+                    followers: user.followers.filter(id => id !== currentUser.id)
+                };
+            }
+            return user;
+        }));
+        
+        // Refresh modal data
+        if(followListModalData){
+            const newFollowListUsers = followListModalData.users.filter(u => u.id !== userIdToUnfollow);
+            setFollowListModalData({ ...followListModalData, users: newFollowListUsers });
+        }
+    };
+    
+    const showFollowList = (type: 'followers' | 'following') => {
+        const userListIds = type === 'followers' ? currentUser.followers : currentUser.following;
+        const userList = users.filter(u => userListIds.includes(u.id));
+        setFollowListModalData({ type, users: userList });
+    };
+
     const handleNavigate = (view: View) => {
         if (currentView === 'messages' && view !== 'messages') {
         }
@@ -145,13 +196,23 @@ const App: React.FC = () => {
             case 'messages':
                 return <MessagesView currentUser={currentUser} conversations={conversations} />;
             case 'profile':
-                return <ProfileView user={currentUser} posts={posts.filter(p => p.user.id === currentUser.id)} />;
+                return <ProfileView 
+                            user={currentUser} 
+                            posts={posts.filter(p => p.user.id === currentUser.id && !p.isArchived)} 
+                            onEditProfile={() => setEditProfileModalOpen(true)}
+                            onViewArchive={() => handleNavigate('archive')}
+                            onViewFollowers={() => showFollowList('followers')}
+                            onViewFollowing={() => showFollowList('following')}
+                            onCreatePost={() => setCreateModalOpen(true)}
+                        />;
             case 'saved':
                 return <SavedView posts={posts.filter(p => p.savedByUser)} />;
             case 'settings':
                 return <SettingsView onGetVerified={() => setVerifiedModalOpen(true)} />;
             case 'premium':
                 return <PremiumView onSubscribe={handleSubscribeToPremium} isCurrentUserPremium={currentUser.isPremium ?? false} />;
+            case 'archive':
+                return <ArchiveView posts={posts.filter(p => p.user.id === currentUser.id && p.isArchived)} />;
             default:
                 return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
         }
@@ -206,6 +267,14 @@ const App: React.FC = () => {
             {isSearchVisible && <SearchView users={users} onClose={() => setSearchVisible(false)} />}
             {isNotificationsPanelVisible && <NotificationsPanel activities={MOCK_ACTIVITIES} onClose={() => setNotificationsPanelVisible(false)} />}
             {isVerifiedModalOpen && <GetVerifiedModal onClose={() => setVerifiedModalOpen(false)} />}
+            {isEditProfileModalOpen && <EditProfileModal currentUser={currentUser} onUpdateUser={handleUpdateUser} onClose={() => setEditProfileModalOpen(false)} />}
+            {followListModalData && <FollowListModal 
+                                        listType={followListModalData.type}
+                                        users={followListModalData.users}
+                                        currentUserFollowing={currentUser.following}
+                                        onUnfollow={handleUnfollow}
+                                        onClose={() => setFollowListModalData(null)} 
+                                     />}
         </div>
     );
 }

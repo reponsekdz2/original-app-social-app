@@ -3,12 +3,16 @@ export interface User {
   id: string;
   username: string;
   avatar: string;
+  name: string;
+  bio: string;
+  followers: string[];
+  following: string[];
   highlights?: StoryHighlight[];
   isOnline?: boolean;
   isPremium?: boolean;
 }
 
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'create' | 'premium';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'create' | 'premium' | 'archive';
 
 export interface Comment {
   id: string;
@@ -28,6 +32,7 @@ export interface Post {
   timestamp: string;
   likedByUser: boolean;
   savedByUser: boolean;
+  isArchived?: boolean;
 }
 
 export interface StoryItem {

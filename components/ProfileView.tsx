@@ -6,11 +6,16 @@ import ProfileHighlight from './ProfileHighlight';
 interface ProfileViewProps {
   user: User;
   posts: Post[];
+  onEditProfile: () => void;
+  onViewArchive: () => void;
+  onViewFollowers: () => void;
+  onViewFollowing: () => void;
+  onCreatePost: () => void;
 }
 
 type ProfileTab = 'posts' | 'saved' | 'tagged';
 
-const ProfileView: React.FC<ProfileViewProps> = ({ user, posts }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ user, posts, onEditProfile, onViewArchive, onViewFollowers, onViewFollowing, onCreatePost }) => {
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
 
     const renderGrid = () => {
@@ -55,21 +60,31 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, posts }) => {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
                         <h2 className="text-2xl">{user.username}</h2>
                         <div className="flex gap-2">
-                           <button className="bg-gray-800 font-semibold px-4 py-1.5 rounded-md text-sm">Edit Profile</button>
-                           <button className="bg-gray-800 font-semibold px-4 py-1.5 rounded-md text-sm">View Archive</button>
+                           <button onClick={onEditProfile} className="bg-gray-800 font-semibold px-4 py-1.5 rounded-md text-sm">Edit Profile</button>
+                           <button onClick={onViewArchive} className="bg-gray-800 font-semibold px-4 py-1.5 rounded-md text-sm">View Archive</button>
+                           <button onClick={onCreatePost} className="bg-gray-800 font-semibold px-2 py-1.5 rounded-md text-sm">
+                                <Icon className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></Icon>
+                           </button>
                         </div>
                     </div>
                      <div className="hidden md:flex items-center space-x-8 mb-4">
                         <p><span className="font-semibold">{posts.length}</span> posts</p>
-                        <p><span className="font-semibold">1,234</span> followers</p>
-                        <p><span className="font-semibold">567</span> following</p>
+                        <button onClick={onViewFollowers}><span className="font-semibold">{user.followers.length}</span> followers</button>
+                        <button onClick={onViewFollowing}><span className="font-semibold">{user.following.length}</span> following</button>
                     </div>
                     <div>
-                        <p className="font-semibold">The Movie Buff</p>
-                        <p className="text-sm text-gray-400">All things film & TV. 🎬🍿</p>
+                        <p className="font-semibold">{user.name}</p>
+                        <p className="text-sm text-gray-400 whitespace-pre-wrap">{user.bio}</p>
                     </div>
                 </div>
             </header>
+            
+            <div className="flex md:hidden items-center justify-around mb-4 border-y border-gray-800 py-2 text-center">
+                <div><p className="font-semibold">{posts.length}</p><p className="text-sm text-gray-400">posts</p></div>
+                <button onClick={onViewFollowers}><p className="font-semibold">{user.followers.length}</p><p className="text-sm text-gray-400">followers</p></button>
+                <button onClick={onViewFollowing}><p className="font-semibold">{user.following.length}</p><p className="text-sm text-gray-400">following</p></button>
+            </div>
+
 
             <div className="px-4 md:px-8">
                  <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
