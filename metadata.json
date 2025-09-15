@@ -1,4 +1,5 @@
 {
-  "name": "Netflixgram",
-  "description": "A social media application inspired by Instagram, with a Netflix-themed red, black, and white color palette. It features stories, posts, and a full messaging system."
+  "name": "frechat",
+  "description": "A social media application inspired by Instagram, with a Netflix-themed red, black, and white color palette. It features stories, posts, and a full messaging system.",
+  "requestFramePermissions": []
 }
