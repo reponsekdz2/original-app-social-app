@@ -53,3 +53,22 @@ export const generateStoryImage = async (prompt: string): Promise<string> => {
     throw new Error("Image generation failed, no images returned.");
   }
 };
+
+/**
+ * Generates a comment suggestion based on a post caption and a desired style.
+ * @param postCaption The caption of the post to comment on.
+ * @param style The desired style of the comment (e.g., 'Witty', 'Formal').
+ * @returns A promise that resolves to the generated comment string.
+ */
+export const generateComment = async (postCaption: string, style: string): Promise<string> => {
+  const prompt = `You are a social media assistant. Based on the following post caption, generate a short, one-sentence comment with a ${style} tone. Do not use hashtags.
+  
+Post Caption: "${postCaption}"`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+
+  return response.text.trim().replace(/"/g, ''); // Remove quotes from the response
+};

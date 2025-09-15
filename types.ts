@@ -1,4 +1,4 @@
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'premium' | 'activity' | 'create' | 'search' | 'notifications';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'premium' | 'activity' | 'create' | 'search' | 'notifications' | 'premium-welcome';
 
 export interface User {
   id: string;
@@ -125,4 +125,10 @@ export interface FeedActivity {
   targetPost?: Post;
   targetUser?: User;
   timestamp: string;
+}
+
+export interface Testimonial {
+    id: string;
+    user: User;
+    quote: string;
 }

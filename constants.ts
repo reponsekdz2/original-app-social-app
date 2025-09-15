@@ -1,4 +1,4 @@
-import type { User, Post, Story, StoryItem, Comment, Reel, Conversation, Message, Activity, StoryHighlight, SponsoredContent, FeedActivity } from './types.ts';
+import type { User, Post, Story, StoryItem, Comment, Reel, Conversation, Message, Activity, StoryHighlight, SponsoredContent, FeedActivity, Testimonial } from './types.ts';
 
 // Base users - defining them first
 const u1: User = {
@@ -199,4 +199,22 @@ export const MOCK_TRENDING_TOPICS: string[] = [
     '#NetflixOriginal',
     '#Documentaries',
     '#ComedySpecials',
+];
+
+export const MOCK_TESTIMONIALS: Testimonial[] = [
+    {
+        id: 't1',
+        user: MOCK_USERS[2], // retro_reels
+        quote: "The 4K uploads are a game-changer for my classic film clips. The quality is just stunning!",
+    },
+    {
+        id: 't2',
+        user: MOCK_USERS[3], // indie_insights
+        quote: "As a creator, the ad-free experience helps me focus. Plus, the verified badge gives my profile that extra layer of trust.",
+    },
+    {
+        id: 't3',
+        user: MOCK_USERS[1], // series_scout
+        quote: "Magic Compose is so much fun! I use it all the time to come up with witty comments. Highly recommend Premium!",
+    }
 ];

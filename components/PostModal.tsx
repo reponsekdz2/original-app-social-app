@@ -3,6 +3,8 @@ import type { Post as PostType, User, Comment } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import EmojiPicker from './EmojiPicker.tsx';
+import { generateComment } from '../services/geminiService.ts';
+import MagicComposePanel from './MagicComposePanel.tsx';
 
 interface PostModalProps {
   post: PostType;
@@ -21,14 +23,30 @@ interface PostModalProps {
 const PostModal: React.FC<PostModalProps> = ({ post, currentUser, onClose, onLike, onSave, onComment, onLikeComment, onShare, onViewProfile, onEdit, onViewLikes }) => {
   const [commentText, setCommentText] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [isMagicComposeOpen, setMagicComposeOpen] = useState(false);
+  const [isGeneratingComment, setIsGeneratingComment] = useState(false);
 
   const handlePostComment = () => {
     if (commentText.trim()) {
       onComment(post.id, commentText);
       setCommentText('');
+      setMagicComposeOpen(false);
     }
   };
   
+  const handleGenerateComment = async (style: string) => {
+    setIsGeneratingComment(true);
+    setMagicComposeOpen(false);
+    try {
+        const generated = await generateComment(post.caption, style);
+        setCommentText(generated);
+    } catch (error) {
+        console.error("Failed to generate comment:", error);
+    } finally {
+        setIsGeneratingComment(false);
+    }
+  };
+
   const handleViewProfileAndClose = (user: User) => {
     onViewProfile(user);
     onClose();
@@ -133,16 +151,26 @@ const PostModal: React.FC<PostModalProps> = ({ post, currentUser, onClose, onLik
                 <button onClick={() => onSave(post.id)}><Icon className="w-7 h-7" fill={post.isSaved ? 'currentColor' : 'none'}><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.5 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></Icon></button>
             </div>
             <button onClick={() => onViewLikes(post.likedBy)} className="font-semibold text-sm mt-2">{post.likes.toLocaleString()} likes</button>
-             <div className="flex items-center mt-3 border-t border-gray-700 pt-3">
-                <input 
-                    type="text" 
-                    placeholder="Add a comment..."
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
-                    className="w-full bg-transparent text-sm focus:outline-none"
-                />
-                <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm">Post</button>
+             <div className="relative border-t border-gray-700 pt-3 mt-3">
+              {isMagicComposeOpen && <div className="absolute bottom-12 right-0 z-10"><MagicComposePanel onGenerate={handleGenerateComment} isLoading={isGeneratingComment} /></div>}
+                <div className="flex items-center">
+                    <input 
+                        type="text" 
+                        placeholder="Add a comment..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
+                        className="w-full bg-transparent text-sm focus:outline-none"
+                    />
+                     <button onClick={() => setMagicComposeOpen(p => !p)} className="p-1" disabled={isGeneratingComment}>
+                      {isGeneratingComment ? (
+                        <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                      ) : (
+                        <Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon>
+                      )}
+                    </button>
+                    {commentText && <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm ml-2">Post</button>}
+                </div>
             </div>
           </footer>
         </div>

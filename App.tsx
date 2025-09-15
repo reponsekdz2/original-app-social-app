@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { User, View, Post as PostType, Story as StoryType, Comment, StoryItem, NotificationSettings } from './types.ts';
-import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES, MOCK_ADS, MOCK_FEED_ACTIVITIES, MOCK_TRENDING_TOPICS } from './constants.ts';
+import type { User, View, Post as PostType, Story as StoryType, Comment, StoryItem, NotificationSettings, Conversation, Message, Testimonial } from './types.ts';
+import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES, MOCK_ADS, MOCK_FEED_ACTIVITIES, MOCK_TRENDING_TOPICS, MOCK_TESTIMONIALS } from './constants.ts';
 import LeftSidebar from './components/LeftSidebar.tsx';
 import Header from './components/Header.tsx';
 import Sidebar from './components/Sidebar.tsx';
@@ -30,6 +30,7 @@ import ChangePasswordModal from './components/ChangePasswordModal.tsx';
 import EditPostModal from './components/EditPostModal.tsx';
 import ViewLikesModal from './components/ViewLikesModal.tsx';
 import PaymentModal from './components/PaymentModal.tsx';
+import PremiumWelcomeView from './components/PremiumWelcomeView.tsx';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
@@ -58,6 +59,7 @@ const App: React.FC = () => {
   // Content State
   const [posts, setPosts] = useState<PostType[]>(MOCK_POSTS);
   const [stories, setStories] = useState<StoryType[]>(MOCK_STORIES);
+  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
   
   // App-wide Settings State
   const [isPrivateAccount, setPrivateAccount] = useState(false);
@@ -219,10 +221,29 @@ const App: React.FC = () => {
   const handleSubscribe = () => {
     setCurrentUser(prev => ({...prev, isPremium: true}));
     setPaymentModalOpen(false);
+    handleNavigate('premium-welcome');
   };
   
   const handleUpdateNotificationSettings = (setting: keyof NotificationSettings, value: boolean) => {
     setNotificationSettings(prev => ({ ...prev, [setting]: value }));
+  };
+
+  const handleSendMessage = (conversationId: string, content: string) => {
+    const newMessage: Message = {
+      id: `m-${Date.now()}`,
+      senderId: currentUser.id,
+      content,
+      timestamp: 'Just now',
+      type: 'text',
+    };
+
+    setConversations(prev =>
+      prev.map(convo =>
+        convo.id === conversationId
+          ? { ...convo, messages: [...convo.messages, newMessage] }
+          : convo
+      )
+    );
   };
 
   const renderView = () => {
@@ -236,7 +257,7 @@ const App: React.FC = () => {
         case 'reels':
             return <ReelsView reels={MOCK_REELS} />;
         case 'messages':
-            return <MessagesView currentUser={currentUser} conversations={MOCK_CONVERSATIONS} onViewProfile={handleViewProfile} />;
+            return <MessagesView currentUser={currentUser} conversations={conversations} onViewProfile={handleViewProfile} onSendMessage={handleSendMessage} />;
         case 'profile':
             return <ProfileView user={profileToShow} posts={posts.filter(p => p.user.id === profileToShow.id)} isCurrentUser={profileToShow.id === currentUser.id} onEditProfile={() => setEditProfileModalOpen(true)} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onShowFollowers={(users) => setFollowListModal({ title: 'Followers', users })} onShowFollowing={(users) => setFollowListModal({ title: 'Following', users })} onEditPost={setEditingPost} onViewPost={setViewedPost}/>;
         case 'settings':
@@ -246,7 +267,9 @@ const App: React.FC = () => {
         case 'archive':
             return <ArchiveView posts={posts.filter(p => p.isArchived)} onViewPost={setViewedPost} />;
         case 'premium':
-            return <PremiumView onShowPaymentModal={() => setPaymentModalOpen(true)} isCurrentUserPremium={currentUser.isPremium || false} />;
+            return <PremiumView onShowPaymentModal={() => setPaymentModalOpen(true)} isCurrentUserPremium={currentUser.isPremium || false} testimonials={MOCK_TESTIMONIALS} />;
+        case 'premium-welcome':
+            return <PremiumWelcomeView onNavigate={handleNavigate} />;
         case 'activity':
             return <ActivityView activities={MOCK_ACTIVITIES} />;
         default:

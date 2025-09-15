@@ -6,10 +6,13 @@ interface MessagesViewProps {
   currentUser: User;
   conversations: Conversation[];
   onViewProfile: (user: User) => void;
+  onSendMessage: (conversationId: string, content: string) => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations, onViewProfile }) => {
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(conversations[0]);
+const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations, onViewProfile, onSendMessage }) => {
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(conversations[0]?.id);
+
+  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
   
   const getOtherParticipant = (convo: Conversation) => {
       return convo.participants.find(p => p.id !== currentUser.id)!;
@@ -25,7 +28,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations,
           {conversations.map(convo => {
             const otherUser = getOtherParticipant(convo);
             return (
-              <button key={convo.id} onClick={() => setSelectedConversation(convo)} className={`w-full text-left p-4 flex items-center gap-3 ${selectedConversation?.id === convo.id ? 'bg-gray-800' : 'hover:bg-gray-900'}`}>
+              <button key={convo.id} onClick={() => setSelectedConversationId(convo.id)} className={`w-full text-left p-4 flex items-center gap-3 ${selectedConversationId === convo.id ? 'bg-gray-800' : 'hover:bg-gray-900'}`}>
                 <img src={otherUser.avatar} alt={otherUser.username} className="w-12 h-12 rounded-full" />
                 <div>
                   <p>{otherUser.username}</p>
@@ -38,7 +41,12 @@ const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations,
       </div>
       <div className="w-2/3">
         {selectedConversation ? (
-          <ChatWindow conversation={selectedConversation} currentUser={currentUser} />
+          <ChatWindow 
+            key={selectedConversation.id} // Add key to force re-mount on conversation change
+            conversation={selectedConversation} 
+            currentUser={currentUser} 
+            onSendMessage={onSendMessage} 
+          />
         ) : (
           <div className="flex h-full items-center justify-center">
             <p>Select a conversation to start chatting.</p>

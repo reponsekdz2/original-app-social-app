@@ -3,6 +3,9 @@ import type { Post as PostType, User, Comment } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import EmojiPicker from './EmojiPicker.tsx';
+import { generateComment } from '../services/geminiService.ts';
+import MagicComposePanel from './MagicComposePanel.tsx';
+
 
 interface PostProps {
   post: PostType;
@@ -21,6 +24,8 @@ const Post: React.FC<PostProps> = ({ post, currentUser, onLike, onComment, onSav
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isEmojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [isMagicComposeOpen, setMagicComposeOpen] = useState(false);
+  const [isGeneratingComment, setIsGeneratingComment] = useState(false);
 
   const captionRef = useRef<HTMLParagraphElement>(null);
   const [isCaptionLong, setIsCaptionLong] = useState(false);
@@ -37,6 +42,21 @@ const Post: React.FC<PostProps> = ({ post, currentUser, onLike, onComment, onSav
       onComment(post.id, commentText);
       setCommentText('');
       setEmojiPickerOpen(false);
+      setMagicComposeOpen(false);
+    }
+  };
+
+  const handleGenerateComment = async (style: string) => {
+    setIsGeneratingComment(true);
+    setMagicComposeOpen(false);
+    try {
+        const generated = await generateComment(post.caption, style);
+        setCommentText(generated);
+    } catch (error) {
+        console.error("Failed to generate comment:", error);
+        // Optionally set an error message to display to the user
+    } finally {
+        setIsGeneratingComment(false);
     }
   };
 
@@ -121,20 +141,30 @@ const Post: React.FC<PostProps> = ({ post, currentUser, onLike, onComment, onSav
         
         {post.comments.length > 0 && <p className="text-sm text-gray-400 mt-2">View all {post.comments.length} comments</p>}
         
-        <div className="relative flex items-center mt-3">
-            <input 
-                type="text" 
-                placeholder="Add a comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
-                className="w-full bg-transparent text-sm focus:outline-none"
-            />
-            {commentText && <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm">Post</button>}
-             <button onClick={() => setEmojiPickerOpen(p => !p)} className="p-1">
-                <Icon className="w-5 h-5 text-gray-400"><path d="M15.182 15.182a4.5 4.5 0 01-6.364 0 4.5 4.5 0 010-6.364l4.95-4.95a3.375 3.375 0 014.773 4.773l-1.976 1.976a1.125 1.125 0 01-1.59 0l-1.591-1.59a.375.375 0 10-.53-.53l1.59-1.591a.375.375 0 000-.53l-4.774-4.773a2.625 2.625 0 00-3.712 3.712l4.95 4.95a1.125 1.125 0 001.59 0l1.976-1.976a2.625 2.625 0 00-3.712-3.712l-4.95 4.95a4.5 4.5 0 006.364 6.364l1.976-1.976a1.125 1.125 0 00-1.59-1.59l-1.976 1.976z" /></Icon>
-            </button>
-            {isEmojiPickerOpen && <div className="absolute bottom-8 right-0"><EmojiPicker onSelectEmoji={(emoji) => setCommentText(p => p+emoji)} /></div>}
+        <div className="relative">
+          {isMagicComposeOpen && <div className="absolute bottom-12 right-0 z-10"><MagicComposePanel onGenerate={handleGenerateComment} isLoading={isGeneratingComment} /></div>}
+          <div className="relative flex items-center mt-3">
+              <input 
+                  type="text" 
+                  placeholder="Add a comment..."
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
+                  className="w-full bg-transparent text-sm focus:outline-none"
+              />
+              {commentText && <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm">Post</button>}
+              <button onClick={() => setMagicComposeOpen(p => !p)} className="p-1" disabled={isGeneratingComment}>
+                  {isGeneratingComment ? (
+                     <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  ) : (
+                     <Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon>
+                  )}
+              </button>
+              <button onClick={() => setEmojiPickerOpen(p => !p)} className="p-1">
+                  <Icon className="w-5 h-5 text-gray-400"><path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></Icon>
+              </button>
+              {isEmojiPickerOpen && <div className="absolute bottom-8 right-0"><EmojiPicker onSelectEmoji={(emoji) => setCommentText(p => p+emoji)} /></div>}
+          </div>
         </div>
       </footer>
     </article>

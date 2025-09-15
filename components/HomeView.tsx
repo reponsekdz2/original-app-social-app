@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Post as PostType, Story as StoryType, User } from '../types.ts';
 import StoryBubble from './StoryBubble.tsx';
 import Post from './Post.tsx';
@@ -35,6 +35,11 @@ const HomeView: React.FC<HomeViewProps> = ({
   onEditPost,
   onViewLikes,
 }) => {
+  const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
+
+  const followingPosts = posts.filter(p => currentUser.following.some(f => f.id === p.user.id) || p.user.id === currentUser.id);
+  const displayedPosts = activeTab === 'following' ? followingPosts : posts;
+
   return (
     <div className="pb-16 md:pb-0">
       {/* Stories */}
@@ -56,9 +61,15 @@ const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* Posts */}
+      {/* Feed */}
       <div className="max-w-2xl mx-auto">
-        {posts.map(post => (
+        <div className="sticky top-0 z-20 bg-black/80 backdrop-blur-md border-b border-gray-800">
+          <div className="flex">
+            <button onClick={() => setActiveTab('for-you')} className={`flex-1 py-3 text-center font-semibold transition-colors ${activeTab === 'for-you' ? 'text-white border-b-2 border-red-500' : 'text-gray-500 hover:bg-gray-900'}`}>For You</button>
+            <button onClick={() => setActiveTab('following')} className={`flex-1 py-3 text-center font-semibold transition-colors ${activeTab === 'following' ? 'text-white border-b-2 border-red-500' : 'text-gray-500 hover:bg-gray-900'}`}>Following</button>
+          </div>
+        </div>
+        {displayedPosts.map(post => (
           <Post 
             key={post.id} 
             post={post} 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Icon from './Icon.tsx';
 
 interface MagicComposePanelProps {
@@ -10,11 +10,11 @@ const styles = ['Casual', 'Formal', 'Witty', 'Poetic', 'Excited'];
 
 const MagicComposePanel: React.FC<MagicComposePanelProps> = ({ onGenerate, isLoading }) => {
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-3">
+    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-3 w-56">
         <div className="flex items-center justify-between mb-2 px-1">
             <p className="font-semibold text-sm">✨ Magic Compose</p>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
             {styles.map(style => (
                 <button 
                     key={style}
@@ -28,7 +28,7 @@ const MagicComposePanel: React.FC<MagicComposePanelProps> = ({ onGenerate, isLoa
              <button
                 onClick={() => onGenerate('remix')}
                 disabled={isLoading}
-                className="col-span-3 text-sm p-2 rounded-md bg-gradient-to-r from-purple-500 to-red-500 text-white font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                className="col-span-2 text-sm p-2 rounded-md bg-gradient-to-r from-purple-500 to-red-500 text-white font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                Remix
             </button>
