@@ -14,7 +14,12 @@ const SavedView: React.FC<SavedViewProps> = ({ posts }) => {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 md:gap-4">
         {posts.map((post) => (
           <div key={post.id} className="relative aspect-square group cursor-pointer">
-            <img src={post.image} alt="Saved post" className="w-full h-full object-cover" />
+            {/* Fix: Use post.media and handle video type */}
+            {post.mediaType === 'video' ? (
+              <video src={post.media} className="w-full h-full object-cover" />
+            ) : (
+              <img src={post.media} alt="Saved post" className="w-full h-full object-cover" />
+            )}
              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
               <div className="text-white opacity-0 group-hover:opacity-100 flex items-center space-x-4">
                 <span className="flex items-center font-bold text-sm"><Icon className="w-5 h-5 mr-1" fill="currentColor"><path d="M11.645 20.91l-1.414-1.414a5 5 0 01-7.071-7.071l7.07-7.071 7.072 7.071a5 5 0 01-7.072 7.071l-1.414 1.414z" /></Icon>{post.likes}</span>

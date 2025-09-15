@@ -39,7 +39,8 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ activities, onC
                                 <span className="font-bold">{activity.user.username}</span> {renderActivityText(activity)}
                                 <span className="text-gray-500"> · {activity.timestamp}</span>
                             </p>
-                            {activity.post && <img src={activity.post.image} alt="post" className="w-11 h-11 object-cover rounded-md" />}
+                            {/* Fix: Use the correct 'media' property instead of 'image' */}
+                            {activity.post && <img src={activity.post.media} alt="post" className="w-11 h-11 object-cover rounded-md" />}
                         </div>
                     ))}
                  </div>

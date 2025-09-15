@@ -67,3 +67,30 @@ export const generateStoryImage = async (prompt: string): Promise<string> => {
     throw new Error("Could not generate story image due to an API error.");
   }
 };
+
+export const rewriteMessage = async (text: string, tone: 'formal' | 'casual'): Promise<string> => {
+  if (!ai) {
+    return "API key is not configured. Cannot rewrite message.";
+  }
+  
+  try {
+    const prompt = `Rewrite the following message to sound more ${tone}. Keep it concise and appropriate for a social media chat. Do not add any extra formatting or quotes around the result.
+Original message: "${text}"
+Rewritten message:`;
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        temperature: 0.7,
+        maxOutputTokens: 100,
+        thinkingConfig: { thinkingBudget: 0 }
+      }
+    });
+
+    return response.text.trim();
+  } catch (error) {
+    console.error("Error rewriting message with Gemini API:", error);
+    return "Could not rewrite message due to an API error.";
+  }
+};

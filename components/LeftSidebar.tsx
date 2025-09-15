@@ -21,7 +21,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onCr
         { view: 'messages', label: 'Messages', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 01-2.53-.388m-5.18-3.468a9.75 9.75 0 01-1.12-3.468c0-4.556 4.03-8.25 9-8.25a9.75 9.75 0 018.825 5.567" /> },
         { view: 'notifications', label: 'Notifications', action: onShowNotifications, icon: <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.31 5.632 23.848 23.848 0 005.454 1.31M15 17.5c-.618 1.078-1.76 1.75-3 1.75s-2.382-.672-3-1.75M15 17.5S14.01 19.5 12 19.5s-3-2-3-2" /> },
         { view: 'create', label: 'Create', action: onCreatePost, icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /> },
-        { view: 'premium', label: 'Premium', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.321h5.367a.563.563 0 01.321.988l-4.338 3.14a.563.563 0 00-.184.55l1.637 5.111a.563.563 0 01-.812.622l-4.338-3.14a.563.563 0 00-.576 0l-4.338 3.14a.563.563 0 01-.812-.622l1.637-5.111a.563.563 0 00-.184-.55l-4.338-3.14a.563.563 0 01.321-.988h5.367a.563.563 0 00.475-.321L11.48 3.5z" /> },
+        { view: 'premium', label: 'Premium', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.321h5.367a.563.563 0 01.321.988l-4.338 3.14a.563.563 0 00-.184.55l1.637 5.111a.563.563 0 01-.812.622l-4.338-3.14a.563.563 0 00-.576 0l-4.338 3.14a.563.563 0 01-.812-.622l1.637-5.111a.563.563 0 00-.184-.55l-4.338-3.14a.563.563 0 01.321-.988h5.367a.563.563 0 00.475-.321L11.48 3.5z" />, isPremium: currentUser.isPremium },
         { view: 'profile', label: 'Profile', icon: <img src={currentUser.avatar} alt="Profile" /> },
     ];
   return (
@@ -39,11 +39,16 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onCr
                     onClick={item.action ? item.action : () => onNavigate(item.view as View)}
                     className={`flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800 transition-colors w-full ${currentView === item.view ? 'font-bold' : ''}`}
                 >
-                    <div className="w-6 h-6 flex items-center justify-center">
+                    <div className="w-6 h-6 flex items-center justify-center relative">
                        {item.view === 'profile' ? 
                            <img src={currentUser.avatar} alt="Profile" className={`w-7 h-7 rounded-full object-cover ${currentView === 'profile' ? 'ring-2 ring-white' : ''}`} /> 
                            : <Icon className="w-7 h-7">{item.icon}</Icon>
                        }
+                       {item.view === 'premium' && item.isPremium && (
+                          <span className="absolute -top-1 -right-1 text-yellow-400">
+                              <Icon className="w-4 h-4" fill="currentColor"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.321h5.367a.563.563 0 01.321.988l-4.338 3.14a.563.563 0 00-.184.55l1.637 5.111a.563.563 0 01-.812.622l-4.338-3.14a.563.563 0 00-.576 0l-4.338 3.14a.563.563 0 01-.812-.622l1.637-5.111a.563.563 0 00-.184-.55l-4.338-3.14a.563.563 0 01.321-.988h5.367a.563.563 0 00.475-.321L11.48 3.5z" /></Icon>
+                          </span>
+                        )}
                    </div>
                     <span className="hidden lg:inline text-base">{item.label}</span>
                 </button>

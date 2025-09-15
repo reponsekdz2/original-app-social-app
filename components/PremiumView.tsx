@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
 import Icon from './Icon';
 
-const PremiumView: React.FC = () => {
+interface PremiumViewProps {
+    onSubscribe: () => void;
+    isCurrentUserPremium: boolean;
+}
+
+const PremiumView: React.FC<PremiumViewProps> = ({ onSubscribe, isCurrentUserPremium }) => {
     const [plan, setPlan] = useState<'monthly' | 'yearly'>('yearly');
+    const [isSubscribed, setIsSubscribed] = useState(isCurrentUserPremium);
+
+    const handleSubscribeClick = () => {
+        onSubscribe();
+        setIsSubscribed(true);
+    };
 
     const features = [
         {
@@ -26,7 +37,7 @@ const PremiumView: React.FC = () => {
             description: 'Enjoy Netflixgram completely uninterrupted, with no ads in your feed, stories, or reels.'
         },
         {
-            icon: <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-1.002 1.11-1.212l1.173-.42c.328-.118.665-.118.993 0l1.173.42c.55.198 1.02.67 1.11 1.212l.245 1.488a8.13 8.13 0 01.702.308l1.357-.549c.42-.17.905-.025 1.15.35l.805 1.393c.246.426.11 1.004-.265 1.32l-1.095.845a7.51 7.51 0 010 1.344l1.095.845c.375.29.51.865.265 1.32l-.805 1.393c-.245.426-.73.52-1.15.35l-1.357-.549a8.13 8.13 0 01-.702.308l-.245 1.488c-.09.542-.56 1.002-1.11 1.212l-1.173-.42c-.328-.118-.665-.118-.993 0l-1.173-.42c-.55-.198-1.02-.67-1.11-1.212l-.245-1.488a8.13 8.13 0 01-.702-.308l-1.357.549c-.42.17-.905-.025-1.15-.35l-.805-1.393c-.246-.426-.11-1.004.265-1.32l1.095-.845a7.51 7.51 0 010-1.344l-1.095-.845c-.375-.29-.51-.865-.265-1.32l.805-1.393c.245.426.73.52 1.15.35l1.357.549a8.13 8.13 0 01.702.308l.245-1.488z" />,
+            icon: <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-1.002 1.11-1.212l1.173-.42c.328-.118.665-.118.993 0l1.173.42c.55.198 1.02.67 1.11 1.212l.245 1.488a8.13 8.13 0 01.702.308l1.357-.549c.42-.17.905-.025 1.15.35l.805 1.393c.246.426.11 1.004-.265 1.32l-1.095.845a7.51 7.51 0 010 1.344l1.095.845c.375.29.51.865.265 1.32l-.805 1.393c-.245.426-.73.52-1.15.35l-1.357-.549a8.13 8.13 0 01-.702.308l-.245 1.488c-.09.542-.56 1.002-1.11 1.212l-1.173-.42c-.328-.118-.665-.118-.993 0l-1.173-.42c-.55-.198-1.02-.67-1.11-1.212l-.245-1.488a8.13 8.13 0 01-.702-.308l-1.357.549c-.42.17-.905-.025-1.15-.35l-.805-1.393c-.246.426-.11-1.004.265-1.32l1.095-.845a7.51 7.51 0 010-1.344l-1.095-.845c-.375-.29-.51-.865-.265-1.32l.805-1.393c.245.426.73.52 1.15.35l1.357.549a8.13 8.13 0 01.702.308l.245-1.488z" />,
             title: 'Profile Customization',
             description: 'Get access to more profile layouts, custom themes, and add a link to your website.'
         },
@@ -36,6 +47,20 @@ const PremiumView: React.FC = () => {
             description: 'Be the first to try new features before they are released to everyone else.'
         }
     ];
+
+    if (isSubscribed) {
+        return (
+            <div className="p-4 md:p-8 flex items-center justify-center h-[calc(100vh-10rem)]">
+                <div className="text-center max-w-xl mx-auto bg-gray-900 rounded-lg p-10 border border-gray-800 shadow-2xl">
+                    <Icon className="w-16 h-16 text-green-500 mx-auto mb-4" fill="currentColor">
+                        <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 6.22a.75.75 0 00-1.06-1.06L11 11.69 8.78 9.47a.75.75 0 00-1.06 1.06l2.75 2.75a.75.75 0 001.06 0l4.5-4.5z" clipRule="evenodd" />
+                    </Icon>
+                    <h1 className="text-4xl font-bold text-white mb-3">Welcome to Premium!</h1>
+                    <p className="text-gray-300">Your subscription is active. You can now enjoy all the exclusive features of Netflixgram Premium.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 md:p-8">
@@ -69,7 +94,7 @@ const PremiumView: React.FC = () => {
                         <p className="text-2xl font-extrabold">$95.99<span className="text-base font-normal text-gray-400">/year</span></p>
                     </button>
                 </div>
-                <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg text-lg transition-transform hover:scale-105">
+                <button onClick={handleSubscribeClick} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg text-lg transition-transform hover:scale-105">
                     Subscribe and Unlock
                 </button>
                  <p className="text-xs text-gray-500 text-center mt-4">Subscription renews automatically. Cancel anytime.</p>

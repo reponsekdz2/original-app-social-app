@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { Post } from '../types';
 import Icon from './Icon';
@@ -22,6 +23,13 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose, onLike, onComment 
       setCommentText('');
     }
   };
+  
+  const renderMedia = () => {
+    if (post.mediaType === 'video') {
+      return <video src={post.media} className="max-h-full max-w-full object-contain" controls autoPlay loop />;
+    }
+    return <img src={post.media} alt={`Post by ${post.user.username}`} className="max-h-full max-w-full object-contain" />;
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
@@ -30,7 +38,7 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose, onLike, onComment 
       </button>
       <div className="bg-black w-full max-w-5xl h-full max-h-[90vh] flex overflow-hidden rounded-lg" onClick={(e) => e.stopPropagation()}>
         <div className="w-1/2 md:w-3/5 bg-black flex items-center justify-center">
-          <img src={post.image} alt={`Post by ${post.user.username}`} className="max-h-full max-w-full object-contain" />
+          {renderMedia()}
         </div>
         <div className="w-1/2 md:w-2/5 flex flex-col border-l border-gray-800">
           <div className="p-4 border-b border-gray-800">

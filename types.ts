@@ -5,9 +5,10 @@ export interface User {
   avatar: string;
   highlights?: StoryHighlight[];
   isOnline?: boolean;
+  isPremium?: boolean;
 }
 
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'search' | 'notifications' | 'create' | 'premium';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'create' | 'premium';
 
 export interface Comment {
   id: string;
@@ -19,7 +20,8 @@ export interface Comment {
 export interface Post {
   id: string;
   user: User;
-  image: string;
+  media: string;
+  mediaType: 'image' | 'video';
   caption: string;
   likes: number;
   comments: Comment[];

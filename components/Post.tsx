@@ -29,6 +29,13 @@ const Post: React.FC<PostProps> = ({ post, onLike, onComment, onViewPost, onSave
   const saveIcon = post.savedByUser
     ? <path fill="currentColor" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.5 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
     : <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.5 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />;
+    
+  const renderMedia = () => {
+    if (post.mediaType === 'video') {
+      return <video src={post.media} className="w-full object-cover" controls autoPlay muted loop />;
+    }
+    return <img src={post.media} alt={`Post by ${post.user.username}`} className="w-full object-cover" />;
+  };
 
   return (
     <div className="border-b border-gray-800 bg-black">
@@ -37,7 +44,7 @@ const Post: React.FC<PostProps> = ({ post, onLike, onComment, onViewPost, onSave
         <p className="font-semibold text-sm">{post.user.username}</p>
       </div>
       <div>
-        <img src={post.image} alt={`Post by ${post.user.username}`} className="w-full object-cover" />
+        {renderMedia()}
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">

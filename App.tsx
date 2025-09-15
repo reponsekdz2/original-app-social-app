@@ -25,8 +25,16 @@ import BottomNav from './components/BottomNav';
 import SearchView from './components/SearchView';
 import NotificationsPanel from './components/NotificationsPanel';
 import CreateStoryModal from './components/CreateStoryModal';
+import GetVerifiedModal from './components/GetVerifiedModal';
 // Fix: Import the 'Sidebar' component to resolve the 'Cannot find name' error.
 import Sidebar from './components/Sidebar';
+
+type PostData = {
+    user: User;
+    media: string;
+    mediaType: 'image' | 'video';
+    caption: string;
+};
 
 const App: React.FC = () => {
     // State management...
@@ -47,6 +55,7 @@ const App: React.FC = () => {
     const [isAccountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
     const [isSearchVisible, setSearchVisible] = useState(false);
     const [isNotificationsPanelVisible, setNotificationsPanelVisible] = useState(false);
+    const [isVerifiedModalOpen, setVerifiedModalOpen] = useState(false);
     
     // Handlers...
     const handleLike = (postId: string) => {
@@ -74,9 +83,9 @@ const App: React.FC = () => {
         setAccountSwitcherOpen(false);
     };
     
-    const handleCreatePost = (post: Omit<PostType, 'id' | 'likes' | 'likedByUser' | 'comments' | 'timestamp' | 'savedByUser'>) => {
+    const handleCreatePost = (postData: PostData) => {
         const newPost: PostType = {
-            ...post,
+            ...postData,
             id: `post-${Date.now()}`,
             likes: 0,
             likedByUser: false,
@@ -115,10 +124,12 @@ const App: React.FC = () => {
         setCreateStoryModalOpen(false);
     };
 
+    const handleSubscribeToPremium = () => {
+      setCurrentUser(prevUser => ({...prevUser, isPremium: true}));
+    };
+
     const handleNavigate = (view: View) => {
-        // If messages view is open and we navigate somewhere else, close it.
         if (currentView === 'messages' && view !== 'messages') {
-            // This logic might change if we want chat to persist
         }
         setCurrentView(view);
     }
@@ -132,15 +143,15 @@ const App: React.FC = () => {
             case 'reels':
                 return <ReelsView reels={reels} />;
             case 'messages':
-                return <MessagesView currentUser={currentUser} conversations={conversations} onNavigateHome={() => setCurrentView('home')} />;
+                return <MessagesView currentUser={currentUser} conversations={conversations} />;
             case 'profile':
                 return <ProfileView user={currentUser} posts={posts.filter(p => p.user.id === currentUser.id)} />;
             case 'saved':
                 return <SavedView posts={posts.filter(p => p.savedByUser)} />;
             case 'settings':
-                return <SettingsView />;
+                return <SettingsView onGetVerified={() => setVerifiedModalOpen(true)} />;
             case 'premium':
-                return <PremiumView />;
+                return <PremiumView onSubscribe={handleSubscribeToPremium} isCurrentUserPremium={currentUser.isPremium ?? false} />;
             default:
                 return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
         }
@@ -168,7 +179,7 @@ const App: React.FC = () => {
                  
                 <main className={`w-full md:pl-[72px] lg:pl-64 ${currentView === 'messages' ? 'flex justify-center' : ''}`}>
                     <div className="flex justify-center w-full">
-                        <div className="w-full max-w-[630px] border-x border-gray-800 min-h-screen">
+                        <div className={`w-full ${currentView !== 'messages' ? 'max-w-[630px] border-x border-gray-800' : ''} min-h-screen`}>
                             {renderView()}
                         </div>
                         <div className="hidden lg:block w-[320px] ml-8">
@@ -194,6 +205,7 @@ const App: React.FC = () => {
             {sharingPost && <ShareModal post={sharingPost} onClose={() => setSharingPost(null)} />}
             {isSearchVisible && <SearchView users={users} onClose={() => setSearchVisible(false)} />}
             {isNotificationsPanelVisible && <NotificationsPanel activities={MOCK_ACTIVITIES} onClose={() => setNotificationsPanelVisible(false)} />}
+            {isVerifiedModalOpen && <GetVerifiedModal onClose={() => setVerifiedModalOpen(false)} />}
         </div>
     );
 }

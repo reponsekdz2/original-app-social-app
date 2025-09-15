@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { User, Post } from '../types';
 import Icon from './Icon';
-import HighlightBubble from './HighlightBubble';
+import ProfileHighlight from './ProfileHighlight';
 
 interface ProfileViewProps {
   user: User;
@@ -18,7 +18,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, posts }) => {
              <div className="grid grid-cols-3 gap-1">
                 {posts.map((post) => (
                     <div key={post.id} className="relative aspect-square group cursor-pointer">
-                        <img src={post.image} alt="Post" className="w-full h-full object-cover" />
+                        {/* Fix: Use post.media and handle video type */}
+                        {post.mediaType === 'video' ? (
+                          <video src={post.media} className="w-full h-full object-cover" />
+                        ) : (
+                          <img src={post.media} alt="Post" className="w-full h-full object-cover" />
+                        )}
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
                             <div className="text-white opacity-0 group-hover:opacity-100 flex items-center space-x-4">
                                 <span className="flex items-center font-bold text-sm"><Icon className="w-5 h-5 mr-1" fill="currentColor"><path d="M11.645 20.91l-1.414-1.414a5 5 0 01-7.071-7.071l7.07-7.071 7.072 7.071a5 5 0 01-7.072 7.071l-1.414 1.414z" /></Icon>{post.likes}</span>
@@ -30,6 +35,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, posts }) => {
             </div>
         )
     }
+
+    const AddHighlight: React.FC = () => (
+      <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0">
+        <div className="w-20 h-28 rounded-xl bg-gray-800/50 border-2 border-dashed border-gray-600 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700/50 hover:border-gray-500 transition-colors">
+            <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></Icon>
+        </div>
+        <p className="text-xs w-20 truncate text-center">New</p>
+      </div>
+    );
 
     return (
         <div className="pb-16 md:pb-4">
@@ -59,7 +73,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, posts }) => {
 
             <div className="px-4 md:px-8">
                  <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
-                    {user.highlights?.map(h => <HighlightBubble key={h.id} highlight={h} />)}
+                    {user.highlights?.map(h => <ProfileHighlight key={h.id} highlight={h} />)}
+                    <AddHighlight />
                 </div>
             </div>
 

@@ -2,11 +2,11 @@
 import type { User, Post, Story, Reel, Conversation, Activity, Message } from './types';
 
 export const MOCK_USERS: User[] = [
-  { id: 'user-1', username: 'movie_magic', avatar: 'https://i.pravatar.cc/100?u=user-1', isOnline: true, highlights: [{id: 'h1', title: 'Faves', cover: 'https://picsum.photos/seed/h1/150/150'}] },
-  { id: 'user-2', username: 'cinephile_cat', avatar: 'https://i.pravatar.cc/100?u=user-2', isOnline: false },
-  { id: 'user-3', username: 'series_spectator', avatar: 'https://i.pravatar.cc/100?u=user-3', isOnline: true },
-  { id: 'user-4', username: 'reel_reviews', avatar: 'https://i.pravatar.cc/100?u=user-4', isOnline: false },
-  { id: 'user-5', username: 'netflix_nerd', avatar: 'https://i.pravatar.cc/100?u=user-5', isOnline: true },
+  { id: 'user-1', username: 'movie_magic', avatar: 'https://i.pravatar.cc/100?u=user-1', isOnline: true, highlights: [{id: 'h1', title: 'Faves', cover: 'https://picsum.photos/seed/h1/150/150'}], isPremium: false },
+  { id: 'user-2', username: 'cinephile_cat', avatar: 'https://i.pravatar.cc/100?u=user-2', isOnline: false, isPremium: false },
+  { id: 'user-3', username: 'series_spectator', avatar: 'https://i.pravatar.cc/100?u=user-3', isOnline: true, isPremium: false },
+  { id: 'user-4', username: 'reel_reviews', avatar: 'https://i.pravatar.cc/100?u=user-4', isOnline: false, isPremium: false },
+  { id: 'user-5', username: 'netflix_nerd', avatar: 'https://i.pravatar.cc/100?u=user-5', isOnline: true, isPremium: false },
 ];
 
 export const SUGGESTED_USERS: User[] = MOCK_USERS.slice(1, 5);
@@ -15,7 +15,8 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'post-1',
     user: MOCK_USERS[1],
-    image: 'https://picsum.photos/seed/post-1/600/400',
+    media: 'https://picsum.photos/seed/post-1/600/400',
+    mediaType: 'image',
     caption: 'Just watched the latest sci-fi blockbuster. Mind-blowing visuals! What did you all think?',
     likes: 1234,
     comments: [
@@ -29,7 +30,8 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'post-2',
     user: MOCK_USERS[2],
-    image: 'https://picsum.photos/seed/post-2/600/401',
+    media: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
+    mediaType: 'video',
     caption: 'Binge-watching this new historical drama. The costumes are incredible.',
     likes: 567,
     comments: [],
@@ -40,7 +42,8 @@ export const MOCK_POSTS: Post[] = [
     {
     id: 'post-3',
     user: MOCK_USERS[3],
-    image: 'https://picsum.photos/seed/post-3/600/402',
+    media: 'https://picsum.photos/seed/post-3/600/402',
+    mediaType: 'image',
     caption: 'My top 5 movies of the year so far. What are yours?',
     likes: 890,
     comments: [
