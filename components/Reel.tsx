@@ -7,9 +7,12 @@ import Icon from './Icon.tsx';
 
 interface ReelProps {
   reel: ReelType;
+  onLike: () => void;
+  onComment: () => void;
+  onShare: () => void;
 }
 
-const Reel: React.FC<ReelProps> = ({ reel }) => {
+const Reel: React.FC<ReelProps> = ({ reel, onLike, onComment, onShare }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
 
@@ -57,13 +60,19 @@ const Reel: React.FC<ReelProps> = ({ reel }) => {
         <p className="text-sm">{reel.caption}</p>
       </div>
        <div className="absolute bottom-4 right-4 flex flex-col items-center space-y-4 text-white">
-            <button className="flex flex-col items-center">
-                <Icon className="w-8 h-8"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon>
+            <button onClick={onLike} className="flex flex-col items-center">
+                <Icon className={`w-8 h-8 ${reel.isLiked ? 'text-red-500' : ''}`} fill={reel.isLiked ? 'currentColor' : 'none'}>
+                    <path stroke="currentColor" strokeWidth="1.5" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </Icon>
                 <span className="text-sm font-semibold">{reel.likes.toLocaleString()}</span>
             </button>
-            <button className="flex flex-col items-center">
-                <Icon className="w-8 h-8"><path fillRule="evenodd" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.068.157 2.148.279 3.238.364.49.03.984.067 1.483.102.72.056 1.45.099 2.18.138 1.491.079 2.996.136 4.502.157 1.506.021 3.012-.036 4.502-.157.73-.039 1.46-.082 2.18-.138.499-.035.993-.071 1.483-.102.787-.058 1.575-.12 2.365-.194a3.003 3.003 0 002.707-3.227V6.741c0-1.6-1.123-2.994-2.707-3.227A48.344 48.344 0 0012 3c-2.392 0-4.744.175-7.043.514A3.003 3.003 0 002.25 6.741v6.018z" clipRule="evenodd" /></Icon>
-                <span className="text-sm font-semibold">{reel.comments.toLocaleString()}</span>
+            <button onClick={onComment} className="flex flex-col items-center">
+                <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.056 3 11.625c0 4.556 4.03 8.25 9 8.25zM12 16.5a.75.75 0 000-1.5H8.625a.75.75 0 000 1.5H12zM15.375 12a.75.75 0 000-1.5H8.625a.75.75 0 000 1.5h6.75z" /></Icon>
+                <span className="text-sm font-semibold">{reel.comments.length.toLocaleString()}</span>
+            </button>
+            <button onClick={onShare} className="flex flex-col items-center">
+                <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.875L6 12z" /></Icon>
+                <span className="text-sm font-semibold">{reel.shares.toLocaleString()}</span>
             </button>
        </div>
     </div>

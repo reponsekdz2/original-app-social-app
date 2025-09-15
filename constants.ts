@@ -8,6 +8,7 @@ const u1: User = {
     avatar: 'https://i.pravatar.cc/150?u=movie_magic',
     isVerified: true,
     isPremium: true,
+    isPrivate: false,
     bio: 'Bringing you the best of cinema. 🎬\nWriter, Director, Popcorn Enthusiast.',
     website: 'https://alexrivera.film',
     gender: 'Prefer not to say',
@@ -20,6 +21,7 @@ const u2: User = {
     username: 'series_scout',
     name: 'Brenda Jones',
     avatar: 'https://i.pravatar.cc/150?u=series_scout',
+    isPrivate: true,
     bio: 'Binge-watching my way through life. What should I watch next?',
     followers: [],
     following: [],
@@ -31,6 +33,7 @@ const u3: User = {
     name: 'Casey Lee',
     avatar: 'https://i.pravatar.cc/150?u=retro_reels',
     isVerified: true,
+    isPrivate: false,
     bio: 'Celebrating classic films and vintage vibes. 🎞️',
     followers: [],
     following: [],
@@ -41,6 +44,7 @@ const u4: User = {
     username: 'indie_insights',
     name: 'Dana Smith',
     avatar: 'https://i.pravatar.cc/150?u=indie_insights',
+    isPrivate: false,
     bio: 'Your source for hidden gems and independent cinema.',
     followers: [],
     following: [],
@@ -144,8 +148,8 @@ MOCK_USERS[0].highlights = MOCK_HIGHLIGHTS;
 
 
 export const MOCK_REELS: Reel[] = [
-    { id: 'r1', user: MOCK_USERS[0], video: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', caption: 'Epic movie moments!', likes: 12000, comments: 45, shares: 120, audio: { title: 'Cinematic Score', artist: 'Composer' } },
-    { id: 'r2', user: MOCK_USERS[1], video: 'https://videos.pexels.com/video-files/2099039/2099039-sd_540_960_30fps.mp4', caption: 'Favorite TV show intros', likes: 8500, comments: 72, shares: 98, audio: { title: 'Catchy Theme', artist: 'TV Band' } },
+    { id: 'r1', user: MOCK_USERS[0], video: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', caption: 'Epic movie moments!', likes: 12000, comments: [], isLiked: false, shares: 120, audio: { title: 'Cinematic Score', artist: 'Composer' } },
+    { id: 'r2', user: MOCK_USERS[1], video: 'https://videos.pexels.com/video-files/2099039/2099039-sd_540_960_30fps.mp4', caption: 'Favorite TV show intros', likes: 8500, comments: [MOCK_COMMENTS[0]], isLiked: true, shares: 98, audio: { title: 'Catchy Theme', artist: 'TV Band' } },
 ];
 
 export const MOCK_MESSAGES: Message[] = [

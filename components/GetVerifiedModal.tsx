@@ -1,5 +1,6 @@
 import React from 'react';
-import Icon from './Icon';
+// Fix: Add .tsx extension to Icon import.
+import Icon from './Icon.tsx';
 
 interface GetVerifiedModalProps {
   onClose: () => void;

@@ -72,3 +72,26 @@ Post Caption: "${postCaption}"`;
 
   return response.text.trim().replace(/"/g, ''); // Remove quotes from the response
 };
+
+
+/**
+ * Generates a user bio using the Gemini API.
+ * @param username The user's username.
+ * @param name The user's full name.
+ * @returns A promise that resolves to the generated bio string.
+ */
+export const generateBio = async (username: string, name: string): Promise<string> => {
+  const prompt = `Generate a short, creative, and engaging bio for a social media profile. The bio should be under 150 characters.
+  
+Username: ${username}
+Name: ${name}
+
+Bio:`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+
+  return response.text.trim();
+};

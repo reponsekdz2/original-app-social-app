@@ -6,9 +6,12 @@ import Icon from './Icon.tsx';
 
 interface ReelsViewProps {
   reels: ReelType[];
+  onLikeReel: (reelId: string) => void;
+  onCommentOnReel: (reel: ReelType) => void;
+  onShareReel: (reel: ReelType) => void;
 }
 
-const ReelsView: React.FC<ReelsViewProps> = ({ reels }) => {
+const ReelsView: React.FC<ReelsViewProps> = ({ reels, onLikeReel, onCommentOnReel, onShareReel }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -77,7 +80,12 @@ const ReelsView: React.FC<ReelsViewProps> = ({ reels }) => {
         {reels.map(reel => (
           <div key={reel.id} data-reel-id={reel.id} className="reel-container h-full w-full snap-start flex items-center justify-center flex-shrink-0">
             <div className="h-full w-full max-w-sm aspect-[9/16]">
-              <Reel reel={reel} />
+              <Reel
+                reel={reel}
+                onLike={() => onLikeReel(reel.id)}
+                onComment={() => onCommentOnReel(reel)}
+                onShare={() => onShareReel(reel)}
+              />
             </div>
           </div>
         ))}

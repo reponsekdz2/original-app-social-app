@@ -1,3 +1,4 @@
+
 export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'premium' | 'activity' | 'create' | 'search' | 'notifications' | 'premium-welcome' | 'help-center' | 'support-inbox';
 
 export interface User {
@@ -7,6 +8,7 @@ export interface User {
   avatar: string;
   isVerified?: boolean;
   isPremium?: boolean;
+  isPrivate?: boolean;
   bio?: string;
   website?: string;
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
@@ -76,7 +78,8 @@ export interface Reel {
   video: string;
   caption: string;
   likes: number;
-  comments: number;
+  isLiked: boolean;
+  comments: Comment[];
   shares: number;
   audio: {
     title: string;
@@ -89,11 +92,12 @@ export interface Message {
   senderId: string;
   content: string;
   timestamp: string;
-  type: 'text' | 'image' | 'like';
+  type: 'text' | 'image' | 'like' | 'share';
+  sharedPost?: Post;
 }
 
 export interface Conversation {
-  id: string;
+  id:string;
   participants: User[];
   messages: Message[];
   lastMessageSeenId: string;

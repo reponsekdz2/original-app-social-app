@@ -9,13 +9,17 @@ interface StoryViewerProps {
   startIndex: number;
   onClose: () => void;
   onViewProfile: (user: User) => void;
+  onReply: (storyUser: User, content: string) => void;
+  onShare: (story: Story) => void;
 }
 
-const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose, onViewProfile }) => {
+const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose, onViewProfile, onReply, onShare }) => {
   // This version shows one story at a time. Navigation between user stories is not yet implemented.
   const story = stories[startIndex];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [replyText, setReplyText] = useState('');
+  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
 
   const currentStoryItem = story.stories[currentIndex];
 
@@ -62,6 +66,19 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
     onClose();
   };
 
+  const handleSendReply = () => {
+    if (replyText.trim()) {
+        onReply(story.user, replyText);
+        setReplyText('');
+    }
+  };
+
+  const handleLike = () => {
+      onReply(story.user, '❤️');
+      setShowLikeAnimation(true);
+      setTimeout(() => setShowLikeAnimation(false), 700); // Match animation duration
+  };
+
   return (
     <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
       <div className="relative w-full max-w-sm h-full max-h-screen aspect-[9/16]">
@@ -99,6 +116,40 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
             onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime / e.currentTarget.duration * 100)}
           />
         )}
+        
+        {showLikeAnimation && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="animate-like-burst">
+                    <Icon className="w-32 h-32 text-red-500" fill="currentColor">
+                         <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                    </Icon>
+                </div>
+            </div>
+        )}
+
+        <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center gap-2">
+            <input 
+                type="text"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendReply()}
+                placeholder={`Reply to ${story.user.username}...`}
+                className="w-full bg-black/50 border border-white/30 rounded-full py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-white"
+            />
+            {replyText ? (
+                 <button onClick={handleSendReply} className="text-white font-semibold px-2">Send</button>
+            ) : (
+                <>
+                    <button onClick={handleLike} className="p-2">
+                        <Icon className="w-7 h-7 text-white"><path stroke="currentColor" strokeWidth="1.5" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon>
+                    </button>
+                    <button onClick={() => onShare(story)} className="p-2">
+                        <Icon className="w-7 h-7 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.875L6 12z" /></Icon>
+                    </button>
+                </>
+            )}
+        </div>
+
       </div>
     </div>
   );

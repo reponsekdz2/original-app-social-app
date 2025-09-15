@@ -2,16 +2,19 @@ import React from 'react';
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
+import FollowButton from './FollowButton.tsx';
 
 interface ViewLikesModalProps {
   users: User[];
   currentUser: User;
   onClose: () => void;
-  onFollow: (userId: string) => void;
   onViewProfile: (user: User) => void;
+  // Fix: Add onFollow and onUnfollow to props to handle follow actions within the modal.
+  onFollow: (user: User) => void;
+  onUnfollow: (user: User) => void;
 }
 
-const ViewLikesModal: React.FC<ViewLikesModalProps> = ({ users, currentUser, onClose, onFollow, onViewProfile }) => {
+const ViewLikesModal: React.FC<ViewLikesModalProps> = ({ users, currentUser, onClose, onViewProfile, onFollow, onUnfollow }) => {
     
   const handleViewProfileAndClose = (user: User) => {
     onViewProfile(user);
@@ -32,7 +35,6 @@ const ViewLikesModal: React.FC<ViewLikesModalProps> = ({ users, currentUser, onC
         </div>
         <div className="overflow-y-auto">
           {users.map(user => {
-            const isFollowing = currentUser.following.some(u => u.id === user.id);
             const isCurrentUser = user.id === currentUser.id;
             return (
               <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-700">
@@ -44,9 +46,13 @@ const ViewLikesModal: React.FC<ViewLikesModalProps> = ({ users, currentUser, onC
                   </div>
                 </div>
                 {!isCurrentUser && (
-                    <button onClick={() => onFollow(user.id)} className={`${isFollowing ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold text-sm py-1.5 px-4 rounded-md`}>
-                        {isFollowing ? 'Following' : 'Follow'}
-                    </button>
+                    <FollowButton 
+                      user={user} 
+                      currentUser={currentUser} 
+                      // Fix: Pass down the onFollow and onUnfollow handlers to the FollowButton.
+                      onFollow={onFollow} 
+                      onUnfollow={onUnfollow} 
+                    />
                 )}
               </div>
             );

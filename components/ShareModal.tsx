@@ -1,19 +1,23 @@
-import React from 'react';
-// Fix: Add .ts extension to import to resolve module.
-import type { Post } from '../types.ts';
+import React, { useState } from 'react';
+import type { Post, User } from '../types.ts';
 import Icon from './Icon.tsx';
-// Fix: Add .ts extension to import to resolve module.
-import { MOCK_USERS } from '../constants.ts';
 
 interface ShareModalProps {
   post: Post | null;
+  users: User[];
   onClose: () => void;
+  onSendShare: (recipient: User) => void;
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ post, onClose }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ post, users, onClose, onSendShare }) => {
+  const [sentToUsers, setSentToUsers] = useState<string[]>([]);
+
   if (!post) return null;
 
-  const usersToShareWith = MOCK_USERS.slice(1);
+  const handleSend = (user: User) => {
+    onSendShare(user);
+    setSentToUsers(prev => [...prev, user.id]);
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
@@ -36,17 +40,28 @@ const ShareModal: React.FC<ShareModalProps> = ({ post, onClose }) => {
         </div>
         <div className="max-h-[50vh] overflow-y-auto px-4 pb-4">
           <ul className="space-y-3">
-            {usersToShareWith.map(user => (
-              <li key={user.id} className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                    <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
-                    <span className="font-semibold text-sm">{user.username}</span>
-                </div>
-                 <button className="bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-1.5 px-4 rounded-md">
-                    Send
-                </button>
-              </li>
-            ))}
+            {users.map(user => {
+              const isSent = sentToUsers.includes(user.id);
+              return (
+                <li key={user.id} className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
+                      <span className="font-semibold text-sm">{user.username}</span>
+                  </div>
+                   <button 
+                      onClick={() => handleSend(user)}
+                      disabled={isSent}
+                      className={`font-semibold text-sm py-1.5 px-4 rounded-md transition-colors ${
+                        isSent
+                          ? 'bg-gray-700 text-gray-400'
+                          : 'bg-red-600 hover:bg-red-700 text-white'
+                      }`}
+                  >
+                      {isSent ? 'Sent' : 'Send'}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
         <div className="p-4 border-t border-gray-700">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { User, View, Post as PostType, Story as StoryType, Comment, StoryItem, NotificationSettings, Conversation, Message, Testimonial, SupportTicket } from './types.ts';
+import type { User, View, Post as PostType, Story as StoryType, Comment, StoryItem, NotificationSettings, Conversation, Message, Testimonial, SupportTicket, Reel as ReelType, StoryHighlight } from './types.ts';
 import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES, MOCK_ADS, MOCK_FEED_ACTIVITIES, MOCK_TRENDING_TOPICS, MOCK_TESTIMONIALS, MOCK_HELP_ARTICLES, MOCK_SUPPORT_TICKETS } from './constants.ts';
 import LeftSidebar from './components/LeftSidebar.tsx';
 import Header from './components/Header.tsx';
@@ -34,6 +34,9 @@ import PremiumWelcomeView from './components/PremiumWelcomeView.tsx';
 import HelpCenterView from './components/HelpCenterView.tsx';
 import SupportInboxView from './components/SupportInboxView.tsx';
 import NewSupportRequestModal from './components/NewSupportRequestModal.tsx';
+import UnfollowModal from './components/UnfollowModal.tsx';
+import ReelCommentsModal from './components/ReelCommentsModal.tsx';
+import CreateHighlightModal from './components/CreateHighlightModal.tsx';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
@@ -47,9 +50,11 @@ const App: React.FC = () => {
   const [editingPost, setEditingPost] = useState<PostType | null>(null);
   const [isCreatePostModalOpen, setCreatePostModalOpen] = useState(false);
   const [isCreateStoryModalOpen, setCreateStoryModalOpen] = useState(false);
+  const [isCreateHighlightModalOpen, setCreateHighlightModalOpen] = useState(false);
   const [isAccountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const [isShareModalOpen, setShareModalOpen] = useState(false);
   const [postToShare, setPostToShare] = useState<PostType | null>(null);
+  const [viewedReelForComments, setViewedReelForComments] = useState<ReelType | null>(null);
   const [isSearchVisible, setSearchVisible] = useState(false);
   const [isNotificationsVisible, setNotificationsVisible] = useState(false);
   const [isGetVerifiedModalOpen, setGetVerifiedModalOpen] = useState(false);
@@ -59,10 +64,12 @@ const App: React.FC = () => {
   const [isNewSupportRequestModalOpen, setNewSupportRequestModalOpen] = useState(false);
   const [followListModal, setFollowListModal] = useState<{ title: 'Followers' | 'Following', users: User[] } | null>(null);
   const [likesModalUsers, setLikesModalUsers] = useState<User[] | null>(null);
+  const [userToUnfollow, setUserToUnfollow] = useState<User | null>(null);
 
   // Content State
   const [posts, setPosts] = useState<PostType[]>(MOCK_POSTS);
   const [stories, setStories] = useState<StoryType[]>(MOCK_STORIES);
+  const [reels, setReels] = useState<ReelType[]>(MOCK_REELS);
   const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(MOCK_SUPPORT_TICKETS);
   
@@ -88,32 +95,27 @@ const App: React.FC = () => {
       if (likesModalUsers) setLikesModalUsers(null);
   };
   
-  const handleFollow = (userIdToFollow: string) => {
-      // This is a mock implementation. In a real app, this would be an API call.
-      const isFollowing = currentUser.following.some(u => u.id === userIdToFollow);
+  const handleFollow = (userToFollow: User) => {
+    setCurrentUser(prev => ({
+      ...prev,
+      following: [...prev.following, userToFollow]
+    }));
+  };
 
-      let updatedCurrentUser = { ...currentUser };
+  const handleUnfollow = (userToUnfollow: User) => {
+    if (userToUnfollow.isPrivate) {
+      setUserToUnfollow(userToUnfollow);
+    } else {
+      performUnfollow(userToUnfollow.id);
+    }
+  };
 
-      if (isFollowing) {
-          updatedCurrentUser.following = currentUser.following.filter(u => u.id !== userIdToFollow);
-      } else {
-          const userToFollow = users.find(u => u.id === userIdToFollow);
-          if (userToFollow) {
-              updatedCurrentUser.following = [...currentUser.following, userToFollow];
-          }
-      }
-      
-      setCurrentUser(updatedCurrentUser);
-
-      // Also update the viewed profile if it's the one being followed/unfollowed
-      if (viewedProfile && viewedProfile.id === userIdToFollow) {
-          let updatedViewedProfile = { ...viewedProfile };
-           if (isFollowing) {
-              // This is a simplification; we're not updating the other user's followers list
-           } else {
-              // Same simplification
-           }
-      }
+  const performUnfollow = (userIdToUnfollow: string) => {
+    setCurrentUser(prev => ({
+      ...prev,
+      following: prev.following.filter(u => u.id !== userIdToUnfollow)
+    }));
+    setUserToUnfollow(null);
   };
 
   const handleUpdateUser = (updatedUser: User) => {
@@ -264,6 +266,153 @@ const App: React.FC = () => {
     setSupportTickets(prev => [newTicket, ...prev]);
     setNewSupportRequestModalOpen(false);
   };
+  
+  const handleLikeReel = (reelId: string) => {
+    setReels(prev => prev.map(r => {
+        if (r.id === reelId) {
+            const isLiked = !r.isLiked;
+            const newLikes = isLiked ? r.likes + 1 : r.likes - 1;
+            return {...r, isLiked, likes: newLikes };
+        }
+        return r;
+    }));
+  };
+
+  const handleCommentOnReel = (reelId: string, text: string) => {
+      const newComment: Comment = {
+          id: `c-reel-${Date.now()}`,
+          user: currentUser,
+          text,
+          timestamp: 'Just now',
+          likes: 0,
+          likedByUser: false,
+      };
+      setReels(prev => prev.map(r => r.id === reelId ? {...r, comments: [...r.comments, newComment]} : r));
+  };
+
+  const handleShareReel = (reel: ReelType) => {
+      const tempPost: PostType = {
+          id: reel.id,
+          user: reel.user,
+          media: [{ url: reel.video, type: 'video' }],
+          caption: reel.caption,
+          likes: reel.likes,
+          likedBy: [],
+          comments: reel.comments,
+          timestamp: 'Reel',
+          isSaved: false,
+          isLiked: reel.isLiked,
+      };
+      setPostToShare(tempPost);
+      setShareModalOpen(true);
+  };
+
+  const handleReplyToStory = (storyUser: User, content: string) => {
+      let convo = conversations.find(c => c.participants.some(p => p.id === storyUser.id) && c.participants.some(p => p.id === currentUser.id));
+      
+      const newMessage: Message = {
+          id: `m-story-reply-${Date.now()}`,
+          senderId: currentUser.id,
+          content,
+          timestamp: 'Just now',
+          type: 'text',
+      };
+
+      if (convo) {
+          setConversations(prev => prev.map(c => c.id === convo!.id ? {...c, messages: [...c.messages, newMessage]} : c));
+      } else {
+          const newConvo: Conversation = {
+              id: `conv-${Date.now()}`,
+              participants: [currentUser, storyUser],
+              messages: [newMessage],
+              lastMessageSeenId: '',
+          };
+          setConversations(prev => [newConvo, ...prev]);
+      }
+  };
+
+  const handleShareStory = (story: StoryType) => {
+       const tempPost: PostType = {
+          id: story.id,
+          user: story.user,
+          media: [{ url: story.stories[0].media, type: story.stories[0].mediaType }],
+          caption: `Check out this story by @${story.user.username}`,
+          likes: 0,
+          likedBy: [],
+          comments: [],
+          timestamp: 'Story',
+          isSaved: false,
+          isLiked: false,
+      };
+      setPostToShare(tempPost);
+      setShareModalOpen(true);
+  };
+
+  const handleCreateHighlight = (title: string, selectedStories: StoryItem[]) => {
+    if (!title || selectedStories.length === 0) return;
+
+    const newHighlight: StoryHighlight = {
+        id: `h-${Date.now()}`,
+        title,
+        stories: selectedStories,
+        cover: selectedStories[0].media,
+    };
+
+    setCurrentUser(prevUser => {
+        const updatedUser = {
+            ...prevUser,
+            highlights: [...(prevUser.highlights || []), newHighlight]
+        };
+        // Also update the master users list
+        setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
+        return updatedUser;
+    });
+
+    setCreateHighlightModalOpen(false);
+  };
+
+  const handleSendShare = (recipient: User) => {
+    if (!postToShare) return;
+
+    const newMessage: Message = {
+        id: `m-share-${Date.now()}`,
+        senderId: currentUser.id,
+        content: `Check out this post from @${postToShare.user.username}`,
+        timestamp: 'Just now',
+        type: 'share',
+        sharedPost: postToShare,
+    };
+
+    // Find if a conversation already exists
+    let convo = conversations.find(c => 
+        c.participants.length === 2 && 
+        c.participants.some(p => p.id === recipient.id) && 
+        c.participants.some(p => p.id === currentUser.id)
+    );
+
+    if (convo) {
+        setConversations(prev => prev.map(c => 
+            c.id === convo!.id 
+            ? {...c, messages: [...c.messages, newMessage]} 
+            : c
+        ));
+    } else {
+        // Create a new conversation
+        const newConvo: Conversation = {
+            id: `conv-${Date.now()}`,
+            participants: [currentUser, recipient],
+            messages: [newMessage],
+            lastMessageSeenId: '',
+        };
+        setConversations(prev => [newConvo, ...prev]);
+    }
+  };
+
+  const getUserStories = (user: User): StoryItem[] => {
+      return stories
+          .filter(s => s.user.id === user.id)
+          .flatMap(s => s.stories);
+  };
 
   const renderView = () => {
       const profileToShow = viewedProfile || currentUser;
@@ -274,11 +423,16 @@ const App: React.FC = () => {
         case 'explore':
             return <ExploreView posts={posts} onViewPost={setViewedPost} />;
         case 'reels':
-            return <ReelsView reels={MOCK_REELS} />;
+            return <ReelsView 
+              reels={reels}
+              onLikeReel={handleLikeReel}
+              onCommentOnReel={(reel) => setViewedReelForComments(reel)}
+              onShareReel={handleShareReel}
+             />;
         case 'messages':
             return <MessagesView currentUser={currentUser} conversations={conversations} onViewProfile={handleViewProfile} onSendMessage={handleSendMessage} />;
         case 'profile':
-            return <ProfileView user={profileToShow} posts={posts.filter(p => p.user.id === profileToShow.id)} isCurrentUser={profileToShow.id === currentUser.id} onEditProfile={() => setEditProfileModalOpen(true)} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onShowFollowers={(users) => setFollowListModal({ title: 'Followers', users })} onShowFollowing={(users) => setFollowListModal({ title: 'Following', users })} onEditPost={setEditingPost} onViewPost={setViewedPost}/>;
+            return <ProfileView user={profileToShow} posts={posts.filter(p => p.user.id === profileToShow.id)} isCurrentUser={profileToShow.id === currentUser.id} onEditProfile={() => setEditProfileModalOpen(true)} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={(users) => setFollowListModal({ title: 'Followers', users })} onShowFollowing={(users) => setFollowListModal({ title: 'Following', users })} onEditPost={setEditingPost} onViewPost={setViewedPost} currentUser={currentUser} onOpenCreateHighlightModal={() => setCreateHighlightModalOpen(true)} />;
         case 'settings':
             return <SettingsView onGetVerified={() => setGetVerifiedModalOpen(true)} onEditProfile={() => setEditProfileModalOpen(true)} onChangePassword={() => setChangePasswordModalOpen(true)} isPrivateAccount={isPrivateAccount} onTogglePrivateAccount={setPrivateAccount} isTwoFactorEnabled={isTwoFactorEnabled} onToggleTwoFactor={setTwoFactorEnabled} notificationSettings={notificationSettings} onUpdateNotificationSettings={handleUpdateNotificationSettings} onNavigate={handleNavigate} />;
         case 'saved':
@@ -352,21 +506,24 @@ const App: React.FC = () => {
       />
       
       {viewedPost && <PostModal post={viewedPost} currentUser={currentUser} onClose={() => setViewedPost(null)} onLike={handleLike} onSave={handleSave} onComment={handleComment} onLikeComment={handleLikeComment} onShare={handleShare} onViewProfile={handleViewProfile} onEdit={setEditingPost} onViewLikes={handleViewLikes} />}
-      {viewedStory && <StoryViewer stories={viewedStory.stories} startIndex={viewedStory.startIndex} onClose={() => setViewedStory(null)} onViewProfile={handleViewProfile} />}
+      {viewedStory && <StoryViewer stories={viewedStory.stories} startIndex={viewedStory.startIndex} onClose={() => setViewedStory(null)} onViewProfile={handleViewProfile} onReply={handleReplyToStory} onShare={handleShareStory} />}
       {isCreatePostModalOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreatePostModalOpen(false)} onCreatePost={handleCreatePost} />}
       {editingPost && <EditPostModal post={editingPost} onClose={() => setEditingPost(null)} onSave={handleUpdatePost} />}
       {isCreateStoryModalOpen && <CreateStoryModal onClose={() => setCreateStoryModalOpen(false)} onCreateStory={handleCreateStory} />}
       {isAccountSwitcherOpen && <AccountSwitcherModal users={users} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchUser={(user) => {setCurrentUser(user); setAccountSwitcherOpen(false)}} />}
-      {isShareModalOpen && <ShareModal post={postToShare} onClose={() => setShareModalOpen(false)} />}
+      {isShareModalOpen && <ShareModal post={postToShare} onClose={() => setShareModalOpen(false)} onSendShare={handleSendShare} users={users.filter(u => u.id !== currentUser.id)} />}
       {isSearchVisible && <SearchView users={users} onClose={() => setSearchVisible(false)} onViewProfile={handleViewProfile} />}
       {isNotificationsVisible && <NotificationsPanel activities={MOCK_ACTIVITIES} onClose={() => setNotificationsVisible(false)} />}
       {isGetVerifiedModalOpen && <GetVerifiedModal onClose={() => setGetVerifiedModalOpen(false)} />}
       {isChangePasswordModalOpen && <ChangePasswordModal onClose={() => setChangePasswordModalOpen(false)} />}
       {isEditProfileModalOpen && <EditProfileModal user={currentUser} onClose={() => setEditProfileModalOpen(false)} onSave={handleUpdateUser} />}
-      {followListModal && <FollowListModal title={followListModal.title} users={followListModal.users} onClose={() => setFollowListModal(null)} onFollow={handleFollow} currentUser={currentUser} onViewProfile={handleViewProfile} />}
-      {likesModalUsers && <ViewLikesModal users={likesModalUsers} onClose={() => setLikesModalUsers(null)} onViewProfile={handleViewProfile} onFollow={handleFollow} currentUser={currentUser} />}
+      {followListModal && <FollowListModal title={followListModal.title} users={followListModal.users} onClose={() => setFollowListModal(null)} currentUser={currentUser} onViewProfile={handleViewProfile} onFollow={handleFollow} onUnfollow={handleUnfollow} />}
+      {likesModalUsers && <ViewLikesModal users={likesModalUsers} onClose={() => setLikesModalUsers(null)} onViewProfile={handleViewProfile} onFollow={handleFollow} onUnfollow={handleUnfollow} currentUser={currentUser} />}
       {isPaymentModalOpen && <PaymentModal onClose={() => setPaymentModalOpen(false)} onSuccess={handleSubscribe} />}
       {isNewSupportRequestModalOpen && <NewSupportRequestModal onClose={() => setNewSupportRequestModalOpen(false)} onSubmit={handleNewSupportRequest} />}
+      {userToUnfollow && <UnfollowModal user={userToUnfollow} onCancel={() => setUserToUnfollow(null)} onConfirm={() => performUnfollow(userToUnfollow.id)} />}
+      {viewedReelForComments && <ReelCommentsModal reel={viewedReelForComments} currentUser={currentUser} onClose={() => setViewedReelForComments(null)} onComment={handleCommentOnReel} onViewProfile={handleViewProfile} />}
+      {isCreateHighlightModalOpen && <CreateHighlightModal userStories={getUserStories(currentUser)} onClose={() => setCreateHighlightModalOpen(false)} onCreate={handleCreateHighlight} />}
     </div>
   );
 }
