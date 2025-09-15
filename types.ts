@@ -1,5 +1,5 @@
-
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'premium' | 'activity' | 'create' | 'search' | 'notifications' | 'premium-welcome' | 'help-center' | 'support-inbox';
+// Fix: Create full type definitions for the application.
+export type View = 'home' | 'explore' | 'notifications' | 'messages' | 'reels' | 'saved' | 'premium' | 'profile' | 'settings' | 'activity' | 'help-center' | 'support-inbox' | 'archive' | 'premium-welcome';
 
 export interface User {
   id: string;
@@ -8,8 +8,8 @@ export interface User {
   avatar: string;
   isVerified?: boolean;
   isPremium?: boolean;
-  isPrivate?: boolean;
-  bio?: string;
+  isPrivate: boolean;
+  bio: string;
   website?: string;
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   followers: User[];
@@ -18,21 +18,19 @@ export interface User {
   highlights?: StoryHighlight[];
 }
 
-export interface NotificationSettings {
-  likes: boolean;
-  comments: boolean;
-  follows: boolean;
-}
-
-export interface MediaItem {
-    url: string;
-    type: 'image' | 'video';
+export interface Comment {
+  id: string;
+  user: User;
+  text: string;
+  timestamp: string;
+  likes: number;
+  likedByUser: boolean;
 }
 
 export interface Post {
   id: string;
   user: User;
-  media: MediaItem[];
+  media: { url: string; type: 'image' | 'video' }[];
   caption: string;
   likes: number;
   likedBy: User[];
@@ -51,79 +49,66 @@ export interface StoryItem {
 }
 
 export interface Story {
-  id: string;
+  id:string;
   user: User;
   stories: StoryItem[];
 }
 
 export interface StoryHighlight {
-  id: string;
-  title: string;
-  cover: string;
-  stories: StoryItem[];
-}
-
-export interface Comment {
-  id: string;
-  user: User;
-  text: string;
-  timestamp: string;
-  likes: number;
-  likedByUser: boolean;
+    id: string;
+    title: string;
+    cover: string;
+    stories: StoryItem[];
 }
 
 export interface Reel {
-  id: string;
-  user: User;
-  video: string;
-  caption: string;
-  likes: number;
-  isLiked: boolean;
-  comments: Comment[];
-  shares: number;
-  audio: {
-    title: string;
-    artist: string;
-  };
+    id: string;
+    user: User;
+    video: string;
+    caption: string;
+    likes: number;
+    comments: Comment[];
+    isLiked: boolean;
+    shares: number;
+    audio?: { title: string; artist: string };
 }
 
 export interface Message {
-  id: string;
-  senderId: string;
-  content: string;
-  timestamp: string;
-  type: 'text' | 'image' | 'like' | 'share';
-  sharedPost?: Post;
+    id: string;
+    senderId: string;
+    content: string;
+    timestamp: string;
+    type: 'text' | 'image' | 'like';
 }
 
 export interface Conversation {
-  id:string;
-  participants: User[];
-  messages: Message[];
-  lastMessageSeenId: string;
+    id: string;
+    participants: User[];
+    messages: Message[];
+    lastMessageSeenId: string;
 }
 
 export interface Activity {
-  id: string;
-  type: 'like' | 'comment' | 'follow' | 'mention';
-  user: User;
-  post?: Post;
-  commentText?: string;
-  timestamp: string;
+    id: string;
+    type: 'like' | 'comment' | 'follow' | 'mention';
+    user: User;
+    post?: Post;
+    commentText?: string;
+    timestamp: string;
 }
 
 export interface SponsoredContent {
-  id: string;
-  company: string;
-  logo: string;
-  media: string;
-  mediaType: 'image' | 'video';
-  callToAction: string;
-  link: string;
+    id: string;
+    company: string;
+    logo: string;
+    media: string;
+    mediaType: 'image' | 'video';
+    callToAction: string;
+    link: string;
 }
 
 export interface FeedActivity {
-  id:string;
+  id: string;
   user: User;
   action: 'liked' | 'followed';
   targetPost?: Post;
@@ -138,20 +123,22 @@ export interface Testimonial {
 }
 
 export interface HelpArticle {
-  id: string;
-  category: string;
-  title: string;
-  content: string;
+    id: string;
+    category: string;
+    title: string;
+    content: string;
 }
 
 export interface SupportTicket {
-  id: string;
-  subject: string;
-  status: 'Open' | 'Resolved' | 'Pending';
-  lastUpdated: string;
-  messages: {
-      sender: 'user' | 'support';
-      text: string;
-      timestamp: string;
-  }[];
+    id: string;
+    subject: string;
+    status: 'Open' | 'Resolved' | 'Pending';
+    lastUpdated: string;
+    messages: { sender: 'user' | 'support'; text: string; timestamp: string }[];
+}
+
+export interface NotificationSettings {
+  likes: boolean;
+  comments: boolean;
+  follows: boolean;
 }

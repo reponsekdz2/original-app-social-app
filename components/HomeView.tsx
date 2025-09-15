@@ -1,89 +1,81 @@
-import React, { useState } from 'react';
-import type { Post as PostType, Story as StoryType, User } from '../types.ts';
+import React from 'react';
+import type { Post, Story, User, View } from '../types.ts';
+import PostComponent from './Post.tsx';
 import StoryBubble from './StoryBubble.tsx';
-import Post from './Post.tsx';
+import Sidebar from './Sidebar.tsx';
 import Icon from './Icon.tsx';
 
 interface HomeViewProps {
-  posts: PostType[];
-  stories: StoryType[];
+  posts: Post[];
+  stories: Story[];
   currentUser: User;
-  onLike: (postId: string) => void;
+  suggestedUsers: User[];
+  trendingTopics: string[];
+  onToggleLike: (postId: string) => void;
+  onToggleSave: (postId: string) => void;
   onComment: (postId: string, text: string) => void;
-  onViewPost: (post: PostType) => void;
-  onViewStory: (story: StoryType) => void;
-  onSave: (postId: string) => void;
-  onShare: (post: PostType) => void;
-  onCreateStory: () => void;
-  onViewProfile: (user: User) => void;
-  onEditPost: (post: PostType) => void;
+  onShare: (post: Post) => void;
+  onViewStory: (story: Story) => void;
   onViewLikes: (users: User[]) => void;
+  onViewProfile: (user: User) => void;
+  onOptions: (post: Post) => void;
+  onShowSuggestions: () => void;
+  onShowTrends: () => void;
+  onCreateStory: () => void;
+  onShowSearch: () => void;
+  onNavigate: (view: View) => void;
+  onFollow: (user: User) => void;
+  onUnfollow: (user: User) => void;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({
-  posts,
-  stories,
-  currentUser,
-  onLike,
-  onComment,
-  onViewPost,
-  onViewStory,
-  onSave,
-  onShare,
-  onCreateStory,
-  onViewProfile,
-  onEditPost,
-  onViewLikes,
-}) => {
-  const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
-
-  const followingPosts = posts.filter(p => currentUser.following.some(f => f.id === p.user.id) || p.user.id === currentUser.id);
-  const displayedPosts = activeTab === 'following' ? followingPosts : posts;
-
+const HomeView: React.FC<HomeViewProps> = (props) => {
   return (
-    <div className="pb-16 md:pb-0">
-      {/* Stories */}
-      <div className="py-4 border-b border-gray-800">
-        <div className="flex space-x-4 overflow-x-auto scrollbar-hide px-4">
-            <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={onCreateStory}>
-              <div className="relative group w-28 h-40 flex flex-col items-center justify-center">
-                <img src={currentUser.avatar} alt="Your story" className="w-full h-full object-cover rounded-xl" />
-                <div className="absolute inset-0 bg-black/30 rounded-xl"></div>
-                <div className="absolute bottom-2">
-                    <Icon className="w-8 h-8 text-white bg-red-600 rounded-full border-2 border-black"><path d="M12 4.5v15m7.5-7.5h-15" /></Icon>
+    <div className="flex justify-center container mx-auto gap-8">
+      <main className="w-full max-w-lg">
+        <div className="py-4 border-b border-gray-800">
+          <div className="flex items-center space-x-4 px-4 overflow-x-auto scrollbar-hide">
+            <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={props.onCreateStory}>
+                <div className="relative group w-28 h-40">
+                    <div className="w-full h-full rounded-xl bg-gray-800/50 border-2 border-dashed border-gray-600 flex items-center justify-center">
+                        <Icon className="w-10 h-10 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></Icon>
+                    </div>
                 </div>
-              </div>
-               <p className="text-xs w-28 truncate text-center">Your Story</p>
+                <p className="text-xs w-28 truncate text-center">Add Story</p>
             </div>
-          {stories.map(story => (
-            <StoryBubble key={story.id} story={story} onView={onViewStory} />
-          ))}
-        </div>
-      </div>
-
-      {/* Feed */}
-      <div className="max-w-2xl mx-auto">
-        <div className="sticky top-0 z-20 bg-black/80 backdrop-blur-md border-b border-gray-800">
-          <div className="flex">
-            <button onClick={() => setActiveTab('for-you')} className={`flex-1 py-3 text-center font-semibold transition-colors ${activeTab === 'for-you' ? 'text-white border-b-2 border-red-500' : 'text-gray-500 hover:bg-gray-900'}`}>For You</button>
-            <button onClick={() => setActiveTab('following')} className={`flex-1 py-3 text-center font-semibold transition-colors ${activeTab === 'following' ? 'text-white border-b-2 border-red-500' : 'text-gray-500 hover:bg-gray-900'}`}>Following</button>
+            {props.stories.map(story => (
+              <StoryBubble key={story.id} story={story} onView={props.onViewStory} />
+            ))}
           </div>
         </div>
-        {displayedPosts.map(post => (
-          <Post 
-            key={post.id} 
-            post={post} 
-            currentUser={currentUser}
-            onLike={onLike}
-            onComment={onComment}
-            onSave={onSave}
-            onShare={onShare}
-            onViewProfile={onViewProfile}
-            onEditPost={onEditPost}
-            onViewLikes={onViewLikes}
-          />
-        ))}
-      </div>
+        <div>
+          {props.posts.map(post => (
+            <PostComponent 
+              key={post.id} 
+              post={post} 
+              currentUser={props.currentUser}
+              onToggleLike={props.onToggleLike}
+              onToggleSave={props.onToggleSave}
+              onComment={props.onComment}
+              onShare={props.onShare}
+              onViewLikes={props.onViewLikes}
+              onViewProfile={props.onViewProfile}
+              onOptions={props.onOptions}
+            />
+          ))}
+        </div>
+      </main>
+      <Sidebar
+        trendingTopics={props.trendingTopics}
+        suggestedUsers={props.suggestedUsers}
+        currentUser={props.currentUser}
+        onShowSearch={props.onShowSearch}
+        onShowSuggestions={props.onShowSuggestions}
+        onShowTrends={props.onShowTrends}
+        onNavigate={props.onNavigate}
+        onFollow={props.onFollow}
+        onUnfollow={props.onUnfollow}
+        onViewProfile={props.onViewProfile}
+      />
     </div>
   );
 };
