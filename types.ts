@@ -7,7 +7,7 @@ export interface User {
   isOnline?: boolean;
 }
 
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'search' | 'notifications' | 'create';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'search' | 'notifications' | 'create' | 'premium';
 
 export interface Comment {
   id: string;

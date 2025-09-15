@@ -11,6 +11,7 @@ import MessagesView from './MessagesView';
 import ProfileView from './components/ProfileView';
 import SavedView from './components/SavedView';
 import SettingsView from './components/SettingsView';
+import PremiumView from './components/PremiumView';
 
 // Import components
 import Header from './components/Header';
@@ -114,6 +115,14 @@ const App: React.FC = () => {
         setCreateStoryModalOpen(false);
     };
 
+    const handleNavigate = (view: View) => {
+        // If messages view is open and we navigate somewhere else, close it.
+        if (currentView === 'messages' && view !== 'messages') {
+            // This logic might change if we want chat to persist
+        }
+        setCurrentView(view);
+    }
+
     const renderView = () => {
         switch (currentView) {
             case 'home':
@@ -123,13 +132,15 @@ const App: React.FC = () => {
             case 'reels':
                 return <ReelsView reels={reels} />;
             case 'messages':
-                return <MessagesView currentUser={currentUser} conversations={conversations} />;
+                return <MessagesView currentUser={currentUser} conversations={conversations} onNavigateHome={() => setCurrentView('home')} />;
             case 'profile':
                 return <ProfileView user={currentUser} posts={posts.filter(p => p.user.id === currentUser.id)} />;
             case 'saved':
                 return <SavedView posts={posts.filter(p => p.savedByUser)} />;
             case 'settings':
                 return <SettingsView />;
+            case 'premium':
+                return <PremiumView />;
             default:
                 return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
         }
@@ -139,28 +150,28 @@ const App: React.FC = () => {
         <div className="bg-black text-white min-h-screen font-sans">
             <Header 
                 currentUser={currentUser}
-                onNavigate={setCurrentView}
+                onNavigate={handleNavigate}
                 onSwitchAccount={() => setAccountSwitcherOpen(true)}
                 onCreatePost={() => setCreateModalOpen(true)}
                 onShowNotifications={() => setNotificationsPanelVisible(true)}
+                onShowSearch={() => setSearchVisible(true)}
             />
             <div className="container mx-auto flex">
                  <LeftSidebar 
                     currentView={currentView}
-                    onNavigate={setCurrentView}
+                    onNavigate={handleNavigate}
                     onCreatePost={() => setCreateModalOpen(true)}
                     currentUser={currentUser}
                     onShowSearch={() => setSearchVisible(true)}
                     onShowNotifications={() => setNotificationsPanelVisible(true)}
                 />
-
-                <main className="w-full md:pl-[72px] lg:pl-64">
-                    <div className="flex justify-center">
+                 
+                <main className={`w-full md:pl-[72px] lg:pl-64 ${currentView === 'messages' ? 'flex justify-center' : ''}`}>
+                    <div className="flex justify-center w-full">
                         <div className="w-full max-w-[630px] border-x border-gray-800 min-h-screen">
                             {renderView()}
                         </div>
                         <div className="hidden lg:block w-[320px] ml-8">
-                           {/* Sidebar is only shown on home view for this layout */}
                            {currentView === 'home' && <Sidebar currentUser={currentUser} onSwitchAccount={() => setAccountSwitcherOpen(true)} />}
                         </div>
                     </div>
@@ -169,7 +180,7 @@ const App: React.FC = () => {
             
              <BottomNav 
                 currentView={currentView}
-                onNavigate={setCurrentView}
+                onNavigate={handleNavigate}
                 onCreatePost={() => setCreateModalOpen(true)}
                 currentUser={currentUser}
             />
