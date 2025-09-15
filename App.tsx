@@ -31,6 +31,7 @@ import EditProfileModal from './components/EditProfileModal';
 import FollowListModal from './components/FollowListModal';
 // Fix: Import the 'Sidebar' component to resolve the 'Cannot find name' error.
 import Sidebar from './components/Sidebar';
+import ChangePasswordModal from './components/ChangePasswordModal';
 
 type PostData = {
     user: User;
@@ -66,6 +67,7 @@ const App: React.FC = () => {
     const [isVerifiedModalOpen, setVerifiedModalOpen] = useState(false);
     const [isEditProfileModalOpen, setEditProfileModalOpen] = useState(false);
     const [followListModalData, setFollowListModalData] = useState<FollowListModalData | null>(null);
+    const [isChangePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
 
     // Handlers...
     const handleLike = (postId: string) => {
@@ -231,7 +233,11 @@ const App: React.FC = () => {
             case 'saved':
                 return <SavedView posts={posts.filter(p => p.savedByUser)} />;
             case 'settings':
-                return <SettingsView onGetVerified={() => setVerifiedModalOpen(true)} />;
+                return <SettingsView 
+                            onGetVerified={() => setVerifiedModalOpen(true)}
+                            onEditProfile={() => setEditProfileModalOpen(true)}
+                            onChangePassword={() => setChangePasswordModalOpen(true)}
+                        />;
             case 'premium':
                 return <PremiumView onSubscribe={handleSubscribeToPremium} isCurrentUserPremium={currentUser.isPremium ?? false} />;
             case 'archive':
@@ -241,7 +247,7 @@ const App: React.FC = () => {
         }
     };
 
-    const showSidebar = ['home', 'explore', 'reels', 'premium'].includes(currentView);
+    const showSidebar = ['home', 'explore', 'reels', 'premium', 'settings'].includes(currentView);
     
     return (
         <div className="bg-black text-white min-h-screen font-sans">
@@ -300,6 +306,7 @@ const App: React.FC = () => {
                                         onUnfollow={handleUnfollow}
                                         onClose={() => setFollowListModalData(null)} 
                                      />}
+            {isChangePasswordModalOpen && <ChangePasswordModal onClose={() => setChangePasswordModalOpen(false)} />}
         </div>
     );
 }
