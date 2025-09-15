@@ -13,18 +13,91 @@ const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations:
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   
   const handleSendMessage = (content: string, type: 'text' | 'image' | 'voice', replyTo?: Message) => {
-    // This is a mock implementation
+    if (!selectedConversation) return;
+
+    const newMessage: Message = {
+        id: `m-${Date.now()}`,
+        senderId: currentUser.id,
+        content,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type,
+        replyTo,
+    };
+
+    const updatedConversations = conversations.map(conv => {
+        if (conv.id === selectedConversation.id) {
+            // Also update the last message seen to the new message ID for the sender
+            return { ...conv, messages: [...conv.messages, newMessage], lastMessageSeenId: newMessage.id };
+        }
+        return conv;
+    });
+
+    setConversations(updatedConversations);
+    
+    // also update the selected conversation to re-render chat window
+    const updatedSelectedConv = updatedConversations.find(c => c.id === selectedConversation.id);
+    if (updatedSelectedConv) {
+      setSelectedConversation(updatedSelectedConv);
+    }
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    // Implement delete logic
+    if (!selectedConversation) return;
+    
+    const updatedConversations = conversations.map(conv => {
+        if (conv.id === selectedConversation.id) {
+            // Replacing content instead of removing to not mess up UI
+            // FIX: Add explicit type `Message[]` to `updatedMessages` to prevent TypeScript from incorrectly widening the `type` property of the message object to `string`.
+            const updatedMessages: Message[] = conv.messages.map(m => m.id === messageId ? {...m, content: 'This message was deleted.', type: 'text', reactions: []} : m);
+            return { ...conv, messages: updatedMessages };
+        }
+        return conv;
+    });
+    setConversations(updatedConversations);
+
+    const updatedSelectedConv = updatedConversations.find(c => c.id === selectedConversation.id);
+    if (updatedSelectedConv) {
+      setSelectedConversation(updatedSelectedConv);
+    }
   };
 
   const handleReact = (messageId: string, emoji: string) => {
-    // Implement reaction logic
-  };
+    if (!selectedConversation) return;
 
-  const otherUser = selectedConversation?.participants.find(p => p.id !== currentUser.id);
+    const updatedConversations = conversations.map(conv => {
+        if (conv.id === selectedConversation.id) {
+            const updatedMessages = conv.messages.map(m => {
+                if (m.id === messageId) {
+                    const existingReactionIndex = m.reactions?.findIndex(r => r.userId === currentUser.id) ?? -1;
+                    let newReactions = [...(m.reactions || [])];
+                    if (existingReactionIndex > -1) {
+                         // User is changing reaction or removing it
+                        if(newReactions[existingReactionIndex].emoji === emoji) {
+                            // remove reaction
+                            newReactions.splice(existingReactionIndex, 1);
+                        } else {
+                            // change reaction
+                            newReactions[existingReactionIndex] = { userId: currentUser.id, emoji };
+                        }
+                    } else {
+                        // New reaction
+                        newReactions.push({ userId: currentUser.id, emoji });
+                    }
+                    return { ...m, reactions: newReactions };
+                }
+                return m;
+            });
+            return { ...conv, messages: updatedMessages };
+        }
+        return conv;
+    });
+
+    setConversations(updatedConversations);
+    const updatedSelectedConv = updatedConversations.find(c => c.id === selectedConversation.id);
+    if (updatedSelectedConv) {
+      setSelectedConversation(updatedSelectedConv);
+    }
+  };
 
   return (
     <div className="flex h-screen md:h-[calc(100vh-4rem)] border-t md:border-t-0 md:border-x border-gray-800">
@@ -45,7 +118,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations:
                              <img src={otherUser.avatar} alt={otherUser.username} className="w-14 h-14 rounded-full" />
                              <div className="overflow-hidden">
                                 <p>{otherUser.username}</p>
-                                <p className="text-sm text-gray-400 truncate">{lastMessage?.content}</p>
+                                <p className="text-sm text-gray-400 truncate">{lastMessage?.type === 'voice' ? 'Voice message' : lastMessage?.type === 'image' ? 'Image' : lastMessage?.content}</p>
                              </div>
                         </button>
                     )

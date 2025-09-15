@@ -1,7 +1,7 @@
 // Fix: Create the main App component to structure the application.
 import React, { useState } from 'react';
 import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES } from './constants';
-import type { User, Post as PostType, Story as StoryType, View, Reel as ReelType, Conversation } from './types';
+import type { User, Post as PostType, Story as StoryType, View, Reel as ReelType, Conversation, StoryItem } from './types';
 
 // Import views
 import HomeView from './components/HomeView';
@@ -14,7 +14,6 @@ import SettingsView from './components/SettingsView';
 
 // Import components
 import Header from './components/Header';
-import Sidebar from './components/Sidebar';
 import PostModal from './components/PostModal';
 import CreatePostModal from './components/CreatePostModal';
 import StoryViewer from './components/StoryViewer';
@@ -24,6 +23,9 @@ import LeftSidebar from './components/LeftSidebar';
 import BottomNav from './components/BottomNav';
 import SearchView from './components/SearchView';
 import NotificationsPanel from './components/NotificationsPanel';
+import CreateStoryModal from './components/CreateStoryModal';
+// Fix: Import the 'Sidebar' component to resolve the 'Cannot find name' error.
+import Sidebar from './components/Sidebar';
 
 const App: React.FC = () => {
     // State management...
@@ -40,6 +42,7 @@ const App: React.FC = () => {
     const [sharingPost, setSharingPost] = useState<PostType | null>(null);
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+    const [isCreateStoryModalOpen, setCreateStoryModalOpen] = useState(false);
     const [isAccountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
     const [isSearchVisible, setSearchVisible] = useState(false);
     const [isNotificationsPanelVisible, setNotificationsPanelVisible] = useState(false);
@@ -84,11 +87,37 @@ const App: React.FC = () => {
         setCreateModalOpen(false);
         setCurrentView('home');
     };
+    
+    const handleCreateStory = (newStoryItem: Omit<StoryItem, 'id'>) => {
+        const fullStoryItem: StoryItem = { ...newStoryItem, id: `s-ai-${Date.now()}`};
+        
+        setStories(prevStories => {
+            const currentUserStoryIndex = prevStories.findIndex(s => s.user.id === currentUser.id);
+            const newStories = [...prevStories];
+
+            if (currentUserStoryIndex > -1) {
+                // Add to existing story
+                const updatedStory = { ...newStories[currentUserStoryIndex] };
+                updatedStory.stories = [fullStoryItem, ...updatedStory.stories];
+                newStories[currentUserStoryIndex] = updatedStory;
+            } else {
+                // Create new story for user if they don't have one
+                const newStory: StoryType = {
+                    id: `story-${currentUser.id}`,
+                    user: currentUser,
+                    stories: [fullStoryItem]
+                };
+                newStories.unshift(newStory);
+            }
+            return newStories;
+        });
+        setCreateStoryModalOpen(false);
+    };
 
     const renderView = () => {
         switch (currentView) {
             case 'home':
-                return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} />;
+                return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
             case 'explore':
                 return <ExploreView posts={posts} />;
             case 'reels':
@@ -102,7 +131,7 @@ const App: React.FC = () => {
             case 'settings':
                 return <SettingsView />;
             default:
-                return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} />;
+                return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
         }
     };
     
@@ -112,7 +141,8 @@ const App: React.FC = () => {
                 currentUser={currentUser}
                 onNavigate={setCurrentView}
                 onSwitchAccount={() => setAccountSwitcherOpen(true)}
-                onSearchFocus={() => setSearchVisible(true)}
+                onCreatePost={() => setCreateModalOpen(true)}
+                onShowNotifications={() => setNotificationsPanelVisible(true)}
             />
             <div className="container mx-auto flex">
                  <LeftSidebar 
@@ -130,7 +160,8 @@ const App: React.FC = () => {
                             {renderView()}
                         </div>
                         <div className="hidden lg:block w-[320px] ml-8">
-                           <Sidebar currentUser={currentUser} onSwitchAccount={() => setAccountSwitcherOpen(true)} />
+                           {/* Sidebar is only shown on home view for this layout */}
+                           {currentView === 'home' && <Sidebar currentUser={currentUser} onSwitchAccount={() => setAccountSwitcherOpen(true)} />}
                         </div>
                     </div>
                 </main>
@@ -146,6 +177,7 @@ const App: React.FC = () => {
             {/* Modals */}
             {viewingPost && <PostModal post={viewingPost} onClose={() => setViewingPost(null)} onLike={handleLike} onComment={handleComment} />}
             {isCreateModalOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreateModalOpen(false)} onCreatePost={handleCreatePost} />}
+            {isCreateStoryModalOpen && <CreateStoryModal onClose={() => setCreateStoryModalOpen(false)} onCreateStory={handleCreateStory} />}
             {viewingStory && <StoryViewer story={viewingStory} onClose={() => setViewingStory(null)} />}
             {isAccountSwitcherOpen && <AccountSwitcherModal users={users} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchUser={handleSwitchAccount} />}
             {sharingPost && <ShareModal post={sharingPost} onClose={() => setSharingPost(null)} />}

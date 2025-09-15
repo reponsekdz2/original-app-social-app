@@ -26,28 +26,25 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onCr
   return (
     <aside className="fixed top-0 left-0 h-screen z-40 bg-black border-r border-gray-800 hidden md:flex flex-col justify-between p-3">
         <div className="flex flex-col items-center lg:items-start gap-2">
-            <div className="p-3 mb-4 hidden lg:block cursor-pointer" onClick={() => onNavigate('home')}>
-                <h1 className="text-xl font-serif font-bold tracking-wider text-white">Netflixgram</h1>
-            </div>
-             <div className="p-3 mb-4 lg:hidden cursor-pointer" onClick={() => onNavigate('home')}>
-                <Icon className="w-8 h-8 text-red-600">
-                    <path d="M11.25 5.25A6.75 6.75 0 1018 12a6.752 6.752 0 00-6.75-6.75zm0 11.25a4.5 4.5 0 110-9 4.5 4.5 0 010 9z" />
-                    <path d="M11.25 0C5.037 0 0 5.037 0 11.25S5.037 22.5 11.25 22.5 22.5 17.463 22.5 11.25 17.463 0 11.25 0zm0 20.25a9 9 0 110-18 9 9 0 010 18z" />
+            <div className="p-3 mb-4 h-16 flex items-center cursor-pointer" onClick={() => onNavigate('home')}>
+                <h1 className="text-2xl font-serif font-bold tracking-wider text-red-600 hidden lg:block">Netflixgram</h1>
+                <Icon className="w-8 h-8 text-red-600 block lg:hidden">
+                    <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM9 8.25a.75.75 0 000 1.5h6a.75.75 0 000-1.5H9zm-1.5 4.5a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75z" clipRule="evenodd" />
                 </Icon>
             </div>
             {navItems.map(item => (
                 <button 
                     key={item.label} 
                     onClick={item.action ? item.action : () => onNavigate(item.view as View)}
-                    className={`flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800 transition-colors w-full ${currentView === item.view ? 'font-bold bg-gray-800' : ''}`}
+                    className={`flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800 transition-colors w-full ${currentView === item.view ? 'font-bold' : ''}`}
                 >
                     <div className="w-6 h-6 flex items-center justify-center">
                        {item.view === 'profile' ? 
-                           <img src={currentUser.avatar} alt="Profile" className={`w-6 h-6 rounded-full object-cover ${currentView === 'profile' ? 'ring-2 ring-white' : ''}`} /> 
-                           : <Icon>{item.icon}</Icon>
+                           <img src={currentUser.avatar} alt="Profile" className={`w-7 h-7 rounded-full object-cover ${currentView === 'profile' ? 'ring-2 ring-white' : ''}`} /> 
+                           : <Icon className="w-7 h-7">{item.icon}</Icon>
                        }
                    </div>
-                    <span className="hidden lg:inline">{item.label}</span>
+                    <span className="hidden lg:inline text-base">{item.label}</span>
                 </button>
             ))}
         </div>

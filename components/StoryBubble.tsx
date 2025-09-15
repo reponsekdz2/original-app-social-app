@@ -8,15 +8,15 @@ interface StoryBubbleProps {
 
 const StoryBubble: React.FC<StoryBubbleProps> = ({ story, onView }) => {
   return (
-    <div className="flex flex-col items-center space-y-1 cursor-pointer" onClick={() => onView(story)}>
-      <div className="relative">
-        <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500">
-          <div className="bg-black rounded-full p-0.5">
-            <img src={story.user.avatar} alt={story.user.username} className="w-full h-full rounded-full object-cover" />
+    <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={() => onView(story)}>
+      <div className="relative group">
+        <div className="w-20 h-28 rounded-xl p-0.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500">
+          <div className="bg-black rounded-[10px] p-0.5 h-full w-full">
+            <img src={story.user.avatar} alt={story.user.username} className="w-full h-full rounded-lg object-cover" />
           </div>
         </div>
       </div>
-      <p className="text-xs w-16 truncate text-center">{story.user.username}</p>
+      <p className="text-xs w-20 truncate text-center">{story.user.username}</p>
     </div>
   );
 };

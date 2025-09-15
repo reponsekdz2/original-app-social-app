@@ -11,7 +11,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, onSwitchAccount }) => {
     const suggestions = SUGGESTED_USERS.filter(u => u.id !== currentUser.id).slice(0, 4);
 
     return (
-        <aside className="w-full py-8">
+        <aside className="w-full py-8 fixed w-[320px]">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
                     <img src={currentUser.avatar} alt={currentUser.username} className="w-14 h-14 rounded-full object-cover mr-4" />
