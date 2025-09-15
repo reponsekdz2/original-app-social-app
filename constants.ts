@@ -1,4 +1,4 @@
-import type { User, Post, Story, StoryItem, Comment, Reel, Conversation, Message, Activity, StoryHighlight, SponsoredContent, FeedActivity, Testimonial } from './types.ts';
+import type { User, Post, Story, StoryItem, Comment, Reel, Conversation, Message, Activity, StoryHighlight, SponsoredContent, FeedActivity, Testimonial, HelpArticle, SupportTicket } from './types.ts';
 
 // Base users - defining them first
 const u1: User = {
@@ -216,5 +216,36 @@ export const MOCK_TESTIMONIALS: Testimonial[] = [
         id: 't3',
         user: MOCK_USERS[1], // series_scout
         quote: "Magic Compose is so much fun! I use it all the time to come up with witty comments. Highly recommend Premium!",
+    }
+];
+
+export const MOCK_HELP_ARTICLES: HelpArticle[] = [
+    { id: 'hc1', category: 'Account & Profile', title: 'How to change your password', content: 'Go to Settings > Privacy & Security > Change Password. You will be asked to enter your current password and then a new password.'},
+    { id: 'hc2', category: 'Account & Profile', title: 'How to edit your profile', content: 'Navigate to your profile and tap the "Edit Profile" button to change your name, bio, website, and profile picture.'},
+    { id: 'hc3', category: 'Privacy & Security', title: 'Making your account private', content: 'In Settings > Privacy & Security, you can toggle the "Private Account" switch. When your account is private, only people you approve can see your posts and stories.'},
+    { id: 'hc4', category: 'Privacy & Security', title: 'What is Two-Factor Authentication?', content: 'It adds an extra layer of security to your account by requiring a second verification method when you log in from an unrecognized device.'},
+    { id: 'hc5', category: 'Troubleshooting', title: 'Why is my video not uploading?', content: 'Ensure you have a stable internet connection and that the video format is supported (e.g., MP4, MOV). If the problem persists, try restarting the app.'},
+];
+
+export const MOCK_SUPPORT_TICKETS: SupportTicket[] = [
+    {
+        id: 'st1',
+        subject: 'Issue with video quality',
+        status: 'Resolved',
+        lastUpdated: '2 days ago',
+        messages: [
+            { sender: 'user', text: 'My videos look blurry after upload.', timestamp: '3 days ago'},
+            { sender: 'support', text: 'We have identified and fixed the issue with our video processing. Please try re-uploading your video. Thank you for your patience.', timestamp: '2 days ago'},
+        ]
+    },
+    {
+        id: 'st2',
+        subject: 'Cannot access my account',
+        status: 'Open',
+        lastUpdated: '1 hour ago',
+        messages: [
+             { sender: 'user', text: 'I forgot my password and I am not receiving the password reset email.', timestamp: '2 hours ago'},
+             { sender: 'support', text: 'We are looking into your issue regarding email delivery and will get back to you shortly.', timestamp: '1 hour ago'},
+        ]
     }
 ];

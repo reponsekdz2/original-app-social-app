@@ -2,7 +2,7 @@
 import React from 'react';
 import Icon from './Icon.tsx';
 import ToggleSwitch from './ToggleSwitch.tsx';
-import type { NotificationSettings } from '../types.ts';
+import type { NotificationSettings, View } from '../types.ts';
 
 interface SettingsViewProps {
   onGetVerified: () => void;
@@ -14,6 +14,7 @@ interface SettingsViewProps {
   onToggleTwoFactor: (enabled: boolean) => void;
   notificationSettings: NotificationSettings;
   onUpdateNotificationSettings: (setting: keyof NotificationSettings, value: boolean) => void;
+  onNavigate: (view: View) => void;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ 
@@ -26,6 +27,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   onToggleTwoFactor,
   notificationSettings,
   onUpdateNotificationSettings,
+  onNavigate,
 }) => {
   const accountItems = [
     { label: 'Edit Profile', action: onEditProfile, icon: <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /> },
@@ -37,8 +39,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   ]
 
   const helpItems = [
-     { label: 'Help Center', icon: <path d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /> },
-     { label: 'Support Inbox', icon: <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286z" /> },
+     { label: 'Help Center', action: () => onNavigate('help-center'), icon: <path d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /> },
+     { label: 'Support Inbox', action: () => onNavigate('support-inbox'), icon: <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286z" /> },
   ]
 
   return (
@@ -111,7 +113,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         <div>
            <h3 className="text-gray-400 font-semibold mb-2 px-2 text-sm uppercase tracking-wider">Support</h3>
            {helpItems.map(item => (
-              <button key={item.label} className="w-full text-left p-3 rounded-lg flex items-center gap-4 hover:bg-gray-800 transition-colors">
+              <button key={item.label} onClick={item.action} className="w-full text-left p-3 rounded-lg flex items-center gap-4 hover:bg-gray-800 transition-colors">
                 <Icon className="w-6 h-6 text-gray-400">{item.icon}</Icon>
                 <span>{item.label}</span>
                 <Icon className="w-5 h-5 ml-auto text-gray-500"><path d="M8.25 4.5l7.5 7.5-7.5 7.5" /></Icon>

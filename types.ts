@@ -1,4 +1,4 @@
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'premium' | 'activity' | 'create' | 'search' | 'notifications' | 'premium-welcome';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'premium' | 'activity' | 'create' | 'search' | 'notifications' | 'premium-welcome' | 'help-center' | 'support-inbox';
 
 export interface User {
   id: string;
@@ -119,7 +119,7 @@ export interface SponsoredContent {
 }
 
 export interface FeedActivity {
-  id: string;
+  id:string;
   user: User;
   action: 'liked' | 'followed';
   targetPost?: Post;
@@ -131,4 +131,23 @@ export interface Testimonial {
     id: string;
     user: User;
     quote: string;
+}
+
+export interface HelpArticle {
+  id: string;
+  category: string;
+  title: string;
+  content: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  subject: string;
+  status: 'Open' | 'Resolved' | 'Pending';
+  lastUpdated: string;
+  messages: {
+      sender: 'user' | 'support';
+      text: string;
+      timestamp: string;
+  }[];
 }

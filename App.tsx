@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { User, View, Post as PostType, Story as StoryType, Comment, StoryItem, NotificationSettings, Conversation, Message, Testimonial } from './types.ts';
-import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES, MOCK_ADS, MOCK_FEED_ACTIVITIES, MOCK_TRENDING_TOPICS, MOCK_TESTIMONIALS } from './constants.ts';
+import type { User, View, Post as PostType, Story as StoryType, Comment, StoryItem, NotificationSettings, Conversation, Message, Testimonial, SupportTicket } from './types.ts';
+import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES, MOCK_ADS, MOCK_FEED_ACTIVITIES, MOCK_TRENDING_TOPICS, MOCK_TESTIMONIALS, MOCK_HELP_ARTICLES, MOCK_SUPPORT_TICKETS } from './constants.ts';
 import LeftSidebar from './components/LeftSidebar.tsx';
 import Header from './components/Header.tsx';
 import Sidebar from './components/Sidebar.tsx';
@@ -31,6 +31,9 @@ import EditPostModal from './components/EditPostModal.tsx';
 import ViewLikesModal from './components/ViewLikesModal.tsx';
 import PaymentModal from './components/PaymentModal.tsx';
 import PremiumWelcomeView from './components/PremiumWelcomeView.tsx';
+import HelpCenterView from './components/HelpCenterView.tsx';
+import SupportInboxView from './components/SupportInboxView.tsx';
+import NewSupportRequestModal from './components/NewSupportRequestModal.tsx';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
@@ -53,6 +56,7 @@ const App: React.FC = () => {
   const [isChangePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
   const [isEditProfileModalOpen, setEditProfileModalOpen] = useState(false);
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [isNewSupportRequestModalOpen, setNewSupportRequestModalOpen] = useState(false);
   const [followListModal, setFollowListModal] = useState<{ title: 'Followers' | 'Following', users: User[] } | null>(null);
   const [likesModalUsers, setLikesModalUsers] = useState<User[] | null>(null);
 
@@ -60,6 +64,7 @@ const App: React.FC = () => {
   const [posts, setPosts] = useState<PostType[]>(MOCK_POSTS);
   const [stories, setStories] = useState<StoryType[]>(MOCK_STORIES);
   const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(MOCK_SUPPORT_TICKETS);
   
   // App-wide Settings State
   const [isPrivateAccount, setPrivateAccount] = useState(false);
@@ -246,6 +251,20 @@ const App: React.FC = () => {
     );
   };
 
+  const handleNewSupportRequest = (subject: string, description: string) => {
+    const newTicket: SupportTicket = {
+        id: `st-${Date.now()}`,
+        subject,
+        status: 'Open',
+        lastUpdated: 'Just now',
+        messages: [
+            { sender: 'user', text: description, timestamp: 'Just now' }
+        ]
+    };
+    setSupportTickets(prev => [newTicket, ...prev]);
+    setNewSupportRequestModalOpen(false);
+  };
+
   const renderView = () => {
       const profileToShow = viewedProfile || currentUser;
       const mainContent = (() => {
@@ -261,7 +280,7 @@ const App: React.FC = () => {
         case 'profile':
             return <ProfileView user={profileToShow} posts={posts.filter(p => p.user.id === profileToShow.id)} isCurrentUser={profileToShow.id === currentUser.id} onEditProfile={() => setEditProfileModalOpen(true)} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onShowFollowers={(users) => setFollowListModal({ title: 'Followers', users })} onShowFollowing={(users) => setFollowListModal({ title: 'Following', users })} onEditPost={setEditingPost} onViewPost={setViewedPost}/>;
         case 'settings':
-            return <SettingsView onGetVerified={() => setGetVerifiedModalOpen(true)} onEditProfile={() => setEditProfileModalOpen(true)} onChangePassword={() => setChangePasswordModalOpen(true)} isPrivateAccount={isPrivateAccount} onTogglePrivateAccount={setPrivateAccount} isTwoFactorEnabled={isTwoFactorEnabled} onToggleTwoFactor={setTwoFactorEnabled} notificationSettings={notificationSettings} onUpdateNotificationSettings={handleUpdateNotificationSettings} />;
+            return <SettingsView onGetVerified={() => setGetVerifiedModalOpen(true)} onEditProfile={() => setEditProfileModalOpen(true)} onChangePassword={() => setChangePasswordModalOpen(true)} isPrivateAccount={isPrivateAccount} onTogglePrivateAccount={setPrivateAccount} isTwoFactorEnabled={isTwoFactorEnabled} onToggleTwoFactor={setTwoFactorEnabled} notificationSettings={notificationSettings} onUpdateNotificationSettings={handleUpdateNotificationSettings} onNavigate={handleNavigate} />;
         case 'saved':
             return <SavedView posts={posts.filter(p => p.isSaved)} onViewPost={setViewedPost} />;
         case 'archive':
@@ -272,6 +291,10 @@ const App: React.FC = () => {
             return <PremiumWelcomeView onNavigate={handleNavigate} />;
         case 'activity':
             return <ActivityView activities={MOCK_ACTIVITIES} />;
+        case 'help-center':
+            return <HelpCenterView articles={MOCK_HELP_ARTICLES} onBack={() => handleNavigate('settings')} />;
+        case 'support-inbox':
+            return <SupportInboxView tickets={supportTickets} onBack={() => handleNavigate('settings')} onNewRequest={() => setNewSupportRequestModalOpen(true)} />;
         default:
             return <HomeView posts={posts} stories={stories} currentUser={currentUser} onLike={handleLike} onComment={handleComment} onViewPost={setViewedPost} onViewStory={handleViewStory} onSave={handleSave} onShare={handleShare} onCreateStory={() => setCreateStoryModalOpen(true)} onViewProfile={handleViewProfile} onEditPost={setEditingPost} onViewLikes={handleViewLikes} />;
         }
@@ -343,6 +366,7 @@ const App: React.FC = () => {
       {followListModal && <FollowListModal title={followListModal.title} users={followListModal.users} onClose={() => setFollowListModal(null)} onFollow={handleFollow} currentUser={currentUser} onViewProfile={handleViewProfile} />}
       {likesModalUsers && <ViewLikesModal users={likesModalUsers} onClose={() => setLikesModalUsers(null)} onViewProfile={handleViewProfile} onFollow={handleFollow} currentUser={currentUser} />}
       {isPaymentModalOpen && <PaymentModal onClose={() => setPaymentModalOpen(false)} onSuccess={handleSubscribe} />}
+      {isNewSupportRequestModalOpen && <NewSupportRequestModal onClose={() => setNewSupportRequestModalOpen(false)} onSubmit={handleNewSupportRequest} />}
     </div>
   );
 }
