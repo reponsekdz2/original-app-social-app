@@ -14,6 +14,8 @@ export const MOCK_USERS: User[] = [
     bio: 'Your friendly neighborhood cinephile. Exploring the world one film at a time. 🎬✨',
     followers: ['user-3', 'user-4'],
     following: ['user-2', 'user-3', 'user-4', 'user-5'],
+    website: 'https://alexrivera.film',
+    gender: 'Cinephile',
   },
   { 
     id: 'user-2', 

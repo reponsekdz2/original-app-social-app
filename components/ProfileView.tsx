@@ -73,9 +73,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, posts, onEditProfile, o
                         <button onClick={onViewFollowers}><span className="font-semibold">{user.followers.length}</span> followers</button>
                         <button onClick={onViewFollowing}><span className="font-semibold">{user.following.length}</span> following</button>
                     </div>
-                    <div>
+                    <div className="space-y-1">
                         <p className="font-semibold">{user.name}</p>
                         <p className="text-sm text-gray-400 whitespace-pre-wrap">{user.bio}</p>
+                        {user.website && (
+                            <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-sm text-red-400 font-semibold hover:underline">
+                                {user.website}
+                            </a>
+                        )}
                     </div>
                 </div>
             </header>

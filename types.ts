@@ -7,6 +7,8 @@ export interface User {
   bio: string;
   followers: string[];
   following: string[];
+  website?: string;
+  gender?: string;
   highlights?: StoryHighlight[];
   isOnline?: boolean;
   isPremium?: boolean;

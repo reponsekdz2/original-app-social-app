@@ -69,6 +69,10 @@ const App: React.FC = () => {
     const [followListModalData, setFollowListModalData] = useState<FollowListModalData | null>(null);
     const [isChangePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
 
+    // Settings States
+    const [isPrivateAccount, setPrivateAccount] = useState(false);
+    const [isTwoFactorEnabled, setTwoFactorEnabled] = useState(true);
+
     // Handlers...
     const handleLike = (postId: string) => {
         setPosts(posts.map(p => p.id === postId ? { ...p, likedByUser: !p.likedByUser, likes: p.likedByUser ? p.likes - 1 : p.likes + 1 } : p));
@@ -237,6 +241,10 @@ const App: React.FC = () => {
                             onGetVerified={() => setVerifiedModalOpen(true)}
                             onEditProfile={() => setEditProfileModalOpen(true)}
                             onChangePassword={() => setChangePasswordModalOpen(true)}
+                            isPrivateAccount={isPrivateAccount}
+                            onTogglePrivateAccount={setPrivateAccount}
+                            isTwoFactorEnabled={isTwoFactorEnabled}
+                            onToggleTwoFactor={setTwoFactorEnabled}
                         />;
             case 'premium':
                 return <PremiumView onSubscribe={handleSubscribeToPremium} isCurrentUserPremium={currentUser.isPremium ?? false} />;
