@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import type { Conversation, User, Message } from './types';
-import ChatWindow from './components/ChatWindow';
-import Icon from './components/Icon';
+// Fix: Add .ts extension to import to resolve module.
+import type { Conversation, User, Message } from './types.ts';
+// Fix: Add .tsx extension to import to resolve module.
+import ChatWindow from './components/ChatWindow.tsx';
+import Icon from './components/Icon.tsx';
 
 interface MessagesViewProps {
   currentUser: User;

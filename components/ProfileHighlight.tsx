@@ -1,5 +1,6 @@
 import React from 'react';
-import type { StoryHighlight } from '../types';
+// Fix: Add .ts extension to import to resolve module.
+import type { StoryHighlight } from '../types.ts';
 
 interface ProfileHighlightProps {
   highlight: StoryHighlight;

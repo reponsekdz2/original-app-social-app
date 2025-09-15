@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import Icon from './Icon';
-import type { StoryItem } from '../types';
-import { generateStoryImage } from '../services/geminiService';
+import Icon from './Icon.tsx';
+// Fix: Add .ts extension to import to resolve module.
+import type { StoryItem } from '../types.ts';
+import { generateStoryImage } from '../services/geminiService.ts';
 
 interface CreateStoryModalProps {
   onClose: () => void;
@@ -78,7 +79,7 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
-           <button onClick={onClose}><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
+           <button onClick={onClose}><Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></Icon></button>
           <h2 className="text-lg font-semibold">Create story</h2>
           <button onClick={handleSubmit} className="font-semibold text-red-500 hover:text-red-400 disabled:opacity-50" disabled={isShareDisabled}>Share</button>
         </div>
@@ -121,6 +122,7 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
                         <div className="text-center text-gray-500 p-4">
                             <Icon className="w-12 h-12 mx-auto"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon>
                             <p>Your generated image will appear here.</p>
+                             {errorAI && <p className="text-red-500 text-xs mt-2">{errorAI}</p>}
                         </div>
                     )
                 )}

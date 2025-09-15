@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import type { Post as PostType, Story as StoryType, User } from '../types';
-import Post from './Post';
-import StoryBubble from './StoryBubble';
-import Icon from './Icon';
+// Fix: Add .ts extension to import to resolve module.
+import type { Post as PostType, Story as StoryType, User } from '../types.ts';
+// Fix: Add .tsx extension to import to resolve module.
+import Post from './Post.tsx';
+import StoryBubble from './StoryBubble.tsx';
+import Icon from './Icon.tsx';
 
 interface HomeViewProps {
   posts: PostType[];

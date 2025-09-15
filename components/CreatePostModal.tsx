@@ -1,9 +1,10 @@
 
 
 import React, { useState, useRef } from 'react';
-import Icon from './Icon';
-import type { Post, User } from '../types';
-import { generateCaption } from '../services/geminiService';
+import Icon from './Icon.tsx';
+// Fix: Add .ts extension to import to resolve module.
+import type { User } from '../types.ts';
+import { generateCaption } from '../services/geminiService.ts';
 
 type PostData = {
     user: User;
@@ -95,7 +96,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ currentUser, onClose,
             ) : (
               <div className="text-center">
                 <Icon className="mx-auto w-24 h-24 text-gray-500">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 017.5 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </Icon>
                 <p className="mt-4 text-xl">Drag photos and videos here</p>
                 <button onClick={() => fileInputRef.current?.click()} className="mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">

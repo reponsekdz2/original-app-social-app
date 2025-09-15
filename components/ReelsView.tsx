@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import type { Reel as ReelType } from '../types';
-import Reel from './Reel';
+// Fix: Add .ts extension to import to resolve module.
+import type { Reel as ReelType } from '../types.ts';
+import Reel from './Reel.tsx';
 
 interface ReelsViewProps {
   reels: ReelType[];

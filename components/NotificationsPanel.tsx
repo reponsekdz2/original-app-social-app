@@ -1,6 +1,7 @@
 // Fix: Create the NotificationsPanel component.
 import React from 'react';
-import type { Activity } from '../types';
+// Fix: Add .ts extension to import to resolve module.
+import type { Activity } from '../types.ts';
 
 interface NotificationsPanelProps {
   activities: Activity[];

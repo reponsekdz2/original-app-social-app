@@ -1,7 +1,9 @@
 import React from 'react';
-import type { Post } from '../types';
-import Icon from './Icon';
-import { MOCK_USERS } from '../constants';
+// Fix: Add .ts extension to import to resolve module.
+import type { Post } from '../types.ts';
+import Icon from './Icon.tsx';
+// Fix: Add .ts extension to import to resolve module.
+import { MOCK_USERS } from '../constants.ts';
 
 interface ShareModalProps {
   post: Post | null;
@@ -22,7 +24,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ post, onClose }) => {
         <div className="p-3 border-b border-gray-700 text-center relative">
           <h2 className="text-lg font-semibold">Share</h2>
            <button className="absolute top-2 right-3" onClick={onClose}>
-            <Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon>
+            <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></Icon>
           </button>
         </div>
         <div className="p-4">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import type { Message, User } from './types';
-import Icon from './components/Icon';
+// Fix: Add .ts extension to import to resolve module.
+import type { Message, User } from './types.ts';
+import Icon from './components/Icon.tsx';
 
 interface MessageProps {
     message: Message;

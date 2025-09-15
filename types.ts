@@ -1,43 +1,22 @@
-// Fix: Create full type definitions for the application.
 export interface User {
   id: string;
   username: string;
   avatar: string;
-  name: string;
-  bio: string;
-  followers: string[];
-  following: string[];
-  website?: string;
-  gender?: string;
-  highlights?: StoryHighlight[];
-  isOnline?: boolean;
-  isPremium?: boolean;
   isVerified?: boolean;
+  isPremium?: boolean;
+  bio?: string;
+  postsCount: number;
+  followersCount: number;
+  followingCount: number;
+  stories?: Story;
+  highlights?: StoryHighlight[];
 }
 
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'create' | 'premium' | 'archive';
-
-export interface Comment {
+export interface StoryHighlight {
   id: string;
-  user: User;
-  text: string;
-  timestamp: string;
-  likes: number;
-  likedByUser: boolean;
-}
-
-export interface Post {
-  id:string;
-  user: User;
-  media: string;
-  mediaType: 'image' | 'video';
-  caption: string;
-  likes: number;
-  comments: Comment[];
-  timestamp: string;
-  likedByUser: boolean;
-  savedByUser: boolean;
-  isArchived?: boolean;
+  title: string;
+  cover: string;
+  stories: StoryItem[];
 }
 
 export interface StoryItem {
@@ -53,52 +32,69 @@ export interface Story {
   stories: StoryItem[];
 }
 
-export interface StoryHighlight {
+export interface Comment {
   id: string;
-  title: string;
-  cover: string;
+  user: User;
+  text: string;
+  timestamp: string;
+}
+
+export interface Post {
+  id: string;
+  user: User;
+  media: string;
+  mediaType: 'image' | 'video';
+  caption: string;
+  likes: number;
+  comments: Comment[];
+  timestamp: string;
+  isSaved: boolean;
+  isLiked: boolean;
 }
 
 export interface Reel {
-    id: string;
-    user: User;
-    video: string;
-    caption: string;
-    likes: number;
-    comments: number;
+  id: string;
+  user: User;
+  video: string;
+  caption: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  audio: {
+    title: string;
+    artist: string;
+  }
 }
 
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'create' | 'notifications' | 'saved' | 'settings' | 'activity' | 'archive' | 'premium';
+
 export interface Reaction {
-  emoji: string;
-  userId: string;
+    userId: string;
+    emoji: string;
 }
 
 export interface Message {
-  id:string;
-  senderId: string;
-  content: string;
-  timestamp: string;
-  type: 'text' | 'image' | 'voice';
-  reactions?: Reaction[];
-  replyTo?: Message;
+    id: string;
+    senderId: string;
+    content: string;
+    timestamp: string;
+    type: 'text' | 'image' | 'voice';
+    replyTo?: Message;
+    reactions?: Reaction[];
 }
 
 export interface Conversation {
-  id: string;
-  participants: User[];
-  messages: Message[];
-  lastMessageSeenId?: string;
-  typingUserIds?: string[];
+    id: string;
+    participants: User[];
+    messages: Message[];
+    lastMessageSeenId?: string;
 }
-
-export type ActivityType = 'like' | 'comment' | 'follow' | 'mention';
 
 export interface Activity {
   id: string;
-  type: ActivityType;
+  type: 'like' | 'comment' | 'follow' | 'mention';
   user: User;
   post?: Post;
   commentText?: string;
   timestamp: string;
-  read: boolean;
 }

@@ -1,6 +1,7 @@
 import React from 'react';
-import type { User } from '../types';
-import Icon from './Icon';
+// Fix: Add .ts extension to import to resolve module.
+import type { User } from '../types.ts';
+import Icon from './Icon.tsx';
 
 interface AccountSwitcherModalProps {
   users: User[];
@@ -30,7 +31,7 @@ const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({ users, curr
                   <img src={user.avatar} alt={user.username} className="w-12 h-12 rounded-full object-cover mr-4" />
                   <span className="font-semibold">{user.username}</span>
                   {user.id === currentUser.id && (
-                    <Icon className="w-6 h-6 text-red-500 ml-auto"><path fillRule="evenodd" d="M12.53 3.47a.75.75 0 00-1.06 0L6.22 8.72a.75.75 0 001.06 1.06L12 5.06l9.72 9.72a.75.75 0 101.06-1.06L12.53 3.47z" clipRule="evenodd" /></Icon>
+                    <Icon className="w-6 h-6 text-red-500 ml-auto"><path fillRule="evenodd" d="M16.704 7.296a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06 0l-3.5-3.5a.75.75 0 011.06-1.06L9 14.19l6.97-6.97a.75.75 0 011.06 0z" clipRule="evenodd" /></Icon>
                   )}
                 </button>
               </li>

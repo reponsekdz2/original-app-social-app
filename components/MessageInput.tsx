@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import type { Message, User } from '../types';
-import Icon from './Icon';
-import MagicComposePanel from './MagicComposePanel';
+// Fix: Add .ts extension to import to resolve module.
+import type { Message, User } from '../types.ts';
+import Icon from './Icon.tsx';
+import MagicComposePanel from './MagicComposePanel.tsx';
 
 interface MessageInputProps {
     onSend: (content: string, type: 'text' | 'image' | 'voice') => void;

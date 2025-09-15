@@ -1,157 +1,130 @@
-// Fix: Create mock data constants for the application.
-import type { User, Post, Story, Reel, Conversation, Activity, Message } from './types';
+import type { User, Post, Story, StoryItem, Comment, Reel, Conversation, Message, Activity, StoryHighlight } from './types.ts';
 
 export const MOCK_USERS: User[] = [
-  { 
-    id: 'user-1', 
-    username: 'movie_magic', 
-    avatar: 'https://i.pravatar.cc/100?u=user-1', 
-    isOnline: true, 
-    highlights: [{id: 'h1', title: 'Faves', cover: 'https://picsum.photos/seed/h1/150/150'}], 
-    isPremium: false,
+  {
+    id: 'u1',
+    username: 'movie_magic',
+    avatar: 'https://i.pravatar.cc/150?u=movie_magic',
     isVerified: true,
-    name: 'Alex Rivera',
-    bio: 'Your friendly neighborhood cinephile. Exploring the world one film at a time. 🎬✨',
-    followers: ['user-3', 'user-4'],
-    following: ['user-2', 'user-3', 'user-4', 'user-5'],
-    website: 'https://alexrivera.film',
-    gender: 'Cinephile',
+    isPremium: true,
+    bio: 'Bringing you the best of cinema. 🎬\nWriter, Director, Popcorn Enthusiast.',
+    postsCount: 134,
+    followersCount: 12580,
+    followingCount: 210,
   },
-  { 
-    id: 'user-2', 
-    username: 'cinephile_cat', 
-    avatar: 'https://i.pravatar.cc/100?u=user-2', 
-    isOnline: false, 
-    isPremium: false,
-    name: 'Bella Thorne',
-    bio: 'Just a cat who loves movies. Meow.',
-    followers: ['user-1'],
-    following: ['user-1'],
+  {
+    id: 'u2',
+    username: 'series_scout',
+    avatar: 'https://i.pravatar.cc/150?u=series_scout',
+    bio: 'Binge-watching my way through life. What should I watch next?',
+    postsCount: 58,
+    followersCount: 8400,
+    followingCount: 502,
   },
-  { 
-    id: 'user-3', 
-    username: 'series_spectator', 
-    avatar: 'https://i.pravatar.cc/100?u=user-3', 
-    isOnline: true, 
-    isPremium: false,
+  {
+    id: 'u3',
+    username: 'retro_reels',
+    avatar: 'https://i.pravatar.cc/150?u=retro_reels',
     isVerified: true,
-    name: 'Chris Nolan',
-    bio: 'Binge-watching expert. Currently on season 5 of everything.',
-    followers: ['user-1'],
-    following: ['user-1'],
+    bio: 'Celebrating classic films and vintage vibes. 🎞️',
+    postsCount: 450,
+    followersCount: 22300,
+    followingCount: 88,
   },
-  { 
-    id: 'user-4', 
-    username: 'reel_reviews', 
-    avatar: 'https://i.pravatar.cc/100?u=user-4', 
-    isOnline: false, 
-    isPremium: false,
-    name: 'Diana Prince',
-    bio: 'Quick takes on the latest releases. 🍿',
-    followers: ['user-1'],
-    following: ['user-1'],
-  },
-  { 
-    id: 'user-5', 
-    username: 'netflix_nerd', 
-    avatar: 'https://i.pravatar.cc/100?u=user-5', 
-    isOnline: true, 
-    isPremium: false,
-    name: 'Ethan Hunt',
-    bio: 'I know what you watched last summer.',
-    followers: ['user-1'],
-    following: [],
+  {
+    id: 'u4',
+    username: 'indie_insights',
+    avatar: 'https://i.pravatar.cc/150?u=indie_insights',
+    bio: 'Your source for hidden gems and independent cinema.',
+    postsCount: 92,
+    followersCount: 6100,
+    followingCount: 430,
   },
 ];
 
-export const SUGGESTED_USERS: User[] = MOCK_USERS.slice(1, 5);
+export const MOCK_COMMENTS: Comment[] = [
+    { id: 'c1', user: MOCK_USERS[1], text: 'This looks amazing!', timestamp: '2h' },
+    { id: 'c2', user: MOCK_USERS[2], text: 'Wow, what a classic!', timestamp: '1h' },
+    { id: 'c3', user: MOCK_USERS[3], text: 'I need to see this!', timestamp: '30m' },
+];
 
 export const MOCK_POSTS: Post[] = [
   {
-    id: 'post-1',
-    user: MOCK_USERS[1],
-    media: 'https://picsum.photos/seed/post-1/600/400',
+    id: 'p1',
+    user: MOCK_USERS[0],
+    media: 'https://picsum.photos/id/10/1080/1080',
     mediaType: 'image',
-    caption: 'Just watched the latest sci-fi blockbuster. Mind-blowing visuals! What did you all think?',
-    likes: 1234,
-    comments: [
-      { id: 'c1', user: MOCK_USERS[2], text: 'Totally agree! The VFX were insane.', timestamp: '1 hour ago', likes: 5, likedByUser: true },
-      { id: 'c2', user: MOCK_USERS[3], text: 'I have to see it this weekend!', timestamp: '30 minutes ago', likes: 2, likedByUser: false },
-    ],
-    timestamp: '2 hours ago',
-    likedByUser: false,
-    savedByUser: true,
+    caption: 'Lost in the city lights. A scene that speaks a thousand words. What movie does this remind you of?',
+    likes: 1245,
+    comments: MOCK_COMMENTS,
+    timestamp: '1d',
+    isSaved: false,
+    isLiked: true,
   },
   {
-    id: 'post-2',
-    user: MOCK_USERS[0],
-    media: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
+    id: 'p2',
+    user: MOCK_USERS[1],
+    media: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4',
     mediaType: 'video',
-    caption: 'Binge-watching this new historical drama. The costumes are incredible.',
-    likes: 567,
+    caption: 'The final season is going to be epic. Can\'t wait to see how it all ends!',
+    likes: 873,
     comments: [],
-    timestamp: '5 hours ago',
-    likedByUser: true,
-    savedByUser: false,
+    timestamp: '2d',
+    isSaved: true,
+    isLiked: false,
   },
-    {
-    id: 'post-3',
-    user: MOCK_USERS[0],
-    media: 'https://picsum.photos/seed/post-3/600/402',
+  {
+    id: 'p3',
+    user: MOCK_USERS[2],
+    media: 'https://picsum.photos/id/22/1080/1350',
     mediaType: 'image',
-    caption: 'My top 5 movies of the year so far. What are yours?',
-    likes: 890,
-    comments: [
-       { id: 'c3', user: MOCK_USERS[2], text: 'Great list!', timestamp: '1 day ago', likes: 10, likedByUser: false },
-    ],
-    timestamp: '1 day ago',
-    likedByUser: false,
-    savedByUser: false,
-    isArchived: true,
-  },
+    caption: 'They don\'t make them like they used to. A true masterpiece from the golden age of Hollywood.',
+    likes: 2300,
+    comments: [MOCK_COMMENTS[1]],
+    timestamp: '3d',
+    isSaved: false,
+    isLiked: false,
+  }
 ];
+
+const storyItems1: StoryItem[] = [
+    { id: 'si1', media: 'https://picsum.photos/id/101/1080/1920', mediaType: 'image', duration: 7000 },
+    { id: 'si2', media: 'https://videos.pexels.com/video-files/2099039/2099039-sd_540_960_30fps.mp4', mediaType: 'video', duration: 15000 },
+];
+
+const storyItems2: StoryItem[] = [
+    { id: 'si3', media: 'https://picsum.photos/id/103/1080/1920', mediaType: 'image', duration: 7000 },
+];
+
 
 export const MOCK_STORIES: Story[] = [
-  {
-    id: 'story-1',
-    user: MOCK_USERS[0],
-    stories: [
-      { id: 's1-1', media: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4', mediaType: 'video', duration: 10000 },
-      { id: 's1-2', media: 'https://picsum.photos/seed/s1-2/401/701', mediaType: 'image', duration: 7000 },
-    ],
-  },
-  // Fix: Explicitly define the return type for the map function to ensure correct type inference for `mediaType`.
-  ...MOCK_USERS.slice(1).map((user, i): Story => ({
-    id: `story-${i+2}`,
-    user: user,
-    stories: [
-      { id: `s${i+2}-1`, media: `https://picsum.photos/seed/s${i+2}-1/400/700`, mediaType: 'image', duration: 5000 },
-      { id: `s${i+2}-2`, media: `https://picsum.photos/seed/s${i+2}-2/401/701`, mediaType: 'image', duration: 7000 },
-    ],
-  }))
+    { id: 's1', user: MOCK_USERS[1], stories: storyItems1 },
+    { id: 's2', user: MOCK_USERS[2], stories: storyItems2 },
+    { id: 's3', user: MOCK_USERS[3], stories: [{id: 'si4', media: 'https://picsum.photos/id/104/1080/1920', mediaType: 'image', duration: 7000}] },
 ];
 
+export const MOCK_HIGHLIGHTS: StoryHighlight[] = [
+    { id: 'h1', title: 'LA Trip', cover: 'https://picsum.photos/id/111/200/200', stories: storyItems1 },
+    { id: 'h2', title: 'Best of 2023', cover: 'https://picsum.photos/id/112/200/200', stories: storyItems2 },
+];
 
 export const MOCK_REELS: Reel[] = [
-  { id: 'reel-1', user: MOCK_USERS[1], video: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4', caption: 'Hilarious movie moments!', likes: 12345, comments: 200 },
-  { id: 'reel-2', user: MOCK_USERS[4], video: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4', caption: 'My quick review of the new thriller.', likes: 8765, comments: 150 },
+    { id: 'r1', user: MOCK_USERS[0], video: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', caption: 'Epic movie moments!', likes: 12000, comments: 45, shares: 120, audio: { title: 'Cinematic Score', artist: 'Composer' } },
+    { id: 'r2', user: MOCK_USERS[1], video: 'https://videos.pexels.com/video-files/2099039/2099039-sd_540_960_30fps.mp4', caption: 'Favorite TV show intros', likes: 8500, comments: 72, shares: 98, audio: { title: 'Catchy Theme', artist: 'TV Band' } },
 ];
 
 export const MOCK_MESSAGES: Message[] = [
-    { id: 'm1', senderId: 'user-2', content: 'Hey! Did you see the new episode?', timestamp: '10:00 AM', type: 'text' },
-    { id: 'm2', senderId: 'user-1', content: 'Not yet! Planning to watch it tonight. No spoilers!', timestamp: '10:01 AM', type: 'text' },
-    { id: 'm3', senderId: 'user-2', content: 'Haha, my lips are sealed. It\'s a good one though!', timestamp: '10:02 AM', type: 'text' },
+    { id: 'm1', senderId: 'u2', content: 'Hey! Did you see the new trailer?', timestamp: '10:30 AM', type: 'text' },
+    { id: 'm2', senderId: 'u1', content: 'I did! It looks so good!', timestamp: '10:31 AM', type: 'text' },
 ];
 
 export const MOCK_CONVERSATIONS: Conversation[] = [
-    { id: 'conv-1', participants: [MOCK_USERS[0], MOCK_USERS[1]], messages: MOCK_MESSAGES, lastMessageSeenId: 'm3' },
-    { id: 'conv-2', participants: [MOCK_USERS[0], MOCK_USERS[2]], messages: [{id: 'm4', senderId: 'user-3', content: 'Let\'s catch up soon!', timestamp: 'Yesterday', type: 'text'}], typingUserIds: ['user-3'] },
-    { id: 'conv-3', participants: [MOCK_USERS[0], MOCK_USERS[3]], messages: [{id: 'm5', senderId: 'user-4', content: 'Can I get your opinion on this trailer?', timestamp: '2 days ago', type: 'text'}] },
+    { id: 'conv1', participants: [MOCK_USERS[0], MOCK_USERS[1]], messages: MOCK_MESSAGES, lastMessageSeenId: 'm2' },
+    { id: 'conv2', participants: [MOCK_USERS[0], MOCK_USERS[2]], messages: [{ id: 'm3', senderId: 'u2', content: 'Let\'s catch a movie this weekend', timestamp: 'Yesterday', type: 'text' }], lastMessageSeenId: 'm3' }
 ];
 
 export const MOCK_ACTIVITIES: Activity[] = [
-    { id: 'a1', type: 'like', user: MOCK_USERS[2], post: MOCK_POSTS[0], timestamp: '1 hour ago', read: false },
-    { id: 'a2', type: 'comment', user: MOCK_USERS[3], post: MOCK_POSTS[0], commentText: 'Can\'t wait to watch it!', timestamp: '2 hours ago', read: false },
-    { id: 'a3', type: 'follow', user: MOCK_USERS[4], timestamp: '5 hours ago', read: true },
-    { id: 'a4', type: 'like', user: MOCK_USERS[1], post: MOCK_POSTS[1], timestamp: '1 day ago', read: true },
+    { id: 'a1', type: 'like', user: MOCK_USERS[1], post: MOCK_POSTS[0], timestamp: '2h' },
+    { id: 'a2', type: 'comment', user: MOCK_USERS[2], post: MOCK_POSTS[0], commentText: 'So cool!', timestamp: '3h' },
+    { id: 'a3', type: 'follow', user: MOCK_USERS[3], timestamp: '5h' },
 ];

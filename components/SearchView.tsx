@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import type { User } from '../types';
-import Icon from './Icon';
+// Fix: Add .ts extension to import to resolve module.
+import type { User } from '../types.ts';
+import Icon from './Icon.tsx';
 
 interface SearchViewProps {
     users: User[];
