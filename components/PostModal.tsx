@@ -1,17 +1,17 @@
-
-
 import React, { useState } from 'react';
 import type { Post } from '../types';
 import Icon from './Icon';
+import VerifiedBadge from './VerifiedBadge';
 
 interface PostModalProps {
   post: Post | null;
   onClose: () => void;
   onLike: (postId: string) => void;
   onComment: (postId: string, commentText: string) => void;
+  onLikeComment: (postId: string, commentId: string) => void;
 }
 
-const PostModal: React.FC<PostModalProps> = ({ post, onClose, onLike, onComment }) => {
+const PostModal: React.FC<PostModalProps> = ({ post, onClose, onLike, onComment, onLikeComment }) => {
   const [commentText, setCommentText] = useState('');
 
   if (!post) return null;
@@ -31,6 +31,10 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose, onLike, onComment 
     return <img src={post.media} alt={`Post by ${post.user.username}`} className="max-h-full max-w-full object-contain" />;
   };
 
+  const likeIcon = post.likedByUser 
+    ? <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    : <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
       <button className="absolute top-4 right-4 text-white" onClick={onClose}>
@@ -44,37 +48,43 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose, onLike, onComment 
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center">
               <img src={post.user.avatar} alt={post.user.username} className="w-10 h-10 rounded-full object-cover mr-3" />
-              <p className="font-semibold text-sm">{post.user.username}</p>
+              <p className="font-semibold text-sm flex items-center">{post.user.username} {post.user.isVerified && <VerifiedBadge className="w-4 h-4 ml-1" />}</p>
             </div>
           </div>
           <div className="flex-1 p-4 overflow-y-auto">
             <div className="flex items-start mb-4">
               <img src={post.user.avatar} alt={post.user.username} className="w-10 h-10 rounded-full object-cover mr-3" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm">
-                  <span className="font-semibold mr-1">{post.user.username}</span>
-                  {post.caption}
+                  <span className="font-semibold mr-1 flex items-center">{post.user.username} {post.user.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</span>
+                  <span className="mt-1 block">{post.caption}</span>
                 </p>
                 <p className="text-xs text-gray-500 mt-1">{post.timestamp}</p>
               </div>
             </div>
             {post.comments.map(comment => (
-              <div key={comment.id} className="flex items-start mb-4">
+              <div key={comment.id} className="flex items-start mb-4 group">
                 <img src={comment.user.avatar} alt={comment.user.username} className="w-10 h-10 rounded-full object-cover mr-3" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm">
-                    <span className="font-semibold mr-1">{comment.user.username}</span>
-                    {comment.text}
+                    <span className="font-semibold mr-1 flex items-center">{comment.user.username} {comment.user.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</span>
+                    <span className="mt-1 block">{comment.text}</span>
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">{comment.timestamp}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-gray-500 mt-1">{comment.timestamp}</p>
+                    {comment.likes > 0 && <p className="text-xs text-gray-500 mt-1 font-semibold">{comment.likes} likes</p>}
+                  </div>
                 </div>
+                <button onClick={() => onLikeComment(post.id, comment.id)} className={`p-1 opacity-0 group-hover:opacity-100 transition-opacity ${comment.likedByUser ? 'text-red-500' : 'text-gray-400'}`}>
+                  <Icon className="w-4 h-4">{comment.likedByUser ? <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />}</Icon>
+                </button>
               </div>
             ))}
           </div>
           <div className="p-4 border-t border-gray-800">
             <div className="flex items-center space-x-4 mb-2">
               <button onClick={() => onLike(post.id)} className={`transition-colors ${post.likedByUser ? 'text-red-600' : 'text-white hover:text-gray-400'}`}>
-                <Icon><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-1.344-.688 15.247 15.247 0 01-1.344.688l-.022.012-.007.003h-.001ac.45.45 0 01.224.194l.428.746A12.986 12.986 0 002.49 18.073a9.703 9.703 0 01-1.423-5.523c0-2.343.886-4.555 2.343-6.21.378-.426.79-.81 1.234-1.139a.75.75 0 01.95.145l.022.033c.074.114.085.25.033.374a13.44 13.44 0 00-1.226 2.165 10.463 10.463 0 00-1.874 5.482.75.75 0 01-1.498-.059 11.963 11.963 0 011.807-5.834 14.98 14.98 0 012.24-4.04C6.182 4.137 7.91 3.5 9.782 3.5h.027a9.75 9.75 0 019.263 11.129 9.75 9.75 0 01-9.263 2.138 9.726 9.726 0 01-2.433-.668 13.725 13.725 0 01-2.288-1.505.75.75 0 01-.1-.965c.09-.234.34-.363.585-.272.246.09.4.332.31.567a12.228 12.228 0 001.947 1.256c.48.26.985.48 1.517.655a8.25 8.25 0 008.25-8.25 8.25 8.25 0 00-8.25-8.25H9.782c-1.536 0-3.02.48-4.25 1.336a13.483 13.483 0 00-3.43 3.653A11.25 11.25 0 00.75 12.553a11.25 11.25 0 002.043 6.95A14.48 14.48 0 0111.5 21.021h.145a.75.75 0 010 1.5h-.145c-2.441 0-4.816-.621-6.95-1.772a.75.75 0 01-.224-1.037l.428-.746a.45.45 0 01.224-.194z" /></Icon>
+                <Icon className="w-7 h-7">{likeIcon}</Icon>
               </button>
             </div>
             <p className="font-semibold text-sm mb-2">{post.likes.toLocaleString()} likes</p>

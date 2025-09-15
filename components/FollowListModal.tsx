@@ -1,6 +1,7 @@
 import React from 'react';
 import type { User } from '../types';
 import Icon from './Icon';
+import VerifiedBadge from './VerifiedBadge';
 
 interface FollowListModalProps {
   listType: 'followers' | 'following';
@@ -30,7 +31,7 @@ const FollowListModal: React.FC<FollowListModalProps> = ({ listType, users, curr
                  <div className="flex items-center gap-3">
                     <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
                     <div>
-                        <p className="font-semibold text-sm">{user.username}</p>
+                        <p className="font-semibold text-sm flex items-center">{user.username} {user.isVerified && <VerifiedBadge className="w-4 h-4 ml-1" />}</p>
                         <p className="text-xs text-gray-400">{user.name}</p>
                     </div>
                 </div>

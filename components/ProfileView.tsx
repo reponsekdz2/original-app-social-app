@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { User, Post } from '../types';
 import Icon from './Icon';
 import ProfileHighlight from './ProfileHighlight';
+import VerifiedBadge from './VerifiedBadge';
 
 interface ProfileViewProps {
   user: User;
@@ -58,7 +59,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, posts, onEditProfile, o
                 </div>
                 <div className="w-full sm:w-3/4 px-4 flex flex-col">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
-                        <h2 className="text-2xl">{user.username}</h2>
+                        <h2 className="text-2xl flex items-center gap-2">{user.username} {user.isVerified && <VerifiedBadge />}</h2>
                         <div className="flex gap-2">
                            <button onClick={onEditProfile} className="bg-gray-800 font-semibold px-4 py-1.5 rounded-md text-sm">Edit Profile</button>
                            <button onClick={onViewArchive} className="bg-gray-800 font-semibold px-4 py-1.5 rounded-md text-sm">View Archive</button>

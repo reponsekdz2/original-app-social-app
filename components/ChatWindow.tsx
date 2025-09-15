@@ -3,6 +3,7 @@ import type { Conversation, User, Message } from '../types';
 import Icon from './Icon';
 import MessageComponent from '../Message';
 import MessageInput from './MessageInput';
+import VerifiedBadge from './VerifiedBadge';
 
 interface ChatWindowProps {
   currentUser: User;
@@ -48,7 +49,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUser, conversation, onSe
              {otherParticipant.isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>}
           </div>
           <div>
-            <p className="font-semibold">{otherParticipant.username}</p>
+            <p className="font-semibold flex items-center">{otherParticipant.username} {otherParticipant.isVerified && <VerifiedBadge className="w-4 h-4 ml-1" />}</p>
              {conversation.typingUserIds?.includes(otherParticipant.id) && <p className="text-xs text-red-400 animate-pulse">typing...</p>}
           </div>
         </div>

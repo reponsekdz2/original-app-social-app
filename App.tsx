@@ -1,7 +1,7 @@
 // Fix: Create the main App component to structure the application.
 import React, { useState } from 'react';
 import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES } from './constants';
-import type { User, Post as PostType, Story as StoryType, View, Reel as ReelType, Conversation, StoryItem } from './types';
+import type { User, Post as PostType, Story as StoryType, View, Reel as ReelType, Conversation, StoryItem, Comment } from './types';
 
 // Import views
 import HomeView from './components/HomeView';
@@ -76,10 +76,26 @@ const App: React.FC = () => {
     };
 
     const handleComment = (postId: string, commentText: string) => {
-        const newComment = { id: `c-${Date.now()}`, user: currentUser, text: commentText, timestamp: 'Just now' };
+        const newComment: Comment = { id: `c-${Date.now()}`, user: currentUser, text: commentText, timestamp: 'Just now', likes: 0, likedByUser: false };
         const updatePost = (p: PostType) => ({ ...p, comments: [...p.comments, newComment] });
         setPosts(posts.map(p => p.id === postId ? updatePost(p) : p));
         if (viewingPost?.id === postId) {
+            setViewingPost(p => p ? updatePost(p) : null);
+        }
+    };
+
+    const handleLikeComment = (postId: string, commentId: string) => {
+        const updatePost = (p: PostType) => {
+            const updatedComments = p.comments.map(c => {
+                if (c.id === commentId) {
+                    return { ...c, likedByUser: !c.likedByUser, likes: c.likedByUser ? c.likes - 1 : c.likes + 1 };
+                }
+                return c;
+            });
+            return { ...p, comments: updatedComments };
+        };
+        setPosts(posts.map(p => p.id === postId ? updatePost(p) : p));
+         if (viewingPost?.id === postId) {
             setViewingPost(p => p ? updatePost(p) : null);
         }
     };
@@ -224,6 +240,8 @@ const App: React.FC = () => {
                 return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={handleViewStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
         }
     };
+
+    const showSidebar = ['home', 'explore', 'reels', 'premium'].includes(currentView);
     
     return (
         <div className="bg-black text-white min-h-screen font-sans">
@@ -251,7 +269,7 @@ const App: React.FC = () => {
                             {renderView()}
                         </div>
                         <div className="hidden lg:block w-[320px] ml-8">
-                           {currentView === 'home' && <Sidebar currentUser={currentUser} onSwitchAccount={() => setAccountSwitcherOpen(true)} />}
+                           {showSidebar && <Sidebar currentUser={currentUser} onSwitchAccount={() => setAccountSwitcherOpen(true)} />}
                         </div>
                     </div>
                 </main>
@@ -265,7 +283,7 @@ const App: React.FC = () => {
             />
 
             {/* Modals */}
-            {viewingPost && <PostModal post={viewingPost} onClose={() => setViewingPost(null)} onLike={handleLike} onComment={handleComment} />}
+            {viewingPost && <PostModal post={viewingPost} onClose={() => setViewingPost(null)} onLike={handleLike} onComment={handleComment} onLikeComment={handleLikeComment} />}
             {isCreateModalOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreateModalOpen(false)} onCreatePost={handleCreatePost} />}
             {isCreateStoryModalOpen && <CreateStoryModal onClose={() => setCreateStoryModalOpen(false)} onCreateStory={handleCreateStory} />}
             {viewingStoryData && <StoryViewer stories={viewingStoryData.stories} startIndex={viewingStoryData.startIndex} onClose={() => setViewingStoryData(null)} />}

@@ -10,6 +10,7 @@ export interface User {
   highlights?: StoryHighlight[];
   isOnline?: boolean;
   isPremium?: boolean;
+  isVerified?: boolean;
 }
 
 export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'saved' | 'settings' | 'create' | 'premium' | 'archive';
@@ -19,10 +20,12 @@ export interface Comment {
   user: User;
   text: string;
   timestamp: string;
+  likes: number;
+  likedByUser: boolean;
 }
 
 export interface Post {
-  id: string;
+  id:string;
   user: User;
   media: string;
   mediaType: 'image' | 'video';
