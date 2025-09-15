@@ -11,8 +11,8 @@ interface SavedViewProps {
 const SavedView: React.FC<SavedViewProps> = ({ posts, onViewPost }) => {
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Saved Posts</h2>
-      <p className="text-xs text-gray-400 mb-6">Only you can see what you've saved</p>
+      <h2 className="text-xl font-bold mb-4">Bookmarks</h2>
+      <p className="text-xs text-gray-400 mb-6">Only you can see what you've bookmarked. Use this space to save posts you want to come back to later.</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 md:gap-4">
         {posts.map((post) => {
           const firstMedia = post.media[0];

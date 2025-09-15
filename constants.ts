@@ -191,3 +191,12 @@ export const MOCK_FEED_ACTIVITIES: FeedActivity[] = [
   { id: 'fa2', user: MOCK_USERS[3], action: 'followed', targetUser: MOCK_USERS[1], timestamp: '15m' },
   { id: 'fa3', user: MOCK_USERS[1], action: 'liked', targetPost: MOCK_POSTS[2], timestamp: '30m' },
 ];
+
+export const MOCK_TRENDING_TOPICS: string[] = [
+    '#TheWitcher',
+    '#SquidGame2',
+    '#ActionMovies',
+    '#NetflixOriginal',
+    '#Documentaries',
+    '#ComedySpecials',
+];

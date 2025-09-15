@@ -1,5 +1,5 @@
 import React from 'react';
-import Icon from './Icon';
+import Icon from './Icon.tsx';
 
 interface VerifiedBadgeProps {
   className?: string;
@@ -8,8 +8,8 @@ interface VerifiedBadgeProps {
 const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({ className = 'w-5 h-5' }) => {
   return (
     <span title="Verified account" className="inline-block flex-shrink-0">
-        <Icon className={`${className} text-red-500`} fill="currentColor">
-            <path fillRule="evenodd" d="M12.016 2.002a2.413 2.413 0 012.368 1.125l.89 1.802.129.26a1.18 1.18 0 00.916.664l2.002.288a2.413 2.413 0 011.37 4.09l-1.45 1.408-.188.182a1.18 1.18 0 000 1.668l.188.182 1.45 1.408a2.413 2.413 0 01-1.37 4.09l-2.002.288a1.18 1.18 0 00-.916.664l-.129.26-.89 1.802a2.413 2.413 0 01-4.736 0l-.89-1.802-.129-.26a1.18 1.18 0 00-.916-.664l-2.002-.288a2.413 2.413 0 01-1.37-4.09l1.45-1.408.188-.182a1.18 1.18 0 000-1.668l-.188-.182-1.45-1.408a2.413 2.413 0 011.37-4.09l2.002-.288a1.18 1.18 0 00.916-.664l.129-.26.89-1.802A2.413 2.413 0 0112.016 2.002zM10.87 13.125a.75.75 0 01-1.06-1.06l1.72-1.72-1.72-1.72a.75.75 0 011.06-1.06l1.72 1.72 1.72-1.72a.75.75 0 111.06 1.06l-1.72 1.72 1.72 1.72a.75.75 0 11-1.06 1.06l-1.72-1.72-1.72 1.72z" clipRule="evenodd" />
+        <Icon className={`${className} text-blue-500`} fill="currentColor">
+            <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
         </Icon>
     </span>
   );

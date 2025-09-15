@@ -1,7 +1,8 @@
 // Fix: Create the SettingsView component.
-import React, { useState } from 'react';
-import Icon from './Icon';
-import ToggleSwitch from './ToggleSwitch';
+import React from 'react';
+import Icon from './Icon.tsx';
+import ToggleSwitch from './ToggleSwitch.tsx';
+import type { NotificationSettings } from '../types.ts';
 
 interface SettingsViewProps {
   onGetVerified: () => void;
@@ -11,6 +12,8 @@ interface SettingsViewProps {
   onTogglePrivateAccount: (enabled: boolean) => void;
   isTwoFactorEnabled: boolean;
   onToggleTwoFactor: (enabled: boolean) => void;
+  notificationSettings: NotificationSettings;
+  onUpdateNotificationSettings: (setting: keyof NotificationSettings, value: boolean) => void;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ 
@@ -20,12 +23,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   isPrivateAccount,
   onTogglePrivateAccount,
   isTwoFactorEnabled,
-  onToggleTwoFactor
+  onToggleTwoFactor,
+  notificationSettings,
+  onUpdateNotificationSettings,
 }) => {
-  const [likeNotifications, setLikeNotifications] = useState(true);
-  const [commentNotifications, setCommentNotifications] = useState(true);
-  const [followNotifications, setFollowNotifications] = useState(false);
-
   const accountItems = [
     { label: 'Edit Profile', action: onEditProfile, icon: <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /> },
     { label: 'Get Verified', action: onGetVerified, icon: <path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12c0 .377-.042.748-.122 1.112A4.5 4.5 0 0119.5 17.25h-.513c-1.386 0-2.655.57-3.585 1.506a4.5 4.5 0 01-4.793 0 4.5 4.5 0 01-3.586-1.506h-.513a4.5 4.5 0 01-2.25-4.138c-.08-.364-.122-.735-.122-1.112a4.49 4.49 0 011.549-3.397 4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.498-1.307zM11.25 10.5a.75.75 0 00-1.5 0v.001a.75.75 0 001.5 0v-.001zm1.85-1.04a.75.75 0 10-1.2 1.29l-1.01 1.01a.75.75 0 101.06 1.06l1.01-1.01a.75.75 0 10-1.29-1.2l-.22.22a.75.75 0 001.06 1.06l.22-.22a.75.75 0 00-1.06-1.06l-.22.22a.75.75 0 001.06 1.06l1.22-1.22a.75.75 0 00-1.06-1.06l-1.22 1.22a.75.75 0 001.06 1.06l.22-.22z" clipRule="evenodd" /> },
@@ -89,21 +90,21 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon>
                <span>Likes</span>
             </div>
-            <ToggleSwitch enabled={likeNotifications} setEnabled={setLikeNotifications} />
+            <ToggleSwitch enabled={notificationSettings.likes} setEnabled={(val) => onUpdateNotificationSettings('likes', val)} />
           </div>
            <div className="w-full text-left p-3 rounded-lg flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
                <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.068.157 2.148.279 3.238.364.49.03.984.067 1.483.102.72.056 1.45.099 2.18.138 1.491.079 2.996.136 4.502.157 1.506.021 3.012-.036 4.502-.157.73-.039 1.46-.082 2.18-.138.499-.035.993-.071 1.483-.102.787-.058 1.575-.12 2.365-.194a3.003 3.003 0 002.707-3.227V6.741c0-1.6-1.123-2.994-2.707-3.227A48.344 48.344 0 0012 3c-2.392 0-4.744.175-7.043.514A3.003 3.003 0 002.25 6.741v6.018z" /></Icon>
                <span>Comments</span>
             </div>
-            <ToggleSwitch enabled={commentNotifications} setEnabled={setCommentNotifications} />
+            <ToggleSwitch enabled={notificationSettings.comments} setEnabled={(val) => onUpdateNotificationSettings('comments', val)} />
           </div>
            <div className="w-full text-left p-3 rounded-lg flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
                <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.962a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></Icon>
                <span>New Followers</span>
             </div>
-            <ToggleSwitch enabled={followNotifications} setEnabled={setFollowNotifications} />
+            <ToggleSwitch enabled={notificationSettings.follows} setEnabled={(val) => onUpdateNotificationSettings('follows', val)} />
           </div>
         </div>
 

@@ -41,14 +41,14 @@ const HomeView: React.FC<HomeViewProps> = ({
       <div className="py-4 border-b border-gray-800">
         <div className="flex space-x-4 overflow-x-auto scrollbar-hide px-4">
             <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={onCreateStory}>
-              <div className="relative group w-20 h-28 flex flex-col items-center justify-center">
+              <div className="relative group w-28 h-40 flex flex-col items-center justify-center">
                 <img src={currentUser.avatar} alt="Your story" className="w-full h-full object-cover rounded-xl" />
                 <div className="absolute inset-0 bg-black/30 rounded-xl"></div>
                 <div className="absolute bottom-2">
                     <Icon className="w-8 h-8 text-white bg-red-600 rounded-full border-2 border-black"><path d="M12 4.5v15m7.5-7.5h-15" /></Icon>
                 </div>
               </div>
-               <p className="text-xs w-20 truncate text-center">Your Story</p>
+               <p className="text-xs w-28 truncate text-center">Your Story</p>
             </div>
           {stories.map(story => (
             <StoryBubble key={story.id} story={story} onView={onViewStory} />

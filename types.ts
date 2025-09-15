@@ -16,6 +16,12 @@ export interface User {
   highlights?: StoryHighlight[];
 }
 
+export interface NotificationSettings {
+  likes: boolean;
+  comments: boolean;
+  follows: boolean;
+}
+
 export interface MediaItem {
     url: string;
     type: 'image' | 'video';

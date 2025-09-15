@@ -66,12 +66,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   
   const AddNewHighlight: React.FC = () => (
      <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0">
-      <div className="relative group w-20 h-28 flex flex-col items-center justify-center">
+      <div className="relative group w-28 h-40 flex flex-col items-center justify-center">
         <div className="w-full h-full rounded-xl bg-gray-800/50 border-2 border-dashed border-gray-600 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700/50 hover:border-gray-500 transition-colors">
             <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></Icon>
         </div>
       </div>
-      <p className="text-xs w-20 truncate text-center">Add New</p>
+      <p className="text-xs w-28 truncate text-center">Add New</p>
     </div>
   );
 
