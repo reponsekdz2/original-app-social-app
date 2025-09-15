@@ -107,14 +107,26 @@ export const MOCK_POSTS: Post[] = [
   },
 ];
 
-export const MOCK_STORIES: Story[] = MOCK_USERS.map((user, i) => ({
-  id: `story-${i+1}`,
-  user: user,
-  stories: [
-    { id: `s${i+1}-1`, image: `https://picsum.photos/seed/s${i+1}-1/400/700`, duration: 5000 },
-    { id: `s${i+1}-2`, image: `https://picsum.photos/seed/s${i+1}-2/401/701`, duration: 7000 },
-  ],
-}));
+export const MOCK_STORIES: Story[] = [
+  {
+    id: 'story-1',
+    user: MOCK_USERS[0],
+    stories: [
+      { id: 's1-1', media: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4', mediaType: 'video', duration: 10000 },
+      { id: 's1-2', media: 'https://picsum.photos/seed/s1-2/401/701', mediaType: 'image', duration: 7000 },
+    ],
+  },
+  // Fix: Explicitly define the return type for the map function to ensure correct type inference for `mediaType`.
+  ...MOCK_USERS.slice(1).map((user, i): Story => ({
+    id: `story-${i+2}`,
+    user: user,
+    stories: [
+      { id: `s${i+2}-1`, media: `https://picsum.photos/seed/s${i+2}-1/400/700`, mediaType: 'image', duration: 5000 },
+      { id: `s${i+2}-2`, media: `https://picsum.photos/seed/s${i+2}-2/401/701`, mediaType: 'image', duration: 7000 },
+    ],
+  }))
+];
+
 
 export const MOCK_REELS: Reel[] = [
   { id: 'reel-1', user: MOCK_USERS[1], video: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4', caption: 'Hilarious movie moments!', likes: 12345, comments: 200 },

@@ -37,7 +37,8 @@ export interface Post {
 
 export interface StoryItem {
   id: string;
-  image: string;
+  media: string;
+  mediaType: 'image' | 'video';
   duration: number; // in ms
 }
 

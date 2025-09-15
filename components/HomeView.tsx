@@ -45,7 +45,7 @@ const HomeView: React.FC<HomeViewProps> = ({ posts, stories, currentUser, onLike
       <div className="md:hidden">
         <FeedToggle />
       </div>
-      <div className="p-4 md:p-0 md:pt-8">
+      <div className="p-4 md:px-4 md:pt-8">
         <div className="flex space-x-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
           <CreateStoryBubble />
           {stories.map(story => (

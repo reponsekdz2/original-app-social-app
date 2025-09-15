@@ -55,7 +55,7 @@ const App: React.FC = () => {
 
     const [currentView, setCurrentView] = useState<View>('home');
     const [viewingPost, setViewingPost] = useState<PostType | null>(null);
-    const [viewingStory, setViewingStory] = useState<StoryType | null>(null);
+    const [viewingStoryData, setViewingStoryData] = useState<{ stories: StoryType[], startIndex: number } | null>(null);
     const [sharingPost, setSharingPost] = useState<PostType | null>(null);
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
@@ -81,6 +81,13 @@ const App: React.FC = () => {
         setPosts(posts.map(p => p.id === postId ? updatePost(p) : p));
         if (viewingPost?.id === postId) {
             setViewingPost(p => p ? updatePost(p) : null);
+        }
+    };
+    
+    const handleViewStory = (storyToView: StoryType) => {
+        const startIndex = stories.findIndex(s => s.id === storyToView.id);
+        if (startIndex > -1) {
+            setViewingStoryData({ stories, startIndex });
         }
     };
 
@@ -188,7 +195,7 @@ const App: React.FC = () => {
     const renderView = () => {
         switch (currentView) {
             case 'home':
-                return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
+                return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={handleViewStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
             case 'explore':
                 return <ExploreView posts={posts} />;
             case 'reels':
@@ -214,7 +221,7 @@ const App: React.FC = () => {
             case 'archive':
                 return <ArchiveView posts={posts.filter(p => p.user.id === currentUser.id && p.isArchived)} />;
             default:
-                return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={setViewingStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
+                return <HomeView posts={posts} stories={stories} onLike={handleLike} onComment={handleComment} onViewPost={setViewingPost} onViewStory={handleViewStory} onSave={handleSave} onShare={setSharingPost} onCreateStory={() => setCreateStoryModalOpen(true)} currentUser={currentUser} />;
         }
     };
     
@@ -261,7 +268,7 @@ const App: React.FC = () => {
             {viewingPost && <PostModal post={viewingPost} onClose={() => setViewingPost(null)} onLike={handleLike} onComment={handleComment} />}
             {isCreateModalOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreateModalOpen(false)} onCreatePost={handleCreatePost} />}
             {isCreateStoryModalOpen && <CreateStoryModal onClose={() => setCreateStoryModalOpen(false)} onCreateStory={handleCreateStory} />}
-            {viewingStory && <StoryViewer story={viewingStory} onClose={() => setViewingStory(null)} />}
+            {viewingStoryData && <StoryViewer stories={viewingStoryData.stories} startIndex={viewingStoryData.startIndex} onClose={() => setViewingStoryData(null)} />}
             {isAccountSwitcherOpen && <AccountSwitcherModal users={users} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchUser={handleSwitchAccount} />}
             {sharingPost && <ShareModal post={sharingPost} onClose={() => setSharingPost(null)} />}
             {isSearchVisible && <SearchView users={users} onClose={() => setSearchVisible(false)} />}
