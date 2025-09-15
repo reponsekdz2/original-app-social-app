@@ -37,6 +37,8 @@ import NewSupportRequestModal from './components/NewSupportRequestModal.tsx';
 import UnfollowModal from './components/UnfollowModal.tsx';
 import ReelCommentsModal from './components/ReelCommentsModal.tsx';
 import CreateHighlightModal from './components/CreateHighlightModal.tsx';
+import TrendsModal from './components/TrendsModal.tsx';
+import SuggestionsModal from './components/SuggestionsModal.tsx';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
@@ -62,6 +64,8 @@ const App: React.FC = () => {
   const [isEditProfileModalOpen, setEditProfileModalOpen] = useState(false);
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
   const [isNewSupportRequestModalOpen, setNewSupportRequestModalOpen] = useState(false);
+  const [isTrendsModalOpen, setTrendsModalOpen] = useState(false);
+  const [isSuggestionsModalOpen, setSuggestionsModalOpen] = useState(false);
   const [followListModal, setFollowListModal] = useState<{ title: 'Followers' | 'Following', users: User[] } | null>(null);
   const [likesModalUsers, setLikesModalUsers] = useState<User[] | null>(null);
   const [userToUnfollow, setUserToUnfollow] = useState<User | null>(null);
@@ -93,6 +97,7 @@ const App: React.FC = () => {
       handleNavigate('profile', user);
       setSearchVisible(false);
       if (likesModalUsers) setLikesModalUsers(null);
+      if (isSuggestionsModalOpen) setSuggestionsModalOpen(false);
   };
   
   const handleFollow = (userToFollow: User) => {
@@ -493,6 +498,8 @@ const App: React.FC = () => {
                     onSwitchAccount={() => setAccountSwitcherOpen(true)}
                     onNavigate={handleNavigate}
                     onShowSearch={() => setSearchVisible(true)}
+                    onShowMoreTrends={() => setTrendsModalOpen(true)}
+                    onShowMoreSuggestions={() => setSuggestionsModalOpen(true)}
                   />
               </div>
         </div>
@@ -524,6 +531,8 @@ const App: React.FC = () => {
       {userToUnfollow && <UnfollowModal user={userToUnfollow} onCancel={() => setUserToUnfollow(null)} onConfirm={() => performUnfollow(userToUnfollow.id)} />}
       {viewedReelForComments && <ReelCommentsModal reel={viewedReelForComments} currentUser={currentUser} onClose={() => setViewedReelForComments(null)} onComment={handleCommentOnReel} onViewProfile={handleViewProfile} />}
       {isCreateHighlightModalOpen && <CreateHighlightModal userStories={getUserStories(currentUser)} onClose={() => setCreateHighlightModalOpen(false)} onCreate={handleCreateHighlight} />}
+      {isTrendsModalOpen && <TrendsModal topics={MOCK_TRENDING_TOPICS} onClose={() => setTrendsModalOpen(false)} />}
+      {isSuggestionsModalOpen && <SuggestionsModal users={users.filter(u => u.id !== currentUser.id && !currentUser.following.some(f => f.id === u.id))} currentUser={currentUser} onClose={() => setSuggestionsModalOpen(false)} onViewProfile={handleViewProfile} onFollow={handleFollow} onUnfollow={handleUnfollow} />}
     </div>
   );
 }

@@ -10,6 +10,8 @@ interface SidebarProps {
   onSwitchAccount: () => void;
   onNavigate: (view: View) => void;
   onShowSearch: () => void;
+  onShowMoreTrends: () => void;
+  onShowMoreSuggestions: () => void;
 }
 
 const Card: React.FC<{ title: string, children: React.ReactNode, action?: { label: string, handler: () => void } }> = ({ title, children, action }) => (
@@ -26,7 +28,7 @@ const Card: React.FC<{ title: string, children: React.ReactNode, action?: { labe
     </div>
 );
 
-const Sidebar: React.FC<SidebarProps> = ({ currentUser, users, trendingTopics, onViewProfile, onSwitchAccount, onNavigate, onShowSearch }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentUser, users, trendingTopics, onViewProfile, onSwitchAccount, onNavigate, onShowSearch, onShowMoreTrends, onShowMoreSuggestions }) => {
   const suggestedUsers = users.filter(u => u.id !== currentUser.id && !currentUser.following.some(f => f.id === u.id)).slice(0, 3);
 
   return (
@@ -56,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, users, trendingTopics, o
                  </Card>
             )}
 
-            <Card title="Trends for you" action={{ label: 'Show more', handler: () => {} }}>
+            <Card title="Trends for you" action={{ label: 'Show more', handler: onShowMoreTrends }}>
                 <div className="space-y-4">
                     {trendingTopics.slice(0, 4).map((topic, index) => (
                         <div key={index} className="cursor-pointer group leading-tight">
@@ -68,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, users, trendingTopics, o
                 </div>
             </Card>
 
-            <Card title="Who to follow" action={{ label: 'Show more', handler: () => {} }}>
+            <Card title="Who to follow" action={{ label: 'Show more', handler: onShowMoreSuggestions }}>
                 <div className="space-y-4">
                     {suggestedUsers.map(user => (
                         <div key={user.id} className="flex items-center justify-between">
