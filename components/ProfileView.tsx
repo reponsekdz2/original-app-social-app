@@ -1,23 +1,42 @@
 import React, { useState } from 'react';
-import type { User, Post, StoryHighlight } from '../types.ts';
+import type { User, Post, StoryHighlight, Post as PostType } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
-import HighlightBubble from './HighlightBubble.tsx';
+import ProfileHighlight from './ProfileHighlight.tsx';
 
 interface ProfileViewProps {
   user: User;
   posts: Post[];
+  isCurrentUser: boolean;
+  onEditProfile: () => void;
+  onViewArchive: () => void;
+  onFollow: (userId: string) => void;
+  onShowFollowers: (users: User[]) => void;
+  onShowFollowing: (users: User[]) => void;
+  onEditPost: (post: PostType) => void;
+  onViewPost: (post: PostType) => void;
 }
 
 type ProfileTab = 'posts' | 'reels' | 'tagged';
 
-const ProfileView: React.FC<ProfileViewProps> = ({ user, posts }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ 
+    user, 
+    posts, 
+    isCurrentUser, 
+    onEditProfile, 
+    onViewArchive,
+    onFollow,
+    onShowFollowers,
+    onShowFollowing,
+    onEditPost,
+    onViewPost
+}) => {
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
 
   const stats = [
-    { label: 'posts', value: user.postsCount },
-    { label: 'followers', value: user.followersCount },
-    { label: 'following', value: user.followingCount },
+    { label: 'posts', value: posts.length, action: () => {} },
+    { label: 'followers', value: user.followers.length, action: () => onShowFollowers(user.followers) },
+    { label: 'following', value: user.following.length, action: () => onShowFollowing(user.following) },
   ];
 
   const tabItems = [
@@ -29,47 +48,74 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, posts }) => {
   const renderContent = () => {
      return (
         <div className="grid grid-cols-3 gap-1">
-            {posts.map(post => (
-                 <div key={post.id} className="relative aspect-square group cursor-pointer">
-                    {post.mediaType === 'video' ? (
-                        <video src={post.media} className="w-full h-full object-cover" />
+            {posts.map(post => {
+              const firstMedia = post.media[0];
+              return (
+                 <div key={post.id} className="relative aspect-square group cursor-pointer" onClick={() => onViewPost(post)}>
+                    {firstMedia.type === 'video' ? (
+                        <video src={firstMedia.url} className="w-full h-full object-cover" />
                     ) : (
-                        <img src={post.media} alt="Post" className="w-full h-full object-cover" />
+                        <img src={firstMedia.url} alt="Post" className="w-full h-full object-cover" />
                     )}
                  </div>
-            ))}
+              )
+            })}
         </div>
      );
   };
+  
+  const AddNewHighlight: React.FC = () => (
+     <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0">
+      <div className="relative group w-20 h-28 flex flex-col items-center justify-center">
+        <div className="w-full h-full rounded-xl bg-gray-800/50 border-2 border-dashed border-gray-600 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700/50 hover:border-gray-500 transition-colors">
+            <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></Icon>
+        </div>
+      </div>
+      <p className="text-xs w-20 truncate text-center">Add New</p>
+    </div>
+  );
 
   return (
     <div className="pb-16 md:pb-0">
       <header className="p-4">
         <div className="flex items-center">
             <img src={user.avatar} alt={user.username} className="w-20 h-20 md:w-36 md:h-36 rounded-full object-cover" />
-            <div className="ml-6 md:ml-16">
+            <div className="ml-6 md:ml-10 flex-1">
                 <div className="flex items-center gap-4 mb-4">
                     <h1 className="text-2xl">{user.username}</h1>
                     {user.isVerified && <VerifiedBadge />}
-                    <button className="bg-gray-800 hover:bg-gray-700 text-sm font-semibold py-1 px-4 rounded-md">Edit Profile</button>
                 </div>
+                 <div className="flex items-center gap-2 mb-4">
+                     {isCurrentUser ? (
+                        <>
+                            <button onClick={onEditProfile} className="flex-1 bg-gray-800 hover:bg-gray-700 text-sm font-semibold py-1.5 px-4 rounded-md">Edit Profile</button>
+                            <button onClick={onViewArchive} className="flex-1 bg-gray-800 hover:bg-gray-700 text-sm font-semibold py-1.5 px-4 rounded-md">View Archive</button>
+                        </>
+                     ) : (
+                        <>
+                           <button onClick={() => onFollow(user.id)} className="flex-1 bg-red-600 hover:bg-red-700 text-sm font-semibold py-1.5 px-4 rounded-md">Follow</button>
+                           <button className="flex-1 bg-gray-800 hover:bg-gray-700 text-sm font-semibold py-1.5 px-4 rounded-md">Message</button>
+                        </>
+                     )}
+                 </div>
                 <div className="hidden md:flex items-center gap-8 mb-4">
                     {stats.map(stat => (
-                        <p key={stat.label}><span className="font-semibold">{stat.value.toLocaleString()}</span> {stat.label}</p>
+                        <button key={stat.label} onClick={stat.action} className="text-left"><span className="font-semibold">{stat.value.toLocaleString()}</span> {stat.label}</button>
                     ))}
                 </div>
                 <div>
-                    <p className="font-semibold">{user.username}</p>
-                    <p className="text-gray-400 whitespace-pre-line">{user.bio}</p>
+                    <p className="font-semibold text-sm">{user.name}</p>
+                    <p className="text-gray-400 whitespace-pre-line text-sm">{user.bio}</p>
+                    {user.website && <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-red-400 font-semibold text-sm">{user.website}</a>}
                 </div>
             </div>
         </div>
          <div className="flex md:hidden items-center justify-around border-t border-b border-gray-800 mt-4 py-2">
             {stats.map(stat => (
-                <div key={stat.label} className="text-center">
+                <button key={stat.label} onClick={stat.action} className="text-center">
                     <p className="font-semibold">{stat.value.toLocaleString()}</p>
                     <p className="text-gray-400 text-sm">{stat.label}</p>
-                </div>
+                </button>
             ))}
         </div>
       </header>
@@ -77,7 +123,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, posts }) => {
       {user.highlights && user.highlights.length > 0 && (
         <div className="px-4 py-2">
             <div className="flex space-x-4">
-                {user.highlights.map(h => <HighlightBubble key={h.id} highlight={h} />)}
+                {user.highlights.map(h => <ProfileHighlight key={h.id} highlight={h} />)}
+                {isCurrentUser && <AddNewHighlight />}
             </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 // Fix: Create Reel component.
-import React, { useRef, useState } from 'react';
+// Fix: Add useEffect to the import from React.
+import React, { useRef, useState, useEffect } from 'react';
 // Fix: Add .ts extension to import to resolve module.
 import type { Reel as ReelType } from '../types.ts';
 import Icon from './Icon.tsx';

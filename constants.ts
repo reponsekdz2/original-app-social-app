@@ -1,73 +1,94 @@
-import type { User, Post, Story, StoryItem, Comment, Reel, Conversation, Message, Activity, StoryHighlight } from './types.ts';
+import type { User, Post, Story, StoryItem, Comment, Reel, Conversation, Message, Activity, StoryHighlight, SponsoredContent, FeedActivity } from './types.ts';
 
-export const MOCK_USERS: User[] = [
-  {
+// Base users - defining them first
+const u1: User = {
     id: 'u1',
     username: 'movie_magic',
+    name: 'Alex Rivera',
     avatar: 'https://i.pravatar.cc/150?u=movie_magic',
     isVerified: true,
     isPremium: true,
     bio: 'Bringing you the best of cinema. 🎬\nWriter, Director, Popcorn Enthusiast.',
-    postsCount: 134,
-    followersCount: 12580,
-    followingCount: 210,
-  },
-  {
+    website: 'https://alexrivera.film',
+    gender: 'Prefer not to say',
+    followers: [],
+    following: [],
+};
+
+const u2: User = {
     id: 'u2',
     username: 'series_scout',
+    name: 'Brenda Jones',
     avatar: 'https://i.pravatar.cc/150?u=series_scout',
     bio: 'Binge-watching my way through life. What should I watch next?',
-    postsCount: 58,
-    followersCount: 8400,
-    followingCount: 502,
-  },
-  {
+    followers: [],
+    following: [],
+};
+
+const u3: User = {
     id: 'u3',
     username: 'retro_reels',
+    name: 'Casey Lee',
     avatar: 'https://i.pravatar.cc/150?u=retro_reels',
     isVerified: true,
     bio: 'Celebrating classic films and vintage vibes. 🎞️',
-    postsCount: 450,
-    followersCount: 22300,
-    followingCount: 88,
-  },
-  {
+    followers: [],
+    following: [],
+};
+
+const u4: User = {
     id: 'u4',
     username: 'indie_insights',
+    name: 'Dana Smith',
     avatar: 'https://i.pravatar.cc/150?u=indie_insights',
     bio: 'Your source for hidden gems and independent cinema.',
-    postsCount: 92,
-    followersCount: 6100,
-    followingCount: 430,
-  },
-];
+    followers: [],
+    following: [],
+};
+
+// Populate followers/following lists
+u1.followers = [u2, u3, u4];
+u1.following = [u2, u3];
+u2.followers = [u1];
+u2.following = [u1, u3, u4];
+u3.followers = [u1, u2];
+u3.following = [u1, u2];
+u4.followers = [u2];
+u4.following = [u1, u2];
+
+export const MOCK_USERS: User[] = [u1, u2, u3, u4];
 
 export const MOCK_COMMENTS: Comment[] = [
-    { id: 'c1', user: MOCK_USERS[1], text: 'This looks amazing!', timestamp: '2h' },
-    { id: 'c2', user: MOCK_USERS[2], text: 'Wow, what a classic!', timestamp: '1h' },
-    { id: 'c3', user: MOCK_USERS[3], text: 'I need to see this!', timestamp: '30m' },
+    { id: 'c1', user: MOCK_USERS[1], text: 'This looks amazing!', timestamp: '2h', likes: 15, likedByUser: true },
+    { id: 'c2', user: MOCK_USERS[2], text: 'Wow, what a classic!', timestamp: '1h', likes: 5, likedByUser: false },
+    { id: 'c3', user: MOCK_USERS[3], text: 'I need to see this!', timestamp: '30m', likes: 8, likedByUser: false },
 ];
 
 export const MOCK_POSTS: Post[] = [
   {
     id: 'p1',
     user: MOCK_USERS[0],
-    media: 'https://picsum.photos/id/10/1080/1080',
-    mediaType: 'image',
-    caption: 'Lost in the city lights. A scene that speaks a thousand words. What movie does this remind you of?',
+    media: [
+        { url: 'https://picsum.photos/id/10/1080/1080', type: 'image' },
+        { url: 'https://picsum.photos/id/11/1080/1080', type: 'image' },
+        { url: 'https://picsum.photos/id/12/1080/1080', type: 'image' },
+    ],
+    caption: 'Lost in the city lights. A selection of scenes that speak a thousand words. What movies do these remind you of?',
     likes: 1245,
+    likedBy: [u2, u3],
     comments: MOCK_COMMENTS,
     timestamp: '1d',
     isSaved: false,
     isLiked: true,
+    isArchived: false,
   },
   {
     id: 'p2',
     user: MOCK_USERS[1],
-    media: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4',
-    mediaType: 'video',
+    media: [{ url: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', type: 'video' }],
     caption: 'The final season is going to be epic. Can\'t wait to see how it all ends!',
     likes: 873,
+    likedBy: [u1, u4],
     comments: [],
     timestamp: '2d',
     isSaved: true,
@@ -76,14 +97,15 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p3',
     user: MOCK_USERS[2],
-    media: 'https://picsum.photos/id/22/1080/1350',
-    mediaType: 'image',
+    media: [{ url: 'https://picsum.photos/id/22/1080/1350', type: 'image' }],
     caption: 'They don\'t make them like they used to. A true masterpiece from the golden age of Hollywood.',
     likes: 2300,
+    likedBy: [u1, u2, u4],
     comments: [MOCK_COMMENTS[1]],
     timestamp: '3d',
     isSaved: false,
     isLiked: false,
+    isArchived: true,
   }
 ];
 
@@ -96,17 +118,30 @@ const storyItems2: StoryItem[] = [
     { id: 'si3', media: 'https://picsum.photos/id/103/1080/1920', mediaType: 'image', duration: 7000 },
 ];
 
-
 export const MOCK_STORIES: Story[] = [
     { id: 's1', user: MOCK_USERS[1], stories: storyItems1 },
     { id: 's2', user: MOCK_USERS[2], stories: storyItems2 },
-    { id: 's3', user: MOCK_USERS[3], stories: [{id: 'si4', media: 'https://picsum.photos/id/104/1080/1920', mediaType: 'image', duration: 7000}] },
-];
+    // Fix: Add type assertion to ensure the inline story item array matches the StoryItem[] type.
+    { id: 's3', user: MOCK_USERS[3], stories: [{id: 'si4', media: 'https://picsum.photos/id/104/1080/1920', mediaType: 'image', duration: 7000}] as StoryItem[] },
+].map((story): Story => ({ // Fix: Explicitly define the return type for map.
+  ...story,
+  user: {
+    ...story.user,
+    stories: story,
+  },
+}));
+
+MOCK_USERS[1].stories = MOCK_STORIES[0];
+MOCK_USERS[2].stories = MOCK_STORIES[1];
+MOCK_USERS[3].stories = MOCK_STORIES[2];
+
 
 export const MOCK_HIGHLIGHTS: StoryHighlight[] = [
     { id: 'h1', title: 'LA Trip', cover: 'https://picsum.photos/id/111/200/200', stories: storyItems1 },
     { id: 'h2', title: 'Best of 2023', cover: 'https://picsum.photos/id/112/200/200', stories: storyItems2 },
 ];
+MOCK_USERS[0].highlights = MOCK_HIGHLIGHTS;
+
 
 export const MOCK_REELS: Reel[] = [
     { id: 'r1', user: MOCK_USERS[0], video: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', caption: 'Epic movie moments!', likes: 12000, comments: 45, shares: 120, audio: { title: 'Cinematic Score', artist: 'Composer' } },
@@ -127,4 +162,32 @@ export const MOCK_ACTIVITIES: Activity[] = [
     { id: 'a1', type: 'like', user: MOCK_USERS[1], post: MOCK_POSTS[0], timestamp: '2h' },
     { id: 'a2', type: 'comment', user: MOCK_USERS[2], post: MOCK_POSTS[0], commentText: 'So cool!', timestamp: '3h' },
     { id: 'a3', type: 'follow', user: MOCK_USERS[3], timestamp: '5h' },
+    { id: 'a4', type: 'like', user: MOCK_USERS[2], post: MOCK_POSTS[1], timestamp: '8h' },
+];
+
+export const MOCK_ADS: SponsoredContent[] = [
+    {
+        id: 'ad1',
+        company: 'CineMax Theaters',
+        logo: 'https://i.pravatar.cc/150?u=cinemax',
+        media: 'https://picsum.photos/id/30/200/200',
+        mediaType: 'image',
+        callToAction: 'Get tickets for the latest blockbusters!',
+        link: '#'
+    },
+    {
+        id: 'ad2',
+        company: 'Streamify+',
+        logo: 'https://i.pravatar.cc/150?u=streamify',
+        media: 'https://picsum.photos/id/40/200/200',
+        mediaType: 'image',
+        callToAction: 'Start your free trial for exclusive shows.',
+        link: '#'
+    }
+];
+
+export const MOCK_FEED_ACTIVITIES: FeedActivity[] = [
+  { id: 'fa1', user: MOCK_USERS[2], action: 'liked', targetPost: MOCK_POSTS[0], timestamp: '5m' },
+  { id: 'fa2', user: MOCK_USERS[3], action: 'followed', targetUser: MOCK_USERS[1], timestamp: '15m' },
+  { id: 'fa3', user: MOCK_USERS[1], action: 'liked', targetPost: MOCK_POSTS[2], timestamp: '30m' },
 ];

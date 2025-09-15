@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import type { Story } from '../types.ts';
+// Fix: Add User import for props
+import type { Story, User } from '../types.ts';
 import Icon from './Icon.tsx';
 
+// Fix: Update props to match usage in App.tsx, enabling future enhancements for multi-story navigation.
 interface StoryViewerProps {
-  story: Story;
+  stories: Story[];
+  startIndex: number;
   onClose: () => void;
+  onViewProfile: (user: User) => void;
 }
 
-const StoryViewer: React.FC<StoryViewerProps> = ({ story, onClose }) => {
+const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose, onViewProfile }) => {
+  // This version shows one story at a time. Navigation between user stories is not yet implemented.
+  const story = stories[startIndex];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -50,6 +56,11 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ story, onClose }) => {
       setCurrentIndex(currentIndex - 1);
     }
   };
+  
+  const handleViewProfileAndClose = (user: User) => {
+    onViewProfile(user);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
@@ -66,8 +77,8 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ story, onClose }) => {
         </div>
         
         <div className="absolute top-8 left-4 z-10 flex items-center gap-2">
-            <img src={story.user.avatar} alt={story.user.username} className="w-9 h-9 rounded-full" />
-            <p className="text-white font-semibold text-sm">{story.user.username}</p>
+            <img src={story.user.avatar} alt={story.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => handleViewProfileAndClose(story.user)} />
+            <p className="text-white font-semibold text-sm cursor-pointer" onClick={() => handleViewProfileAndClose(story.user)}>{story.user.username}</p>
         </div>
 
         <button onClick={onClose} className="absolute top-2 right-2 z-10 text-white p-2">

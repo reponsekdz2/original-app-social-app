@@ -1,17 +1,11 @@
-
-
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
 // Fix: Add .ts extension to import to resolve module.
-import type { User } from '../types.ts';
+import type { User, Post } from '../types.ts';
 import { generateCaption } from '../services/geminiService.ts';
 
-type PostData = {
-    user: User;
-    media: string;
-    mediaType: 'image' | 'video';
-    caption: string;
-};
+type PostData = Omit<Post, 'id' | 'likes' | 'likedBy' | 'comments' | 'timestamp' | 'isSaved' | 'isLiked' | 'isArchived'>;
+
 
 interface CreatePostModalProps {
   currentUser: User;
@@ -50,8 +44,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ currentUser, onClose,
     if (!mediaPreview || !mediaType) return;
     const newPost: PostData = {
       user: currentUser,
-      media: mediaPreview,
-      mediaType: mediaType,
+      media: [{ url: mediaPreview, type: mediaType }],
       caption: caption,
     };
     onCreatePost(newPost);

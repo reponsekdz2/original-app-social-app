@@ -3,8 +3,7 @@ import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 
-interface FollowListModalProps {
-  title: 'Followers' | 'Following';
+interface ViewLikesModalProps {
   users: User[];
   currentUser: User;
   onClose: () => void;
@@ -12,8 +11,8 @@ interface FollowListModalProps {
   onViewProfile: (user: User) => void;
 }
 
-const FollowListModal: React.FC<FollowListModalProps> = ({ title, users, currentUser, onClose, onFollow, onViewProfile }) => {
-
+const ViewLikesModal: React.FC<ViewLikesModalProps> = ({ users, currentUser, onClose, onFollow, onViewProfile }) => {
+    
   const handleViewProfileAndClose = (user: User) => {
     onViewProfile(user);
     onClose();
@@ -26,7 +25,7 @@ const FollowListModal: React.FC<FollowListModalProps> = ({ title, users, current
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-3 border-b border-gray-700 text-center relative">
-          <h2 className="text-lg font-semibold">{title}</h2>
+          <h2 className="text-lg font-semibold">Likes</h2>
           <button className="absolute top-2 right-3" onClick={onClose}>
             <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></Icon>
           </button>
@@ -58,4 +57,4 @@ const FollowListModal: React.FC<FollowListModalProps> = ({ title, users, current
   );
 };
 
-export default FollowListModal;
+export default ViewLikesModal;

@@ -1,96 +1,55 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Ensure the API key is handled securely and not exposed in the client-side code.
-// This assumes the build environment replaces `process.env.API_KEY` with the actual key.
-const apiKey = process.env.API_KEY;
+// Guideline: Always use new GoogleGenAI({apiKey: process.env.API_KEY});
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-let ai: GoogleGenAI | null = null;
-if (apiKey) {
-  ai = new GoogleGenAI({ apiKey });
-} else {
-  console.error("API_KEY environment variable not set. Gemini API calls will be disabled.");
-}
+/**
+ * Generates a caption for an image using the Gemini API.
+ * @param base64Data The base64 encoded image data.
+ * @param mimeType The MIME type of the image.
+ * @returns A promise that resolves to the generated caption string.
+ */
+export const generateCaption = async (base64Data: string, mimeType: string): Promise<string> => {
+  const imagePart = {
+    inlineData: {
+      data: base64Data,
+      mimeType,
+    },
+  };
 
-export const generateCaption = async (imageAsBase64: string, mimeType: string): Promise<string> => {
-  if (!ai) {
-    return "API key is not configured. Cannot generate caption.";
-  }
-  
-  try {
-    const imagePart = {
-      inlineData: {
-        data: imageAsBase64,
-        mimeType: mimeType,
-      },
-    };
-    
-    const textPart = {
-      text: "Write a short, engaging caption for this image for a social media post. Make it sound like it's for an Instagram-like platform focused on movies and TV shows called 'Netflixgram'. Keep it under 30 words.",
-    };
+  const textPart = {
+    text: "Write a short, engaging caption for this image for a social media post on a platform like Instagram. Be creative and descriptive.",
+  };
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: { parts: [imagePart, textPart] },
-    });
+  // Guideline: Use ai.models.generateContent
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash', // Guideline: Use 'gemini-2.5-flash' for general text tasks
+    contents: { parts: [imagePart, textPart] },
+  });
 
-    return response.text;
-  } catch (error) {
-    console.error("Error generating caption with Gemini API:", error);
-    return "Could not generate caption due to an API error.";
-  }
+  // Guideline: Use response.text to get the text output
+  return response.text.trim();
 };
 
+/**
+ * Generates an image for a story using the Gemini API.
+ * @param prompt The text prompt to generate the image from.
+ * @returns A promise that resolves to the base64 encoded image data.
+ */
 export const generateStoryImage = async (prompt: string): Promise<string> => {
-  if (!ai) {
-    throw new Error("API key is not configured. Cannot generate image.");
-  }
+  // Guideline: Use ai.models.generateImages for image generation
+  const response = await ai.models.generateImages({
+    model: 'imagen-4.0-generate-001', // Guideline: Use 'imagen-4.0-generate-001' for image generation
+    prompt: `${prompt}, cinematic, vertical aspect ratio for a mobile story`,
+    config: {
+      numberOfImages: 1,
+      aspectRatio: '9:16', // Stories are vertical
+    },
+  });
 
-  try {
-    const response = await ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: `A vibrant, high-quality photograph for a social media story. Style: cinematic, professional. Prompt: ${prompt}`,
-        config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/jpeg',
-          aspectRatio: '9:16',
-        },
-    });
-
-    if (response.generatedImages && response.generatedImages.length > 0) {
-        return response.generatedImages[0].image.imageBytes;
-    } else {
-        throw new Error("API did not return any images.");
-    }
-
-  } catch (error) {
-    console.error("Error generating story image with Gemini API:", error);
-    throw new Error("Could not generate story image due to an API error.");
-  }
-};
-
-export const rewriteMessage = async (text: string, tone: 'formal' | 'casual'): Promise<string> => {
-  if (!ai) {
-    return "API key is not configured. Cannot rewrite message.";
-  }
-  
-  try {
-    const prompt = `Rewrite the following message to sound more ${tone}. Keep it concise and appropriate for a social media chat. Do not add any extra formatting or quotes around the result.
-Original message: "${text}"
-Rewritten message:`;
-    
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        temperature: 0.7,
-        maxOutputTokens: 100,
-        thinkingConfig: { thinkingBudget: 0 }
-      }
-    });
-
-    return response.text.trim();
-  } catch (error) {
-    console.error("Error rewriting message with Gemini API:", error);
-    return "Could not rewrite message due to an API error.";
+  if (response.generatedImages && response.generatedImages.length > 0) {
+    return response.generatedImages[0].image.imageBytes;
+  } else {
+    throw new Error("Image generation failed, no images returned.");
   }
 };

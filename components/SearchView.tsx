@@ -6,14 +6,20 @@ import Icon from './Icon.tsx';
 interface SearchViewProps {
     users: User[];
     onClose: () => void;
+    onViewProfile: (user: User) => void;
 }
 
-const SearchView: React.FC<SearchViewProps> = ({ users, onClose }) => {
+const SearchView: React.FC<SearchViewProps> = ({ users, onClose, onViewProfile }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredUsers = searchTerm 
         ? users.filter(user => user.username.toLowerCase().includes(searchTerm.toLowerCase()))
         : [];
+        
+    const handleSelectUser = (user: User) => {
+        onViewProfile(user);
+        onClose();
+    };
 
     return (
          <div 
@@ -31,21 +37,22 @@ const SearchView: React.FC<SearchViewProps> = ({ users, onClose }) => {
                         placeholder="Search"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        autoFocus
                         className="w-full bg-gray-800 rounded-lg px-4 py-2 mb-6 focus:outline-none focus:ring-1 focus:ring-gray-600"
                     />
                     <div className="border-t border-gray-800 flex-1 overflow-y-auto -mx-6">
                         {filteredUsers.length > 0 ? (
                             <div className="py-4">
                                 {filteredUsers.map(user => (
-                                    <div key={user.id} className="flex items-center justify-between px-6 py-2 hover:bg-gray-800 cursor-pointer">
+                                    <button key={user.id} onClick={() => handleSelectUser(user)} className="flex items-center justify-between w-full px-6 py-2 hover:bg-gray-800 cursor-pointer text-left">
                                         <div className="flex items-center">
                                             <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover mr-3" />
                                             <div>
                                                 <p className="font-semibold text-sm">{user.username}</p>
-                                                <p className="text-xs text-gray-400">User</p>
+                                                <p className="text-xs text-gray-400">{user.name}</p>
                                             </div>
                                         </div>
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         ) : (

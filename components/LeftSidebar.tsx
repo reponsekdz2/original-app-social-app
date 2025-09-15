@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { View } from '../types.ts';
+import type { View, User } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface LeftSidebarProps {
@@ -8,9 +8,10 @@ interface LeftSidebarProps {
   onShowSearch: () => void;
   onShowNotifications: () => void;
   onCreatePost: () => void;
+  isPremium?: boolean;
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onShowSearch, onShowNotifications, onCreatePost }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onShowSearch, onShowNotifications, onCreatePost, isPremium }) => {
     const [isMoreMenuOpen, setMoreMenuOpen] = useState(false);
 
     const navItems = [
@@ -27,8 +28,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onSh
   return (
     <aside className="fixed top-0 left-0 h-screen bg-black border-r border-gray-800 p-3 z-40 hidden md:flex flex-col">
        <div className="py-4 px-2 mb-4">
-        <h1 className="text-2xl font-serif font-bold text-white hidden lg:block">Netflixgram</h1>
-        <h1 className="text-3xl font-serif font-bold text-white block lg:hidden">N</h1>
+        <h1 onClick={() => onNavigate('home')} className="text-2xl font-serif font-bold text-white hidden lg:block cursor-pointer">Netflixgram</h1>
+        <h1 onClick={() => onNavigate('home')} className="text-3xl font-serif font-bold text-white block lg:hidden cursor-pointer">N</h1>
        </div>
        <nav className="flex-1">
         <ul>
@@ -49,10 +50,15 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onSh
            </button>
            {isMoreMenuOpen && (
                 <div className="absolute bottom-14 left-0 w-64 bg-gray-800 rounded-lg shadow-lg border border-gray-700 py-2">
-                    <button onClick={() => onNavigate('settings')} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">Settings</button>
-                    <button onClick={() => onNavigate('activity')} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">Your activity</button>
-                    <button onClick={() => onNavigate('saved')} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">Saved</button>
-                    <button onClick={() => onNavigate('premium')} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">Get Premium</button>
+                    <button onClick={() => {onNavigate('settings'); setMoreMenuOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">Settings</button>
+                    <button onClick={() => {onNavigate('activity'); setMoreMenuOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">Your activity</button>
+                    <button onClick={() => {onNavigate('saved'); setMoreMenuOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">Saved</button>
+                    <button onClick={() => {onNavigate('premium'); setMoreMenuOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">
+                        Get Premium
+                        {isPremium && <Icon className="w-4 h-4 text-yellow-400" fill="currentColor"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.321h5.367a.563.563 0 01.321.988l-4.338 3.14a.563.563 0 00-.184.55l1.637 5.111a.563.563 0 01-.812.622l-4.338-3.14a.563.563 0 00-.576 0l-4.338 3.14a.563.563 0 01-.812-.622l1.637-5.111a.563.563 0 00-.184-.55l-4.338-3.14a.563.563 0 01.321-.988h5.367a.563.563 0 00.475-.321L11.48 3.5z" /></Icon>}
+                    </button>
+                    <div className="border-t border-gray-700 my-1"></div>
+                    <button className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700">Log Out</button>
                 </div>
             )}
        </div>
