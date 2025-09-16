@@ -4,8 +4,11 @@ import React, { useState, useEffect } from 'react';
 // Types
 import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings, Comment } from './types.ts';
 
+// API Service
+import * as api from './services/apiService.ts';
+
 // Data
-import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_FEED_ACTIVITIES, MOCK_ADS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES, MOCK_TRENDING_TOPICS, MOCK_TESTIMONIALS, MOCK_HELP_ARTICLES, MOCK_SUPPORT_TICKETS } from './constants.ts';
+import { MOCK_ADS, MOCK_FEED_ACTIVITIES, MOCK_HELP_ARTICLES, MOCK_TESTIMONIALS, MOCK_TRENDING_TOPICS } from './constants.ts';
 
 // Components
 import LeftSidebar from './components/LeftSidebar';
@@ -24,6 +27,8 @@ import HelpCenterView from './components/HelpCenterView';
 import SupportInboxView from './components/SupportInboxView';
 import MessagesView from './MessagesView';
 import ArchiveView from './components/ArchiveView';
+import AuthView from './components/AuthView.tsx';
+import CallModal from './components/CallModal.tsx';
 
 // Modals & Panels
 import PostModal from './components/PostModal';
@@ -53,20 +58,21 @@ import NotificationsPanel from './components/NotificationsPanel';
 
 const App: React.FC = () => {
     // Data State
-    const [users, setUsers] = useState<User[]>(MOCK_USERS);
-    const [posts, setPosts] = useState<PostType[]>(MOCK_POSTS);
-    const [stories, setStories] = useState<Story[]>(MOCK_STORIES);
-    const [reels, setReels] = useState<ReelType[]>(MOCK_REELS);
-    const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
-    const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
-    const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(MOCK_SUPPORT_TICKETS);
+    const [users, setUsers] = useState<User[]>([]);
+    const [posts, setPosts] = useState<PostType[]>([]);
+    const [stories, setStories] = useState<Story[]>([]);
+    const [reels, setReels] = useState<ReelType[]>([]);
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [activities, setActivities] = useState<Activity[]>([]);
+    const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({ likes: true, comments: true, follows: true });
 
 
     // UI State
-    const [currentUser, setCurrentUser] = useState<User>(users[0]);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [currentView, setCurrentView] = useState<View>('home');
     const [viewedProfile, setViewedProfile] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Modal State
     const [viewedPost, setViewedPost] = useState<PostType | null>(null);
@@ -89,14 +95,75 @@ const App: React.FC = () => {
     const [isCreateHighlightOpen, setCreateHighlightOpen] = useState(false);
     const [isSuggestionsModalOpen, setSuggestionsModalOpen] = useState(false);
     const [isTrendsModalOpen, setTrendsModalOpen] = useState(false);
+    const [callState, setCallState] = useState<{ user: User, type: 'audio' | 'video' } | null>(null);
+
     
     // Panel State
     const [isSearchPanelOpen, setSearchPanelOpen] = useState(false);
     const [isNotificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
 
+    const fetchAllData = async () => {
+        try {
+            const [
+                postsData,
+                usersData,
+                storiesData,
+                reelsData,
+                conversationsData,
+                activitiesData,
+                supportTicketsData
+            ] = await Promise.all([
+                api.getPosts(),
+                api.getUsers(),
+                api.getStories(),
+                api.getReels(),
+                api.getConversations(),
+                api.getActivities(),
+                api.getSupportTickets(),
+            ]);
+
+            setPosts(postsData);
+            setUsers(usersData);
+            setStories(storiesData);
+            setReels(reelsData);
+            setConversations(conversationsData);
+            setActivities(activitiesData);
+            setSupportTickets(supportTicketsData);
+
+        } catch (error) {
+            console.error("Failed to fetch app data", error);
+        }
+    };
+    
+    const handleLoginSuccess = (user: User) => {
+        localStorage.setItem('currentUserId', user.id);
+        setCurrentUser(user);
+        setIsLoading(true);
+        fetchAllData().finally(() => setIsLoading(false));
+    };
+
     useEffect(() => {
-        // If the viewed profile is the current user, update it in state when it changes
-        if (viewedProfile && viewedProfile.id === currentUser.id) {
+        const checkSession = async () => {
+            const userId = localStorage.getItem('currentUserId');
+            if (userId) {
+                try {
+                    const user = await api.getMe(userId);
+                    setCurrentUser(user);
+                    await fetchAllData();
+                } catch (error) {
+                    console.error("Session check failed", error);
+                    localStorage.removeItem('currentUserId');
+                    setCurrentUser(null);
+                }
+            }
+            setIsLoading(false);
+        };
+
+        checkSession();
+    }, []);
+
+    useEffect(() => {
+        if (viewedProfile && currentUser && viewedProfile.id === currentUser.id) {
             setViewedProfile(currentUser);
         }
     }, [currentUser, viewedProfile]);
@@ -112,149 +179,137 @@ const App: React.FC = () => {
     };
     
     // Data mutation handlers
-    const handleToggleLike = (postId: string) => {
-        setPosts(posts.map(p => p.id === postId ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : p));
+    const handleToggleLike = async (postId: string) => {
+        if (!currentUser) return;
+        const originalPosts = [...posts];
+        // Optimistic update
+        const updatedPosts = posts.map(p => p.id === postId ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : p);
+        setPosts(updatedPosts);
+        try {
+            const updatedPost = await api.togglePostLike(postId, currentUser.id);
+            setPosts(posts.map(p => p.id === postId ? updatedPost : p));
+             if (viewedPost?.id === postId) setViewedPost(updatedPost);
+        } catch (error) {
+            setPosts(originalPosts); // Revert on error
+        }
+    };
+    
+    const handleToggleSave = async (postId: string) => {
+        const updatedPost = await api.togglePostSave(postId);
+        setPosts(posts.map(p => p.id === postId ? updatedPost : p));
+    };
+
+    const handleComment = async (postId: string, text: string) => {
+        if (!currentUser) return;
+        const updatedPost = await api.addComment(postId, currentUser.id, text);
+        setPosts(posts.map(p => p.id === postId ? updatedPost : p));
         if (viewedPost?.id === postId) {
-            setViewedPost(p => p ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : null);
-        }
-    };
-    
-    const handleToggleSave = (postId: string) => {
-        setPosts(posts.map(p => p.id === postId ? { ...p, isSaved: !p.isSaved } : p));
-    };
-
-    const handleComment = (postId: string, text: string) => {
-        const newComment: Comment = {
-            id: `c${Date.now()}`,
-            user: currentUser,
-            text,
-            timestamp: '1m',
-            likes: 0,
-            likedByUser: false
-        };
-
-        const updatePostState = (prevState: PostType[]) => 
-            prevState.map(p => 
-                p.id === postId 
-                ? { ...p, comments: [...p.comments, newComment] } 
-                : p
-            );
-
-        setPosts(updatePostState);
-
-        if (viewedPost?.id === postId) {
-            setViewedPost(p => p ? { ...p, comments: [...p.comments, newComment] } : null);
+            setViewedPost(updatedPost);
         }
     };
 
-    const handleFollow = (userToFollow: User) => {
-      // Don't process if already following
-      if (currentUser.following.some(u => u.id === userToFollow.id)) return;
-    
-      // Add userToFollow to currentUser's following list
-      const updatedCurrentUser = {
-        ...currentUser,
-        following: [...currentUser.following, userToFollow],
-      };
-    
-      // Add currentUser to userToFollow's followers list
-      const updatedUsers = users.map(u => {
-        if (u.id === userToFollow.id) {
-          return {
-            ...u,
-            followers: [...u.followers, currentUser],
-          };
-        }
-        if (u.id === currentUser.id) {
-            return updatedCurrentUser;
-        }
-        return u;
-      });
-      
-      setUsers(updatedUsers);
+    const handleFollow = async (userToFollow: User) => {
+      if (!currentUser) return;
+      const { currentUser: updatedCurrentUser } = await api.followUser(currentUser.id, userToFollow.id);
       setCurrentUser(updatedCurrentUser);
+      // Refresh all user data to get updated follower counts
+      const updatedUsers = await api.getUsers();
+      setUsers(updatedUsers);
     };
 
-    const handleUnfollow = (userToUnfollow: User) => {
-        // Remove userToUnfollow from currentUser's following list
-        const updatedCurrentUser = {
-            ...currentUser,
-            following: currentUser.following.filter(u => u.id !== userToUnfollow.id),
-        };
-        
-        // Remove currentUser from userToUnfollow's followers list
-        const updatedUsers = users.map(u => {
-            if (u.id === userToUnfollow.id) {
-                return {
-                    ...u,
-                    followers: u.followers.filter(follower => follower.id !== currentUser.id)
-                }
-            }
-            if (u.id === currentUser.id) {
-                return updatedCurrentUser;
-            }
-            return u;
-        });
-
-        setUsers(updatedUsers);
+    const handleUnfollow = async (userToUnfollow: User) => {
+        if (!currentUser) return;
+        const { currentUser: updatedCurrentUser } = await api.unfollowUser(currentUser.id, userToUnfollow.id);
         setCurrentUser(updatedCurrentUser);
-        setUserToUnfollow(null); // Close modal
+        const updatedUsers = await api.getUsers();
+        setUsers(updatedUsers);
+        setUserToUnfollow(null);
     };
     
-    const handleEditProfileSave = (updatedUser: User) => {
+    const handleEditProfileSave = async (updatedUserData: User) => {
+        const updatedUser = await api.updateUserProfile(updatedUserData.id, updatedUserData);
         const newUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
         setUsers(newUsers);
         setCurrentUser(updatedUser);
         setEditProfileOpen(false);
     };
 
-    const handleCreatePost = (postData: Omit<Post, 'id' | 'likes' | 'likedBy' | 'comments' | 'timestamp' | 'isSaved' | 'isLiked'>) => {
-        const newPost: PostType = {
-            ...postData,
-            id: `p${Date.now()}`,
-            likes: 0,
-            likedBy: [],
-            comments: [],
-            timestamp: '1m',
-            isSaved: false,
-            isLiked: false,
-        };
+    const handleCreatePost = async (postData: Omit<Post, 'id' | 'likes' | 'likedBy' | 'comments' | 'timestamp' | 'isSaved' | 'isLiked'>) => {
+        const newPost = await api.createPost(postData);
         setPosts([newPost, ...posts]);
         setCreatePostOpen(false);
     }
     
-    const handleDeletePost = (postId: string) => {
+    const handleDeletePost = async (postId: string) => {
+        await api.deletePost(postId);
         setPosts(posts.filter(p => p.id !== postId));
     };
     
-    const handleEditPostSave = (postId: string, newCaption: string) => {
-        setPosts(posts.map(p => p.id === postId ? { ...p, caption: newCaption } : p));
+    const handleEditPostSave = async (postId: string, newCaption: string) => {
+        const updatedPost = await api.updatePost(postId, newCaption);
+        setPosts(posts.map(p => p.id === postId ? updatedPost : p));
         setEditingPost(null);
     };
     
-    const handleToggleArchive = (post: PostType) => {
-        setPosts(posts.map(p => p.id === post.id ? {...p, isArchived: !p.isArchived} : p));
+    const handleToggleArchive = async (post: PostType) => {
+        const updatedPost = await api.toggleArchivePost(post.id);
+        setPosts(posts.map(p => p.id === post.id ? updatedPost : p));
     }
 
-    const handleSendMessage = (conversationId: string, messageContent: Omit<Message, 'id' | 'senderId' | 'timestamp'>) => {
-        setConversations(prevConvos => {
-            return prevConvos.map(convo => {
-                if (convo.id === conversationId) {
-                    const newMessage: Message = {
-                        ...messageContent,
-                        id: `m${Date.now()}`,
-                        senderId: currentUser.id,
-                        timestamp: 'Just now',
-                    };
-                    return {
-                        ...convo,
-                        messages: [...convo.messages, newMessage],
-                    };
-                }
-                return convo;
-            });
+    const handleSendMessage = async (conversationId: string, messageContent: Omit<Message, 'id' | 'senderId' | 'timestamp'>) => {
+        if (!currentUser) return;
+        
+        // Optimistic update
+        const newMessage: Message = {
+            id: `temp-${Date.now()}`,
+            senderId: currentUser.id,
+            timestamp: 'Just now',
+            ...messageContent,
+        };
+        const updatedConversations = conversations.map(c => {
+            if (c.id === conversationId) {
+                return { ...c, messages: [...c.messages, newMessage] };
+            }
+            return c;
         });
+        setConversations(updatedConversations);
+
+        try {
+            const updatedConversation = await api.sendMessage(conversationId, {
+                ...messageContent,
+                senderId: currentUser.id,
+            });
+            setConversations(convos => convos.map(c => c.id === conversationId ? updatedConversation : c));
+        } catch (error) {
+            console.error("Failed to send message, reverting");
+            // Revert optimistic update on error
+             const revertedConversations = conversations.map(c => {
+                if (c.id === conversationId) {
+                    return { ...c, messages: c.messages.filter(m => m.id !== newMessage.id) };
+                }
+                return c;
+            });
+            setConversations(revertedConversations);
+        }
     };
+    
+    const handleInitiateCall = async (receiver: User, type: 'audio' | 'video') => {
+        if (!currentUser) return;
+        try {
+            await api.initiateCall(currentUser.id, receiver.id, type);
+            setCallState({ user: receiver, type });
+        } catch (error) {
+            alert(`Could not initiate call with ${receiver.username}.`);
+        }
+    };
+    
+    if (isLoading) {
+        return <div className="flex items-center justify-center h-screen bg-black text-white text-xl">Loading Netflixgram...</div>;
+    }
+
+    if (!currentUser) {
+        return <AuthView onLoginSuccess={handleLoginSuccess} />;
+    }
 
     const renderView = () => {
         const profileUser = viewedProfile || currentUser;
@@ -315,9 +370,11 @@ const App: React.FC = () => {
             case 'messages':
                 return <MessagesView 
                     conversations={conversations} 
+                    setConversations={setConversations}
                     currentUser={currentUser}
                     onSendMessage={handleSendMessage}
                     onViewProfile={(user) => handleNavigate('profile', user)}
+                    onInitiateCall={handleInitiateCall}
                 />;
             case 'saved':
                 return <SavedView posts={posts.filter(p => p.isSaved)} onViewPost={setViewedPost} />;
@@ -409,6 +466,7 @@ const App: React.FC = () => {
         {isCreateHighlightOpen && <CreateHighlightModal userStories={stories.flatMap(s => s.stories)} onClose={() => setCreateHighlightOpen(false)} onCreate={() => setCreateHighlightOpen(false)} />}
         {isSuggestionsModalOpen && <SuggestionsModal users={users.filter(u => u.id !== currentUser.id && !currentUser.following.some(f => f.id === u.id))} currentUser={currentUser} onClose={() => setSuggestionsModalOpen(false)} onViewProfile={(user) => { setSuggestionsModalOpen(null); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {isTrendsModalOpen && <TrendsModal topics={MOCK_TRENDING_TOPICS} onClose={() => setTrendsModalOpen(false)} />}
+        {callState && <CallModal user={callState.user} type={callState.type} onClose={() => setCallState(null)} />}
         
         {/* Side Panels */}
         {isSearchPanelOpen && <SearchView users={users} onClose={() => setSearchPanelOpen(false)} onViewProfile={(user) => {setSearchPanelOpen(false); handleNavigate('profile', user);}} />}

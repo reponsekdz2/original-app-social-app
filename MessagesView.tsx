@@ -1,19 +1,39 @@
-
 // Fix: Create the MessagesView component.
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Conversation, User, Message } from './types';
 import ChatWindow from './components/ChatWindow';
 import Icon from './components/Icon';
+import * as api from './services/apiService';
+
 
 interface MessagesViewProps {
   conversations: Conversation[];
+  setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
   currentUser: User;
   onSendMessage: (conversationId: string, message: Omit<Message, 'id' | 'senderId' | 'timestamp'>) => void;
   onViewProfile: (user: User) => void;
+  onInitiateCall: (user: User, type: 'audio' | 'video') => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ conversations, currentUser, onSendMessage, onViewProfile }) => {
+const MessagesView: React.FC<MessagesViewProps> = ({ conversations, setConversations, currentUser, onSendMessage, onViewProfile, onInitiateCall }) => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(conversations[0] || null);
+
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const updatedConvo = await api.getConversationById(selectedConversation.id);
+        setConversations(convos => convos.map(c => c.id === updatedConvo.id ? updatedConvo : c));
+        setSelectedConversation(updatedConvo);
+      } catch (error) {
+        console.error("Failed to poll for new messages:", error);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedConversation, setConversations]);
+
 
   const getOtherParticipant = (convo: Conversation) => {
     return convo.participants.find(p => p.id !== currentUser.id);
@@ -46,11 +66,13 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations, currentUser,
       </div>
       {selectedConversation && (
         <ChatWindow 
+          key={selectedConversation.id}
           conversation={selectedConversation} 
           currentUser={currentUser} 
           onSendMessage={onSendMessage}
           onViewProfile={onViewProfile}
           onBack={() => setSelectedConversation(null)}
+          onInitiateCall={onInitiateCall}
         />
       )}
     </div>

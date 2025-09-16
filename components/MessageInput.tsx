@@ -29,6 +29,14 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend }) => {
       setText('');
     }
   };
+  
+  const handleSendImage = () => {
+    onSend('https://picsum.photos/id/237/400/300', 'image');
+  };
+  
+  const handleSendVoicenote = () => {
+    onSend('#', 'voicenote');
+  };
 
   const handleSelectEmoji = (emoji: string) => {
     setText(prev => prev + emoji);
@@ -68,10 +76,10 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend }) => {
               <button className="p-1.5 rounded-full hover:bg-gray-700" aria-label="Attach file">
                 <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.735l-7.662 7.662a4.5 4.5 0 01-6.364-6.364l7.662-7.662a3 3 0 014.242 4.242l-7.662 7.662a1.5 1.5 0 01-2.121-2.121l7.662-7.662" /></Icon>
               </button>
-              <button className="p-1.5 rounded-full hover:bg-gray-700" aria-label="Send image">
+              <button onClick={handleSendImage} className="p-1.5 rounded-full hover:bg-gray-700" aria-label="Send image">
                 <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></Icon>
               </button>
-              <button className="p-1.5 rounded-full hover:bg-gray-700" aria-label="Record voice note">
+              <button onClick={handleSendVoicenote} className="p-1.5 rounded-full hover:bg-gray-700" aria-label="Record voice note">
                   <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a.75.75 0 00.75-.75V6.75a.75.75 0 00-1.5 0v11.25a.75.75 0 00.75.75zM8.25 12a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3A.75.75 0 018.25 12zM15.75 12a.75.75 0 01.75-.75h.008a.75.75 0 010 1.5h-.008a.75.75 0 01-.75-.75z" /></Icon>
               </button>
           </div>
