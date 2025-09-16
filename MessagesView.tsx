@@ -1,3 +1,4 @@
+
 // Fix: Create the MessagesView component.
 import React, { useState } from 'react';
 import type { Conversation, User, Message } from './types';
@@ -20,7 +21,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations, currentUser,
   
   return (
     <div className="flex h-[calc(100vh-4rem)] md:h-screen">
-      <div className={`w-full md:w-96 border-r border-gray-800 flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full lg:w-96 border-r border-gray-800 flex-col ${selectedConversation ? 'hidden lg:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           <h1 className="text-xl font-bold">{currentUser.username}</h1>
           <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></Icon>

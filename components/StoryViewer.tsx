@@ -14,15 +14,23 @@ interface StoryViewerProps {
 }
 
 const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose, onViewProfile, onReply, onShare }) => {
-  // This version shows one story at a time. Navigation between user stories is not yet implemented.
-  const story = stories[startIndex];
+  const [storyIndex, setStoryIndex] = useState(startIndex);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [replyText, setReplyText] = useState('');
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
 
+  const story = stories[storyIndex];
   const currentStoryItem = story.stories[currentIndex];
 
+  useEffect(() => {
+    setProgress(0);
+    // Reset item index when story user changes
+    if (currentIndex !== 0 && stories[storyIndex].id !== story.id) {
+        setCurrentIndex(0);
+    }
+  }, [storyIndex]);
+  
   useEffect(() => {
     setProgress(0);
     if (currentStoryItem.mediaType === 'image') {
@@ -45,11 +53,14 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
         clearTimeout(timeout);
       };
     }
-  }, [currentIndex, story]);
+  }, [currentIndex, storyIndex]);
 
   const handleNext = () => {
     if (currentIndex < story.stories.length - 1) {
       setCurrentIndex(currentIndex + 1);
+    } else if (storyIndex < stories.length - 1) {
+      setStoryIndex(storyIndex + 1);
+      setCurrentIndex(0);
     } else {
       onClose();
     }
@@ -58,7 +69,25 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
+    } else if (storyIndex > 0) {
+      const prevStory = stories[storyIndex - 1];
+      setStoryIndex(storyIndex - 1);
+      setCurrentIndex(prevStory.stories.length - 1);
     }
+  };
+  
+  const handleNextStory = () => {
+    if (storyIndex < stories.length - 1) {
+        setStoryIndex(storyIndex + 1);
+        setCurrentIndex(0);
+    }
+  };
+
+  const handlePrevStory = () => {
+      if (storyIndex > 0) {
+          setStoryIndex(storyIndex - 1);
+          setCurrentIndex(0);
+      }
   };
   
   const handleViewProfileAndClose = (user: User) => {
@@ -81,6 +110,11 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+       {storyIndex > 0 && (
+        <button onClick={handlePrevStory} className="absolute left-2 md:-left-12 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 rounded-full p-2">
+            <Icon className="w-6 h-6 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></Icon>
+        </button>
+       )}
       <div className="relative w-full max-w-sm h-full max-h-screen aspect-[9/16]">
         <div className="absolute top-4 left-2 right-2 flex gap-1 z-10">
           {story.stories.map((_, index) => (
@@ -109,6 +143,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
           <img src={currentStoryItem.media} className="w-full h-full object-contain" />
         ) : (
           <video 
+            key={`${storyIndex}-${currentIndex}`}
             src={currentStoryItem.media} 
             className="w-full h-full object-contain" 
             autoPlay 
@@ -151,6 +186,11 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
         </div>
 
       </div>
+       {storyIndex < stories.length - 1 && (
+         <button onClick={handleNextStory} className="absolute right-2 md:-right-12 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 rounded-full p-2">
+            <Icon className="w-6 h-6 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></Icon>
+        </button>
+       )}
     </div>
   );
 };

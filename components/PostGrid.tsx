@@ -9,7 +9,7 @@ interface PostGridProps {
 
 const PostGrid: React.FC<PostGridProps> = ({ posts, onViewPost }) => {
   return (
-    <div className="grid grid-cols-3 gap-1 sm:gap-2 md:gap-4">
+    <div className="grid grid-cols-3 gap-1 sm:gap-2 lg:grid-cols-4">
       {posts.map(post => {
         const firstMedia = post.media[0];
         return (

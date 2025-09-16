@@ -13,7 +13,7 @@ const SavedView: React.FC<SavedViewProps> = ({ posts, onViewPost }) => {
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Bookmarks</h2>
       <p className="text-xs text-gray-400 mb-6">Only you can see what you've bookmarked. Use this space to save posts you want to come back to later.</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 md:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 lg:grid-cols-4 2xl:grid-cols-5">
         {posts.map((post) => {
           const firstMedia = post.media[0];
           return (
@@ -25,7 +25,7 @@ const SavedView: React.FC<SavedViewProps> = ({ posts, onViewPost }) => {
               )}
               {post.media.length > 1 && (
                 <div className="absolute top-2 right-2 text-white z-10">
-                    <Icon className="w-5 h-5 drop-shadow-md" fill="currentColor"><path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></Icon>
+                    <Icon className="w-5 h-5 drop-shadow-md" fill="currentColor"><path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 017.5 0z" /></Icon>
                 </div>
               )}
               {firstMedia.type === 'video' && (

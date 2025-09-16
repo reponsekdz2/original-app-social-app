@@ -375,7 +375,7 @@ const App: React.FC = () => {
                 onCreatePost={() => setCreatePostOpen(true)}
                 onShowNotifications={() => setNotificationsPanelOpen(true)}
               />
-              <main className="container mx-auto">
+              <main className={currentView === 'home' ? '' : 'container mx-auto'}>
                 {renderView()}
               </main>
           </div>

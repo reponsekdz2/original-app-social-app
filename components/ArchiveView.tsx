@@ -14,7 +14,7 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ posts, onViewPost }) => {
       <h2 className="text-xl font-bold mb-4">Archived Posts</h2>
       <p className="text-xs text-gray-400 mb-6">Only you can see what you've archived</p>
       {posts.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 lg:grid-cols-4 2xl:grid-cols-5">
           {posts.map((post) => {
             const firstMedia = post.media[0];
             return (
