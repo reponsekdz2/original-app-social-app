@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Types
-import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings } from './types.ts';
+import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings, Comment } from './types.ts';
 
 // Data
 import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES, MOCK_REELS, MOCK_FEED_ACTIVITIES, MOCK_ADS, MOCK_CONVERSATIONS, MOCK_ACTIVITIES, MOCK_TRENDING_TOPICS, MOCK_TESTIMONIALS, MOCK_HELP_ARTICLES, MOCK_SUPPORT_TICKETS } from './constants.ts';
@@ -121,6 +121,30 @@ const App: React.FC = () => {
     
     const handleToggleSave = (postId: string) => {
         setPosts(posts.map(p => p.id === postId ? { ...p, isSaved: !p.isSaved } : p));
+    };
+
+    const handleComment = (postId: string, text: string) => {
+        const newComment: Comment = {
+            id: `c${Date.now()}`,
+            user: currentUser,
+            text,
+            timestamp: '1m',
+            likes: 0,
+            likedByUser: false
+        };
+
+        const updatePostState = (prevState: PostType[]) => 
+            prevState.map(p => 
+                p.id === postId 
+                ? { ...p, comments: [...p.comments, newComment] } 
+                : p
+            );
+
+        setPosts(updatePostState);
+
+        if (viewedPost?.id === postId) {
+            setViewedPost(p => p ? { ...p, comments: [...p.comments, newComment] } : null);
+        }
     };
 
     const handleFollow = (userToFollow: User) => {
@@ -248,11 +272,12 @@ const App: React.FC = () => {
                     conversations={conversations}
                     onToggleLike={handleToggleLike}
                     onToggleSave={handleToggleSave}
-                    onComment={() => {}}
+                    onComment={handleComment}
                     onShare={setPostToShare}
                     onViewStory={(story) => setViewedStory({story, index: stories.findIndex(s => s.id === story.id)})}
                     onViewLikes={setUsersForLikesModal}
                     onViewProfile={(user) => handleNavigate('profile', user)}
+                    onViewPost={setViewedPost}
                     onOptions={setPostWithOptions}
                     onShowSuggestions={() => setSuggestionsModalOpen(true)}
                     onShowTrends={() => setTrendsModalOpen(true)}
@@ -364,7 +389,7 @@ const App: React.FC = () => {
         />
 
         {/* Modals */}
-        {viewedPost && <PostModal post={viewedPost} currentUser={currentUser} onClose={() => setViewedPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={()=>{}} onShare={setPostToShare} onViewLikes={setUsersForLikesModal} onViewProfile={(user) => { setViewedPost(null); handleNavigate('profile', user); }} onOptions={setPostWithOptions} />}
+        {viewedPost && <PostModal post={viewedPost} currentUser={currentUser} onClose={() => setViewedPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={setPostToShare} onViewLikes={setUsersForLikesModal} onViewProfile={(user) => { setViewedPost(null); handleNavigate('profile', user); }} onOptions={setPostWithOptions} />}
         {viewedStory && <StoryViewer stories={stories} startIndex={viewedStory.index} onClose={() => setViewedStory(null)} onViewProfile={(user) => { setViewedStory(null); handleNavigate('profile', user); }} onReply={() => {}} onShare={() => {}} />}
         {isAccountSwitcherOpen && <AccountSwitcherModal users={users} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchUser={(user) => {setCurrentUser(user); setAccountSwitcherOpen(false); handleNavigate('home');}} />}
         {isCreatePostOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreatePostOpen(false)} onCreatePost={handleCreatePost} />}

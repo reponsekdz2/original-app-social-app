@@ -21,6 +21,7 @@ interface HomeViewProps {
   onViewStory: (story: Story) => void;
   onViewLikes: (users: User[]) => void;
   onViewProfile: (user: User) => void;
+  onViewPost: (post: Post) => void;
   onOptions: (post: Post) => void;
   onShowSuggestions: () => void;
   onShowTrends: () => void;
@@ -34,7 +35,7 @@ interface HomeViewProps {
 const HomeView: React.FC<HomeViewProps> = (props) => {
   return (
     <div className="flex justify-center container mx-auto gap-8 lg:gap-16 xl:gap-24">
-      <main className="w-full max-w-xl">
+      <main className="w-full max-w-2xl">
         <div className="py-4 border-b border-gray-800">
           <div className="flex items-center space-x-4 px-4 overflow-x-auto scrollbar-hide">
             <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={props.onCreateStory}>
@@ -62,7 +63,10 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
               onShare={props.onShare}
               onViewLikes={props.onViewLikes}
               onViewProfile={props.onViewProfile}
+              onViewPost={props.onViewPost}
               onOptions={props.onOptions}
+              onFollow={props.onFollow}
+              onUnfollow={props.onUnfollow}
             />
           ))}
         </div>
