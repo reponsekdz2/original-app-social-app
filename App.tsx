@@ -1,5 +1,3 @@
-
-
 // Fix: Create the main App component.
 import React, { useState, useEffect } from 'react';
 
@@ -214,6 +212,26 @@ const App: React.FC = () => {
         setPosts(posts.map(p => p.id === post.id ? {...p, isArchived: !p.isArchived} : p));
     }
 
+    const handleSendMessage = (conversationId: string, messageContent: Omit<Message, 'id' | 'senderId' | 'timestamp'>) => {
+        setConversations(prevConvos => {
+            return prevConvos.map(convo => {
+                if (convo.id === conversationId) {
+                    const newMessage: Message = {
+                        ...messageContent,
+                        id: `m${Date.now()}`,
+                        senderId: currentUser.id,
+                        timestamp: 'Just now',
+                    };
+                    return {
+                        ...convo,
+                        messages: [...convo.messages, newMessage],
+                    };
+                }
+                return convo;
+            });
+        });
+    };
+
     const renderView = () => {
         const profileUser = viewedProfile || currentUser;
         
@@ -273,7 +291,7 @@ const App: React.FC = () => {
                 return <MessagesView 
                     conversations={conversations} 
                     currentUser={currentUser}
-                    onSendMessage={() => {}}
+                    onSendMessage={handleSendMessage}
                     onViewProfile={(user) => handleNavigate('profile', user)}
                 />;
             case 'saved':

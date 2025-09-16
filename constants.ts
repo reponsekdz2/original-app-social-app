@@ -152,13 +152,27 @@ export const MOCK_REELS: Reel[] = [
     { id: 'r2', user: MOCK_USERS[1], video: 'https://videos.pexels.com/video-files/2099039/2099039-sd_540_960_30fps.mp4', caption: 'Favorite TV show intros', likes: 8500, comments: [MOCK_COMMENTS[0]], isLiked: true, shares: 98, audio: { title: 'Catchy Theme', artist: 'TV Band' } },
 ];
 
-export const MOCK_MESSAGES: Message[] = [
+const initialMessages: Message[] = [
     { id: 'm1', senderId: 'u2', content: 'Hey! Did you see the new trailer?', timestamp: '10:30 AM', type: 'text' },
     { id: 'm2', senderId: 'u1', content: 'I did! It looks so good!', timestamp: '10:31 AM', type: 'text' },
+    { id: 'm3', senderId: 'u2', content: 'https://picsum.photos/id/237/400/300', timestamp: '10:32 AM', type: 'image' },
+    { id: 'm4', senderId: 'u1', content: '#', duration: '0:15', timestamp: '10:33 AM', type: 'voicenote' },
 ];
 
+initialMessages.push({
+    id: 'm5',
+    senderId: 'u2',
+    content: 'Totally! The cinematography is stunning.',
+    timestamp: '10:34 AM',
+    type: 'text',
+    replyTo: initialMessages[1]
+});
+
+export const MOCK_MESSAGES: Message[] = initialMessages;
+
+
 export const MOCK_CONVERSATIONS: Conversation[] = [
-    { id: 'conv1', participants: [MOCK_USERS[0], MOCK_USERS[1]], messages: MOCK_MESSAGES, lastMessageSeenId: 'm2' },
+    { id: 'conv1', participants: [MOCK_USERS[0], MOCK_USERS[1]], messages: MOCK_MESSAGES, lastMessageSeenId: 'm5' },
     { id: 'conv2', participants: [MOCK_USERS[0], MOCK_USERS[2]], messages: [{ id: 'm3', senderId: 'u2', content: 'Let\'s catch a movie this weekend', timestamp: 'Yesterday', type: 'text' }], lastMessageSeenId: 'm3' }
 ];
 

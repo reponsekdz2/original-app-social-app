@@ -78,7 +78,9 @@ export interface Message {
     senderId: string;
     content: string;
     timestamp: string;
-    type: 'text' | 'image' | 'like';
+    type: 'text' | 'image' | 'like' | 'voicenote' | 'sticker';
+    replyTo?: Message;
+    duration?: string;
 }
 
 export interface Conversation {

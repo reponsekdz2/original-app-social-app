@@ -21,7 +21,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, currentUser, onSe
 
   if (!otherParticipant) return <div>Conversation error</div>;
 
-  const handleSendMessage = (content: string, type: 'text' | 'like') => {
+  const handleSendMessage = (content: string, type: MessageType['type']) => {
     onSendMessage(conversation.id, { content, type });
   };
   

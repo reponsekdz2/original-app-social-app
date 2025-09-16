@@ -32,6 +32,7 @@ const Post: React.FC<PostProps> = ({
   const [isPanelOpen, setPanelOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [isMuted, setIsMuted] = useState(true);
 
   const panelRef = useRef<HTMLDivElement>(null);
   
@@ -90,11 +91,20 @@ const Post: React.FC<PostProps> = ({
         </button>
       </div>
 
-      <div className="relative bg-black">
+      <div className="relative bg-black rounded-lg overflow-hidden">
         {currentMedia.type === 'image' ? (
           <img src={currentMedia.url} alt={`Post by ${post.user.username}`} className="w-full h-auto max-h-[80vh] object-contain" />
         ) : (
-          <video src={currentMedia.url} controls className="w-full h-auto max-h-[80vh] object-contain" />
+          <>
+            <video src={currentMedia.url} loop autoPlay muted={isMuted} playsInline className="w-full h-auto max-h-[80vh] object-contain" />
+            <button onClick={() => setIsMuted(p => !p)} className="absolute bottom-3 right-3 bg-black/60 p-1.5 rounded-full text-white hover:bg-black/80 transition-opacity">
+              {isMuted ? (
+                  <Icon className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></Icon>
+              ) : (
+                  <Icon className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></Icon>
+              )}
+            </button>
+          </>
         )}
         {hasMultipleMedia && (
             <>

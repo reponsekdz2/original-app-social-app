@@ -70,7 +70,7 @@ const PostModal: React.FC<PostModalProps> = (props) => {
             {currentMedia.type === 'image' ? (
                 <img src={currentMedia.url} alt="Post" className="max-h-full max-w-full object-contain" />
             ) : (
-                <video src={currentMedia.url} controls autoPlay className="max-h-full max-w-full object-contain" />
+                <video src={currentMedia.url} controls autoPlay muted loop playsInline className="max-h-full max-w-full object-contain" />
             )}
             {hasMultipleMedia && (
                 <>
