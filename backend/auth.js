@@ -11,9 +11,9 @@ const sanitizeUser = (user) => {
 
 // Register a new user
 router.post('/register', (req, res) => {
-    const { email, name, username, password } = req.body;
+    const { email, name, username, password, phone, dob } = req.body;
     
-    if (!email || !name || !username || !password) {
+    if (!email || !name || !username || !password || !phone || !dob) {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
@@ -33,6 +33,8 @@ router.post('/register', (req, res) => {
         name,
         email,
         password, // In a real app, this should be hashed
+        phone,
+        dob,
         avatar: `https://i.pravatar.cc/150?u=${username}`,
         isVerified: false,
         isPremium: false,

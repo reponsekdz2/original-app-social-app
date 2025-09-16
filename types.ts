@@ -6,12 +6,16 @@ export interface User {
   username: string;
   name: string;
   avatar: string;
+  email?: string; // Made optional as it's part of auth
+  password?: string; // Made optional as it's part of auth
   isVerified?: boolean;
   isPremium?: boolean;
   isPrivate: boolean;
   bio: string;
   website?: string;
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
+  phone?: string;
+  dob?: string; // Date of Birth
   followers: User[];
   following: User[];
   stories?: Story;
