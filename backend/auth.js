@@ -17,6 +17,10 @@ router.post('/register', (req, res) => {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
+    if (password.length < 8) {
+        return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
+    }
+
     const usernameExists = MOCK_USERS.some(u => u.username.toLowerCase() === username.toLowerCase());
     if (usernameExists) {
         return res.status(409).json({ message: 'Username is already taken' });
@@ -32,7 +36,7 @@ router.post('/register', (req, res) => {
         username,
         name,
         email,
-        password, // In a real app, this should be hashed
+        password, // In a real app, this should be hashed using bcrypt
         phone,
         dob,
         avatar: `https://i.pravatar.cc/150?u=${username}`,

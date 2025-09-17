@@ -31,7 +31,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+      {error && <p className="text-red-500 text-sm text-center bg-red-500/10 p-2 rounded-md">{error}</p>}
       
       <div>
         <input
@@ -65,6 +65,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
           </Icon>
         </button>
       </div>
+
+      <a href="#" className="text-xs text-red-400 hover:underline text-right block -mt-2">Forgot Password?</a>
 
       <button
         type="submit"
