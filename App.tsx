@@ -195,7 +195,9 @@ const App: React.FC = () => {
     };
     
     const handleToggleSave = async (postId: string) => {
-        const updatedPost = await api.togglePostSave(postId);
+        // Fix: Add a check for currentUser and pass currentUser.id to the API call.
+        if (!currentUser) return;
+        const updatedPost = await api.togglePostSave(postId, currentUser.id);
         setPosts(posts.map(p => p.id === postId ? updatedPost : p));
     };
 

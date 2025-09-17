@@ -49,6 +49,10 @@ export const getConversations = () => request('/conversations');
 export const getConversationById = (id: string) => request(`/conversations/${id}`);
 export const getActivities = () => request('/activities');
 export const getSupportTickets = () => request('/support-tickets');
+export const getNotifications = (userId: string) => request(`/notifications/${userId}`);
+export const searchUsers = (query: string) => request(`/search/users?q=${encodeURIComponent(query)}`);
+export const searchPosts = (query: string) => request(`/search/posts?q=${encodeURIComponent(query)}`);
+
 
 // --- POST ---
 export const createPost = (postData: any) => request('/posts', {
@@ -61,13 +65,19 @@ export const togglePostLike = (postId: string, userId: string) => request(`/post
     body: JSON.stringify({ userId }),
 });
 
-export const togglePostSave = (postId: string) => request(`/posts/${postId}/toggle-save`, {
+export const togglePostSave = (postId: string, userId: string) => request(`/posts/${postId}/toggle-save`, {
     method: 'POST',
+     body: JSON.stringify({ userId }),
 });
 
 export const addComment = (postId: string, userId: string, text: string) => request(`/posts/${postId}/comment`, {
     method: 'POST',
     body: JSON.stringify({ userId, text }),
+});
+
+export const toggleCommentLike = (commentId: string, userId: string) => request(`/comments/${commentId}/toggle-like`, {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
 });
 
 export const followUser = (currentUserId: string, targetUserId: string) => request('/users/follow', {
@@ -94,12 +104,22 @@ export const toggleArchivePost = (postId: string) => request(`/posts/${postId}/a
     method: 'POST',
 });
 
+export const markNotificationsAsRead = (userId: string) => request(`/notifications/${userId}/mark-read`, {
+    method: 'POST',
+});
+
 
 // --- PUT ---
 export const updateUserProfile = (userId: string, userData: any) => request(`/users/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
 });
+
+export const updateUserSettings = (userId: string, settings: any) => request(`/users/${userId}/settings`, {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+});
+
 
 export const updatePost = (postId: string, caption: string) => request(`/posts/${postId}`, {
     method: 'PUT',

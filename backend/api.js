@@ -1,31 +1,12 @@
 import { Router } from 'express';
-import {
-  MOCK_POSTS,
-  MOCK_USERS,
-  MOCK_STORIES,
-  MOCK_REELS,
-  MOCK_CONVERSATIONS,
-  MOCK_ACTIVITIES,
-  MOCK_SUPPORT_TICKETS,
-  MOCK_TRENDING_TOPICS,
-  MOCK_FEED_ACTIVITIES,
-  MOCK_ADS,
-} from './data.js';
+import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate } from './data.js';
 
 const router = Router();
 
-// Middleware to find a user by ID
-const findUser = (id) => MOCK_USERS.find(u => u.id === id);
-
-// --- AUTH ---
-router.get('/currentUser', (req, res) => {
-    // In a real app, this would come from a session/token
-    res.json(MOCK_USERS[0]);
-});
-
 // --- POSTS ---
 router.get('/posts', (req, res) => {
-  res.json(MOCK_POSTS);
+  const posts = db.posts.map(p => hydrate(p, ['user', 'likedBy', 'comments']));
+  res.json(posts);
 });
 
 router.post('/posts', (req, res) => {
@@ -34,38 +15,49 @@ router.post('/posts', (req, res) => {
     if (!currentUser) return res.status(404).json({ message: "User not found" });
 
     const newPost = {
-        user: currentUser,
+        userId: currentUser.id,
         media,
         caption,
-        id: `p${Date.now()}`,
+        id: generateId('post'),
         likes: 0,
         likedBy: [],
-        comments: [],
+        commentIds: [],
         timestamp: '1m',
-        isSaved: false,
-        isLiked: false,
+        isSaved: false, // This would be user-specific
+        isLiked: false, // This would be user-specific
     };
-    MOCK_POSTS.unshift(newPost);
-    res.status(201).json(newPost);
+    db.posts.unshift(newPost);
+    res.status(201).json(hydrate(newPost, ['user', 'likedBy', 'comments']));
 });
 
 router.post('/posts/:id/toggle-like', (req, res) => {
     const { userId } = req.body;
-    const post = MOCK_POSTS.find(p => p.id === req.params.id);
-    if (post) {
-        post.isLiked = !post.isLiked;
-        post.likes = post.isLiked ? post.likes + 1 : post.likes - 1;
-        res.json(post);
+    const post = findPost(req.params.id);
+    const user = findUser(userId);
+    if (!post || !user) return res.status(404).json({ message: "Post or user not found" });
+
+    const likeIndex = post.likedBy.indexOf(userId);
+    let isLiked = false;
+    if (likeIndex > -1) {
+        post.likedBy.splice(likeIndex, 1);
     } else {
-        res.status(404).send('Post not found');
+        post.likedBy.push(userId);
+        isLiked = true;
+        if (post.userId !== userId) {
+            createNotification({ recipientId: post.userId, type: 'like', user, post });
+        }
     }
+    post.likes = post.likedBy.length;
+    res.json({ ...hydrate(post, ['user', 'likedBy', 'comments']), isLiked });
 });
 
 router.post('/posts/:id/toggle-save', (req, res) => {
-    const post = MOCK_POSTS.find(p => p.id === req.params.id);
+    // In a real DB, this would be a separate table linking users and saved posts.
+    // Here we just toggle a boolean on the post itself for simplicity.
+    const post = findPost(req.params.id);
     if (post) {
         post.isSaved = !post.isSaved;
-        res.json(post);
+        res.json(hydrate(post, ['user', 'likedBy', 'comments']));
     } else {
         res.status(404).send('Post not found');
     }
@@ -73,58 +65,73 @@ router.post('/posts/:id/toggle-save', (req, res) => {
 
 router.post('/posts/:id/comment', (req, res) => {
     const { userId, text } = req.body;
-    const post = MOCK_POSTS.find(p => p.id === req.params.id);
+    const post = findPost(req.params.id);
     const user = findUser(userId);
-    if (post && user) {
-        const newComment = {
-            id: `c${Date.now()}`,
-            user,
-            text,
-            timestamp: '1m',
-            likes: 0,
-            likedByUser: false,
-        };
-        post.comments.push(newComment);
-        res.json(post);
-    } else {
-        res.status(404).send('Post or user not found');
+    if (!post || !user) return res.status(404).send('Post or user not found');
+
+    const newComment = {
+        id: generateId('comment'),
+        userId,
+        text,
+        timestamp: randomTimeAgo(),
+        likes: 0,
+        likedBy: [],
+    };
+    db.comments.push(newComment);
+    post.commentIds.push(newComment.id);
+    if (post.userId !== userId) {
+        createNotification({ recipientId: post.userId, type: 'comment', user, post, commentText: text });
     }
+    res.json(hydrate(post, ['user', 'likedBy', 'comments']));
 });
 
 router.delete('/posts/:id', (req, res) => {
-    const index = MOCK_POSTS.findIndex(p => p.id === req.params.id);
-    if (index > -1) {
-        MOCK_POSTS.splice(index, 1);
-        res.status(204).send();
-    } else {
-        res.status(404).send('Post not found');
-    }
+    db.posts = db.posts.filter(p => p.id !== req.params.id);
+    res.status(204).send();
 });
 
 router.put('/posts/:id', (req, res) => {
     const { caption } = req.body;
-    const post = MOCK_POSTS.find(p => p.id === req.params.id);
+    const post = findPost(req.params.id);
     if (post) {
         post.caption = caption;
-        res.json(post);
+        res.json(hydrate(post, ['user', 'likedBy', 'comments']));
     } else {
         res.status(404).send('Post not found');
     }
 });
 
 router.post('/posts/:id/archive', (req, res) => {
-    const post = MOCK_POSTS.find(p => p.id === req.params.id);
+    const post = findPost(req.params.id);
     if (post) {
         post.isArchived = !post.isArchived;
-        res.json(post);
+        res.json(hydrate(post, ['user', 'likedBy', 'comments']));
     } else {
         res.status(404).send('Post not found');
     }
 });
 
+// --- COMMENTS ---
+router.post('/comments/:id/toggle-like', (req, res) => {
+    const { userId } = req.body;
+    const comment = findComment(req.params.id);
+    const user = findUser(userId);
+    if (!comment || !user) return res.status(404).json({ message: "Comment or user not found" });
+
+    const likeIndex = comment.likedBy.indexOf(userId);
+    if (likeIndex > -1) {
+        comment.likedBy.splice(likeIndex, 1);
+    } else {
+        comment.likedBy.push(userId);
+    }
+    comment.likes = comment.likedBy.length;
+    res.json(hydrate(comment, ['user']));
+});
+
+
 // --- USERS ---
 router.get('/users', (req, res) => {
-    res.json(MOCK_USERS);
+    res.json(db.users.map(u => hydrate(u, ['followers', 'following', 'stories', 'highlights'])));
 });
 
 router.post('/users/follow', (req, res) => {
@@ -132,18 +139,19 @@ router.post('/users/follow', (req, res) => {
     const currentUser = findUser(currentUserId);
     const targetUser = findUser(targetUserId);
 
-    if (currentUser && targetUser) {
-        // Add to following/followers
-        if (!currentUser.following.some(u => u.id === targetUserId)) {
-            currentUser.following.push(targetUser);
-        }
-        if (!targetUser.followers.some(u => u.id === currentUserId)) {
-            targetUser.followers.push(currentUser);
-        }
-        res.json({ currentUser, targetUser });
-    } else {
-        res.status(404).send('User not found');
+    if (!currentUser || !targetUser) return res.status(404).send('User not found');
+
+    if (!currentUser.following.includes(targetUserId)) {
+        currentUser.following.push(targetUserId);
     }
+    if (!targetUser.followers.includes(currentUserId)) {
+        targetUser.followers.push(currentUserId);
+        createNotification({ recipientId: targetUserId, type: 'follow', user: currentUser });
+    }
+    res.json({ 
+        currentUser: hydrate(currentUser, ['followers', 'following']), 
+        targetUser: hydrate(targetUser, ['followers', 'following']) 
+    });
 });
 
 router.post('/users/unfollow', (req, res) => {
@@ -151,82 +159,138 @@ router.post('/users/unfollow', (req, res) => {
     const currentUser = findUser(currentUserId);
     const targetUser = findUser(targetUserId);
 
-    if (currentUser && targetUser) {
-        currentUser.following = currentUser.following.filter(u => u.id !== targetUserId);
-        targetUser.followers = targetUser.followers.filter(u => u.id !== currentUserId);
-        res.json({ currentUser, targetUser });
-    } else {
-        res.status(404).send('User not found');
-    }
+    if (!currentUser || !targetUser) return res.status(404).send('User not found');
+
+    currentUser.following = currentUser.following.filter(id => id !== targetUserId);
+    targetUser.followers = targetUser.followers.filter(id => id !== currentUserId);
+    res.json({ 
+        currentUser: hydrate(currentUser, ['followers', 'following']), 
+        targetUser: hydrate(targetUser, ['followers', 'following']) 
+    });
 });
 
 router.put('/users/:id', (req, res) => {
+    const { id } = req.params;
     const updatedUserData = req.body;
-    const userIndex = MOCK_USERS.findIndex(u => u.id === req.params.id);
+    const userIndex = db.users.findIndex(u => u.id === id);
     if (userIndex > -1) {
-        MOCK_USERS[userIndex] = { ...MOCK_USERS[userIndex], ...updatedUserData };
-        res.json(MOCK_USERS[userIndex]);
+        // Prevent password from being overwritten
+        delete updatedUserData.password;
+        db.users[userIndex] = { ...db.users[userIndex], ...updatedUserData };
+        res.json(hydrate(db.users[userIndex], ['followers', 'following']));
     } else {
         res.status(404).send('User not found');
     }
 });
 
+router.put('/users/:id/settings', (req, res) => {
+    const { id } = req.params;
+    const { isPrivate, notificationSettings } = req.body;
+    const user = findUser(id);
+    if (!user) return res.status(404).send('User not found');
 
-// --- MESSAGES ---
+    if (isPrivate !== undefined) user.isPrivate = isPrivate;
+    if (notificationSettings) user.notificationSettings = { ...user.notificationSettings, ...notificationSettings };
+
+    res.json(hydrate(user, ['followers', 'following']));
+});
+
+
+// --- MESSAGES & CALLS ---
 router.get('/conversations', (req, res) => {
-    res.json(MOCK_CONVERSATIONS);
+    res.json(db.conversations.map(c => hydrate(c, ['participants', 'messages'])));
 });
 
 router.get('/conversations/:id', (req, res) => {
-    const convo = MOCK_CONVERSATIONS.find(c => c.id === req.params.id);
+    const convo = db.conversations.find(c => c.id === req.params.id);
     if (convo) {
-        res.json(convo);
+        res.json(hydrate(convo, ['participants', 'messages']));
     } else {
         res.status(404).send('Conversation not found');
     }
 });
-
 
 router.post('/conversations/:id/messages', (req, res) => {
-    const { senderId, content, type, replyTo, duration } = req.body;
-    const convo = MOCK_CONVERSATIONS.find(c => c.id === req.params.id);
+    const { senderId, content, type, replyToId, duration } = req.body;
+    const convo = db.conversations.find(c => c.id === req.params.id);
+    if (!convo) return res.status(404).send('Conversation not found');
 
-    if (convo) {
-        const newMessage = {
-            id: `m${Date.now()}`,
-            senderId,
-            content,
-            type,
-            replyTo,
-            duration,
-            timestamp: 'Just now',
-        };
-        convo.messages.push(newMessage);
-        res.json(convo);
-    } else {
-        res.status(404).send('Conversation not found');
-    }
+    const newMessage = {
+        id: generateId('message'),
+        senderId,
+        content,
+        type,
+        replyToId,
+        duration,
+        timestamp: 'Just now',
+    };
+    db.messages.push(newMessage);
+    convo.messages.push(newMessage.id);
+    res.json(hydrate(convo, ['participants', 'messages']));
 });
 
-// --- CALLS (Mock) ---
 router.post('/calls/initiate', (req, res) => {
     const { callerId, receiverId, type } = req.body;
+    const caller = findUser(callerId);
     const receiver = findUser(receiverId);
-    if (receiver) {
-        console.log(`${callerId} is ${type} calling ${receiverId}`);
-        res.json({ message: `Successfully initiated ${type} call with ${receiver.username}` });
-    } else {
-        res.status(404).send('Receiver not found');
+    if (!caller || !receiver) return res.status(404).send('User not found');
+
+    const convo = db.conversations.find(c => c.participants.includes(callerId) && c.participants.includes(receiverId));
+    if (convo) {
+        const callMessage = {
+            id: generateId('message'),
+            senderId: callerId,
+            content: `${type === 'video' ? 'Video' : 'Audio'} call started`,
+            type: 'system', // A new message type
+            timestamp: 'Just now',
+        };
+        db.messages.push(callMessage);
+        convo.messages.push(callMessage.id);
     }
+    console.log(`${callerId} is ${type} calling ${receiverId}`);
+    res.json({ message: `Successfully initiated ${type} call with ${receiver.username}` });
+});
+
+
+// --- NOTIFICATIONS ---
+router.get('/notifications/:userId', (req, res) => {
+    const { userId } = req.params;
+    const userNotifications = db.notifications
+        .filter(n => n.recipientId === userId)
+        .map(n => hydrate(n, ['user', 'post']));
+    res.json(userNotifications);
+});
+
+router.post('/notifications/:userId/mark-read', (req, res) => {
+    const { userId } = req.params;
+    db.notifications.forEach(n => {
+        if (n.recipientId === userId) {
+            n.read = true;
+        }
+    });
+    res.json({ message: 'Notifications marked as read' });
+});
+
+
+// --- SEARCH ---
+router.get('/search/users', (req, res) => {
+    const query = (req.query.q || '').toLowerCase();
+    if (!query) return res.json([]);
+    const results = db.users.filter(u => u.username.toLowerCase().includes(query) || u.name.toLowerCase().includes(query));
+    res.json(results.map(u => hydrate(u, ['followers', 'following'])));
+});
+
+router.get('/search/posts', (req, res) => {
+    const query = (req.query.q || '').toLowerCase();
+    if (!query) return res.json([]);
+    const results = db.posts.filter(p => p.caption.toLowerCase().includes(query));
+    res.json(results.map(p => hydrate(p, ['user', 'likedBy', 'comments'])));
 });
 
 // --- OTHER DATA ---
-router.get('/stories', (req, res) => res.json(MOCK_STORIES));
-router.get('/reels', (req, res) => res.json(MOCK_REELS));
-router.get('/activities', (req, res) => res.json(MOCK_ACTIVITIES));
-router.get('/support-tickets', (req, res) => res.json(MOCK_SUPPORT_TICKETS));
-router.get('/trending-topics', (req, res) => res.json(MOCK_TRENDING_TOPICS));
-router.get('/feed-activities', (req, res) => res.json(MOCK_FEED_ACTIVITIES));
-router.get('/ads', (req, res) => res.json(MOCK_ADS));
+router.get('/stories', (req, res) => res.json(db.stories.map(s => hydrate(s, ['user']))));
+router.get('/reels', (req, res) => res.json(db.reels.map(r => hydrate(r, ['user', 'comments']))));
+router.get('/activities', (req, res) => res.json(db.activities.map(a => hydrate(a, ['user', 'post']))));
+router.get('/support-tickets', (req, res) => res.json(db.supportTickets));
 
 export default router;

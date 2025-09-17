@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { MOCK_USERS } from './data.js';
+import db, { generateId, hydrate } from './data.js';
 
 const router = Router();
 
@@ -21,18 +21,18 @@ router.post('/register', (req, res) => {
         return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
     }
 
-    const usernameExists = MOCK_USERS.some(u => u.username.toLowerCase() === username.toLowerCase());
+    const usernameExists = db.users.some(u => u.username.toLowerCase() === username.toLowerCase());
     if (usernameExists) {
         return res.status(409).json({ message: 'Username is already taken' });
     }
     
-    const emailExists = MOCK_USERS.some(u => u.email.toLowerCase() === email.toLowerCase());
+    const emailExists = db.users.some(u => u.email.toLowerCase() === email.toLowerCase());
     if (emailExists) {
         return res.status(409).json({ message: 'Email is already in use' });
     }
 
     const newUser = {
-        id: `u${Date.now()}`,
+        id: generateId('user'),
         username,
         name,
         email,
@@ -46,9 +46,10 @@ router.post('/register', (req, res) => {
         bio: '',
         followers: [],
         following: [],
+        notificationSettings: { likes: true, comments: true, follows: true },
     };
 
-    MOCK_USERS.push(newUser);
+    db.users.push(newUser);
     res.status(201).json(sanitizeUser(newUser));
 });
 
@@ -56,12 +57,12 @@ router.post('/register', (req, res) => {
 router.post('/login', (req, res) => {
     const { identifier, password } = req.body;
     
-    const user = MOCK_USERS.find(
+    const user = db.users.find(
         u => (u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase())
     );
 
     if (user && user.password === password) {
-        res.json(sanitizeUser(user));
+        res.json(sanitizeUser(hydrate(user, ['followers', 'following'])));
     } else {
         res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -70,9 +71,9 @@ router.post('/login', (req, res) => {
 
 // Get current user based on ID (simulating a session)
 router.get('/me/:id', (req, res) => {
-    const user = MOCK_USERS.find(u => u.id === req.params.id);
+    const user = db.users.find(u => u.id === req.params.id);
     if (user) {
-        res.json(sanitizeUser(user));
+        res.json(sanitizeUser(hydrate(user, ['followers', 'following', 'stories', 'highlights'])));
     } else {
         res.status(404).json({ message: 'User not found' });
     }
