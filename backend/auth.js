@@ -68,6 +68,42 @@ router.post('/login', (req, res) => {
     }
 });
 
+// Forgot password
+router.post('/forgot-password', (req, res) => {
+    const { identifier } = req.body;
+    const user = db.users.find(u => u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase());
+
+    // In a real app, you'd generate a token, save it with an expiry, and email a link.
+    // For this app, we'll always return success to prevent user enumeration.
+    if (user) {
+        console.log(`Password reset requested for ${user.username}. In a real app, an email would be sent.`);
+    } else {
+        console.log(`Password reset requested for non-existent user: ${identifier}.`);
+    }
+    res.status(200).json({ message: 'If your account exists, a password reset link has been sent.' });
+});
+
+// Reset password
+router.post('/reset-password', (req, res) => {
+    const { identifier, password } = req.body;
+    
+    if (!password || password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long." });
+    }
+    
+    const user = db.users.find(u => u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase());
+    
+    if (user) {
+        user.password = password;
+        console.log(`Password for ${user.username} has been reset.`);
+        res.status(200).json({ message: 'Password has been successfully reset.' });
+    } else {
+        // Should technically not happen if the identifier is passed correctly from the previous step,
+        // but good to have a safeguard.
+        res.status(404).json({ message: 'User not found.' });
+    }
+});
+
 
 // Get current user based on ID (simulating a session)
 router.get('/me/:id', (req, res) => {

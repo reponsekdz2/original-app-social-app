@@ -15,6 +15,7 @@ interface ProfileHeaderProps {
   onUnfollow: (user: User) => void;
   onShowFollowers: (users: User[]) => void;
   onShowFollowing: (users: User[]) => void;
+  onMessage: (user: User) => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ 
@@ -27,7 +28,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     onFollow, 
     onUnfollow, 
     onShowFollowers, 
-    onShowFollowing 
+    onShowFollowing,
+    onMessage
 }) => {
   const stats = [
     { label: 'posts', value: posts.length, action: () => {} },
@@ -54,7 +56,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             ) : (
               <>
                 <FollowButton className="w-full" user={user} currentUser={currentUser} onFollow={onFollow} onUnfollow={onUnfollow} />
-                <button className="w-full bg-gray-800 hover:bg-gray-700 text-sm font-semibold py-1.5 px-4 rounded-md">Message</button>
+                <button onClick={() => onMessage(user)} className="w-full bg-gray-800 hover:bg-gray-700 text-sm font-semibold py-1.5 px-4 rounded-md">Message</button>
               </>
             )}
           </div>

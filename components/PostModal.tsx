@@ -1,9 +1,57 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Post as PostType, User } from '../types.ts';
+import type { Post as PostType, User, Comment as CommentType } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import MagicComposePanel from './MagicComposePanel.tsx';
 import { generateComment } from '../services/geminiService.ts';
+
+interface CommentComponentProps {
+  comment: CommentType;
+  currentUser: User;
+  onViewProfile: (user: User) => void;
+  onToggleLike: (commentId: string) => void;
+  onReply: (comment: CommentType) => void;
+}
+
+const CommentComponent: React.FC<CommentComponentProps> = ({ comment, currentUser, onViewProfile, onToggleLike, onReply }) => {
+  const likedByUser = comment.likedBy.some(u => u.id === currentUser.id);
+
+  return (
+    <div className="flex items-start gap-3">
+      <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(comment.user)} />
+      <div className="flex-1">
+        <p className="text-sm">
+          <span className="font-semibold cursor-pointer" onClick={() => onViewProfile(comment.user)}>{comment.user.username}</span> {comment.text}
+        </p>
+        <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+          <span>{comment.timestamp}</span>
+          {comment.likes > 0 && <span className="font-semibold">{comment.likes} likes</span>}
+          <button onClick={() => onReply(comment)} className="font-semibold">Reply</button>
+        </div>
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-3 space-y-4 pl-4 border-l-2 border-gray-700">
+            {comment.replies.map(reply => (
+              <CommentComponent
+                key={reply.id}
+                comment={reply}
+                currentUser={currentUser}
+                onViewProfile={onViewProfile}
+                onToggleLike={onToggleLike}
+                onReply={onReply}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <button className="mt-2" onClick={() => onToggleLike(comment.id)}>
+        <Icon className={`w-4 h-4 ${likedByUser ? 'text-red-500' : 'text-gray-400'}`} fill={likedByUser ? 'currentColor' : 'none'}>
+          <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+        </Icon>
+      </button>
+    </div>
+  );
+};
+
 
 interface PostModalProps {
   post: PostType;
@@ -11,7 +59,8 @@ interface PostModalProps {
   onClose: () => void;
   onToggleLike: (postId: string) => void;
   onToggleSave: (postId: string) => void;
-  onComment: (postId: string, text: string) => void;
+  onComment: (postId: string, text: string, replyToId?: string) => void;
+  onToggleCommentLike: (postId: string, commentId: string) => void;
   onShare: (post: PostType) => void;
   onViewLikes: (users: User[]) => void;
   onViewProfile: (user: User) => void;
@@ -19,13 +68,15 @@ interface PostModalProps {
 }
 
 const PostModal: React.FC<PostModalProps> = (props) => {
-  const { post, currentUser, onClose } = props;
+  const { post, currentUser, onClose, onToggleCommentLike } = props;
   const [commentText, setCommentText] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isPanelOpen, setPanelOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<CommentType | null>(null);
   
   const panelRef = useRef<HTMLDivElement>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
   const hasMultipleMedia = post.media.length > 1;
   const currentMedia = post.media[currentMediaIndex];
 
@@ -38,15 +89,22 @@ const PostModal: React.FC<PostModalProps> = (props) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+  
+  useEffect(() => {
+    if (replyingTo) {
+      commentInputRef.current?.focus();
+    }
+  }, [replyingTo]);
 
   const handleNextMedia = () => setCurrentMediaIndex(p => (p + 1) % post.media.length);
   const handlePrevMedia = () => setCurrentMediaIndex(p => (p - 1 + post.media.length) % post.media.length);
   
   const handlePostComment = () => {
     if (commentText.trim()) {
-      props.onComment(post.id, commentText);
+      props.onComment(post.id, commentText, replyingTo?.id);
       setCommentText('');
       setPanelOpen(false);
+      setReplyingTo(null);
     }
   };
   
@@ -62,6 +120,12 @@ const PostModal: React.FC<PostModalProps> = (props) => {
     }
     setPanelOpen(false);
   };
+  
+  const handleSetReplyingTo = (comment: CommentType) => {
+    setReplyingTo(comment);
+    commentInputRef.current?.focus();
+  }
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -97,18 +161,14 @@ const PostModal: React.FC<PostModalProps> = (props) => {
                     </div>
                  </div>
                 {post.comments.map(comment => (
-                     <div key={comment.id} className="flex items-start gap-3">
-                        <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => props.onViewProfile(comment.user)} />
-                        <div className="flex-1">
-                            <p className="text-sm"><span className="font-semibold cursor-pointer" onClick={() => props.onViewProfile(comment.user)}>{comment.user.username}</span> {comment.text}</p>
-                            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                                <span>{comment.timestamp}</span>
-                                {comment.likes > 0 && <span className="font-semibold">{comment.likes} likes</span>}
-                                <button className="font-semibold">Reply</button>
-                            </div>
-                        </div>
-                        <button className="mt-2"><Icon className={`w-4 h-4 ${comment.likedByUser ? 'text-red-500' : 'text-gray-400'}`} fill={comment.likedByUser ? 'currentColor' : 'none'}><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon></button>
-                    </div>
+                     <CommentComponent
+                        key={comment.id}
+                        comment={comment}
+                        currentUser={currentUser}
+                        onViewProfile={props.onViewProfile}
+                        onToggleLike={(commentId) => onToggleCommentLike(post.id, commentId)}
+                        onReply={handleSetReplyingTo}
+                      />
                 ))}
             </div>
              <div className="p-4 border-t border-gray-700">
@@ -124,10 +184,16 @@ const PostModal: React.FC<PostModalProps> = (props) => {
                 <p className="text-xs text-gray-500 uppercase mt-1">{post.timestamp}</p>
             </div>
             <div className="p-3 border-t border-gray-700">
+                {replyingTo && (
+                    <div className="text-xs text-gray-400 mb-2 flex justify-between items-center">
+                        <span>Replying to <span className="font-semibold text-gray-300">{replyingTo.user.username}</span></span>
+                        <button onClick={() => setReplyingTo(null)} className="p-1"><Icon className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></Icon></button>
+                    </div>
+                )}
                <div className="relative flex items-center">
                   <img src={currentUser.avatar} alt="current user avatar" className="w-8 h-8 rounded-full mr-3" />
-                  <input type="text" placeholder="Add a comment..." value={commentText} onChange={e => setCommentText(e.target.value)} onKeyPress={e => e.key === 'Enter' && handlePostComment()} className="w-full bg-transparent text-sm focus:outline-none"/>
-                  {currentUser.isPremium && !commentText && (
+                  <input ref={commentInputRef} type="text" placeholder="Add a comment..." value={commentText} onChange={e => setCommentText(e.target.value)} onKeyPress={e => e.key === 'Enter' && handlePostComment()} className="w-full bg-transparent text-sm focus:outline-none"/>
+                  {currentUser.isPremium && !commentText && !replyingTo && (
                     <div ref={panelRef}>
                       <button onClick={() => setPanelOpen(p => !p)} className="text-gray-500 hover:text-white">
                           <Icon className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon>

@@ -4,6 +4,7 @@ import type { Conversation, User, Message } from './types';
 import ChatWindow from './components/ChatWindow';
 import Icon from './components/Icon';
 import * as api from './services/apiService';
+import { socketService } from './services/socketService.ts';
 
 
 interface MessagesViewProps {
@@ -43,21 +44,27 @@ const MessagesView: React.FC<MessagesViewProps> = ({
     }
   }, [conversationToSelect, conversations, setConversationToSelect]);
 
-
   useEffect(() => {
-    if (!selectedConversation) return;
+    const handleReceiveMessage = (data: { conversation: Conversation }) => {
+        const { conversation: updatedConvo } = data;
+        setConversations(prevConvos => {
+            const newConvos = prevConvos.map(c => c.id === updatedConvo.id ? updatedConvo : c);
+            // If it's a new conversation, add it
+            if (!prevConvos.some(c => c.id === updatedConvo.id)) {
+                newConvos.unshift(updatedConvo);
+            }
+            return newConvos;
+        });
+        if (selectedConversation?.id === updatedConvo.id) {
+            setSelectedConversation(updatedConvo);
+        }
+    };
 
-    const interval = setInterval(async () => {
-      try {
-        const updatedConvo = await api.getConversationById(selectedConversation.id);
-        setConversations(convos => convos.map(c => c.id === updatedConvo.id ? updatedConvo : c));
-        setSelectedConversation(updatedConvo);
-      } catch (error) {
-        console.error("Failed to poll for new messages:", error);
-      }
-    }, 5000); // Poll every 5 seconds
+    socketService.on('receive_message', handleReceiveMessage);
 
-    return () => clearInterval(interval);
+    return () => {
+        socketService.off('receive_message', handleReceiveMessage);
+    };
   }, [selectedConversation, setConversations]);
 
 

@@ -6,6 +6,7 @@ import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivit
 
 // API Service
 import * as api from './services/apiService.ts';
+import { socketService } from './services/socketService.ts';
 
 // Components
 import LeftSidebar from './components/LeftSidebar';
@@ -26,6 +27,7 @@ import MessagesView from './MessagesView';
 import ArchiveView from './components/ArchiveView';
 import AuthView from './components/AuthView.tsx';
 import CallModal from './components/CallModal.tsx';
+import Toast from './components/Toast.tsx';
 
 // Modals & Panels
 import PostModal from './components/PostModal';
@@ -49,6 +51,8 @@ import CreateHighlightModal from './components/CreateHighlightModal';
 import SuggestionsModal from './components/SuggestionsModal';
 import TrendsModal from './components/TrendsModal';
 import NewMessageModal from './components/NewMessageModal.tsx';
+import ForgotPasswordModal from './components/ForgotPasswordModal.tsx';
+import ResetPasswordModal from './components/ResetPasswordModal.tsx';
 
 // Side Panels
 import SearchView from './components/SearchView';
@@ -81,6 +85,8 @@ const App: React.FC = () => {
     const [viewedProfile, setViewedProfile] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [conversationToSelect, setConversationToSelect] = useState<string | null>(null);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+
 
     // Modal State
     const [viewedPost, setViewedPost] = useState<PostType | null>(null);
@@ -105,6 +111,8 @@ const App: React.FC = () => {
     const [isTrendsModalOpen, setTrendsModalOpen] = useState(false);
     const [callState, setCallState] = useState<{ user: User, type: 'audio' | 'video' } | null>(null);
     const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
+    const [isForgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+    const [resetPasswordIdentifier, setResetPasswordIdentifier] = useState<string | null>(null);
 
     
     // Panel State
@@ -152,12 +160,14 @@ const App: React.FC = () => {
         localStorage.setItem('currentUserId', user.id);
         setCurrentUser(user);
         setIsLoading(true);
+        socketService.connect(user.id);
         fetchAllData(user.id).finally(() => setIsLoading(false));
     };
 
     const handleLogout = () => {
         localStorage.removeItem('currentUserId');
         setCurrentUser(null);
+        socketService.disconnect();
         // Reset all state
         setPosts([]);
         setUsers([]);
@@ -173,6 +183,7 @@ const App: React.FC = () => {
                 try {
                     const user = await api.getMe(userId);
                     setCurrentUser(user);
+                    socketService.connect(user.id);
                     await fetchAllData(userId);
                 } catch (error) {
                     console.error("Session check failed", error);
@@ -183,6 +194,10 @@ const App: React.FC = () => {
         };
 
         checkSession();
+
+        return () => {
+            socketService.disconnect();
+        }
     }, []);
 
     useEffect(() => {
@@ -233,9 +248,9 @@ const App: React.FC = () => {
         setPosts(posts.map(p => p.id === postId ? updatedPost : p));
     };
 
-    const handleComment = async (postId: string, text: string) => {
+    const handleComment = async (postId: string, text: string, replyToId?: string) => {
         if (!currentUser) return;
-        const updatedPost = await api.addComment(postId, currentUser.id, text);
+        const updatedPost = await api.addComment(postId, currentUser.id, text, replyToId);
         setPosts(posts.map(p => p.id === postId ? updatedPost : p));
         if (viewedPost?.id === postId) {
             setViewedPost(updatedPost);
@@ -268,6 +283,7 @@ const App: React.FC = () => {
         setUsers(newUsers);
         setCurrentUser(updatedUser);
         setEditProfileOpen(false);
+        setToastMessage("Profile updated successfully!");
     };
 
     const handleCreatePost = async (postData: Omit<Post, 'id' | 'likes' | 'likedBy' | 'comments' | 'timestamp' | 'isSaved' | 'isLiked' | 'commentsDisabled'>) => {
@@ -279,6 +295,7 @@ const App: React.FC = () => {
     const handleDeletePost = async (postId: string) => {
         await api.deletePost(postId);
         setPosts(posts.filter(p => p.id !== postId));
+        setToastMessage("Post deleted.");
     };
     
     const handleEditPostSave = async (postId: string, newCaption: string) => {
@@ -290,10 +307,12 @@ const App: React.FC = () => {
     const handleToggleArchive = async (post: PostType) => {
         const updatedPost = await api.toggleArchivePost(post.id);
         setPosts(posts.map(p => p.id === post.id ? updatedPost : p));
+        setToastMessage(updatedPost.isArchived ? "Post archived" : "Post unarchived");
     }
 
     const handleSendDirectMessage = async (messageData: any) => {
         if (!currentUser) return;
+        // API call now also emits socket event
         const updatedConvo = await api.sendDirectMessage({ senderId: currentUser.id, ...messageData });
         updateConversation(updatedConvo);
     };
@@ -334,7 +353,7 @@ const App: React.FC = () => {
             await api.initiateCall(currentUser.id, receiver.id, type);
             setCallState({ user: receiver, type });
         } catch (error) {
-            alert(`Could not initiate call with ${receiver.username}.`);
+            setToastMessage(`Could not initiate call with ${receiver.username}.`);
         }
     };
     
@@ -391,6 +410,7 @@ const App: React.FC = () => {
         if (!currentUser) return;
         await api.changePassword(currentUser.id, passwords);
         setChangePasswordOpen(false);
+        setToastMessage("Password changed successfully.");
     };
 
     const handleConfirmPayment = async () => {
@@ -405,7 +425,7 @@ const App: React.FC = () => {
         if (!currentUser) return;
         await api.submitVerificationRequest(currentUser.id);
         setGetVerifiedOpen(false);
-        alert("Your verification request has been submitted.");
+        setToastMessage("Your verification request has been submitted.");
     };
 
     const handleCopyLink = (content: PostType | ReelType | Story) => {
@@ -415,7 +435,7 @@ const App: React.FC = () => {
         else if ('stories' in content) path = `/story/${content.user.id}`;
         
         navigator.clipboard.writeText(`https://talka.app${path}`);
-        alert('Link copied to clipboard!');
+        setToastMessage('Link copied to clipboard!');
         setPostWithOptions(null);
         setContentToShare(null);
     };
@@ -430,7 +450,68 @@ const App: React.FC = () => {
             setConversationToSelect(convo.id);
         } catch (error) {
             console.error("Failed to start conversation:", error);
-            alert("Could not start a conversation. Please try again.");
+            setToastMessage("Could not start a conversation. Please try again.");
+        }
+    };
+
+    const handleForgotPassword = async (identifier: string) => {
+        try {
+            await api.forgotPassword(identifier);
+            setForgotPasswordOpen(false);
+            setResetPasswordIdentifier(identifier);
+        } catch (error: any) {
+            setToastMessage(error.message || "An error occurred.");
+        }
+    };
+
+    const handleResetPassword = async (password: string) => {
+        if (!resetPasswordIdentifier) return;
+        try {
+            await api.resetPassword(resetPasswordIdentifier, password);
+            setResetPasswordIdentifier(null);
+            setToastMessage("Password has been reset successfully. Please log in.");
+        } catch (error: any) {
+             setToastMessage(error.message || "An error occurred.");
+        }
+    };
+
+    const handleToggleCommentLike = async (postId: string, commentId: string) => {
+        if (!currentUser) return;
+
+        const updateCommentLikeRecursively = (comments: Comment[]): Comment[] => {
+            return comments.map(comment => {
+                if (comment.id === commentId) {
+                    const isLiked = comment.likedBy.some(u => u.id === currentUser.id);
+                    const updatedLikedBy = isLiked
+                        ? comment.likedBy.filter(u => u.id !== currentUser.id)
+                        : [...comment.likedBy, currentUser!]; 
+                    return { ...comment, likedBy: updatedLikedBy, likes: updatedLikedBy.length };
+                }
+                if (comment.replies && comment.replies.length > 0) {
+                    return { ...comment, replies: updateCommentLikeRecursively(comment.replies) };
+                }
+                return comment;
+            });
+        };
+
+        const newPosts = posts.map(p => {
+            if (p.id === postId) {
+                return { ...p, comments: updateCommentLikeRecursively(p.comments) };
+            }
+            return p;
+        });
+
+        setPosts(newPosts);
+
+        if (viewedPost?.id === postId) {
+            setViewedPost(newPosts.find(p => p.id === postId) || null);
+        }
+
+        try {
+            await api.toggleCommentLike(commentId, currentUser.id);
+        } catch (error) {
+            console.error("Failed to toggle comment like:", error);
+            // In a real app, you might want to revert the state here.
         }
     };
 
@@ -441,7 +522,7 @@ const App: React.FC = () => {
     }
     
     if (!currentUser) {
-        return <AuthView onLoginSuccess={handleLoginSuccess} />;
+        return <AuthView onLoginSuccess={handleLoginSuccess} onForgotPassword={() => setForgotPasswordOpen(true)} />;
     }
     
     const mainContent = () => {
@@ -501,6 +582,7 @@ const App: React.FC = () => {
                 conversationToSelect={conversationToSelect}
                 setConversationToSelect={setConversationToSelect}
             />;
+            // Fix: Add missing onMessage prop to ProfileView.
             case 'profile': return <ProfileView 
                 user={viewedProfile || currentUser} 
                 posts={userPosts}
@@ -515,8 +597,9 @@ const App: React.FC = () => {
                 onShowFollowing={(users) => setFollowList({ title: 'Following', users })}
                 onEditPost={setEditingPost}
                 onViewPost={setViewedPost}
-                onViewReel={() => {}} // TODO: implement reel view
+                onViewReel={(reel) => { handleNavigate('reels'); }} 
                 onOpenCreateHighlightModal={() => setCreateHighlightOpen(true)}
+                onMessage={handleStartConversation}
             />;
             case 'saved': return <SavedView posts={savedPosts} onViewPost={setViewedPost} />;
             case 'settings': return <SettingsView 
@@ -547,6 +630,11 @@ const App: React.FC = () => {
     
     return (
         <div className="bg-black text-white min-h-screen flex">
+             {toastMessage && (
+                <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[100]">
+                    <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
+                </div>
+            )}
             <LeftSidebar 
                 currentUser={currentUser}
                 currentView={currentView}
@@ -584,7 +672,9 @@ const App: React.FC = () => {
             {isNotificationsPanelOpen && <NotificationsPanel notifications={notifications} onClose={() => setNotificationsPanelOpen(false)} />}
             
             {/* Modals */}
-            {viewedPost && <PostModal post={viewedPost} currentUser={currentUser} onClose={() => setViewedPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={setContentToShare} onViewLikes={setUsersForLikesModal} onViewProfile={(user) => { setViewedPost(null); handleNavigate('profile', user); }} onOptions={setPostWithOptions} />}
+            {isForgotPasswordOpen && <ForgotPasswordModal onClose={() => setForgotPasswordOpen(false)} onSubmit={handleForgotPassword} />}
+            {resetPasswordIdentifier && <ResetPasswordModal onClose={() => setResetPasswordIdentifier(null)} onSubmit={handleResetPassword} />}
+            {viewedPost && <PostModal post={viewedPost} currentUser={currentUser} onClose={() => setViewedPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onToggleCommentLike={handleToggleCommentLike} onShare={setContentToShare} onViewLikes={setUsersForLikesModal} onViewProfile={(user) => { setViewedPost(null); handleNavigate('profile', user); }} onOptions={setPostWithOptions} />}
             {viewedStory && <StoryViewer stories={stories} startIndex={viewedStory.index} onClose={() => setViewedStory(null)} onViewProfile={(user) => { setViewedStory(null); handleNavigate('profile', user); }} onReply={handleReplyToStory} onShare={setContentToShare} />}
             {isAccountSwitcherOpen && <AccountSwitcherModal users={users} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchUser={() => {}} />}
             {isCreatePostOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreatePostOpen(false)} onCreatePost={handleCreatePost} />}
@@ -601,7 +691,6 @@ const App: React.FC = () => {
             {isPaymentModalOpen && <PaymentModal onClose={() => setPaymentModalOpen(false)} onConfirmPayment={handleConfirmPayment} />}
             {isNewSupportRequestOpen && <NewSupportRequestModal onClose={() => setNewSupportRequestOpen(false)} onSubmit={handleCreateSupportTicket} />}
             {isCreateStoryOpen && <CreateStoryModal onClose={() => setCreateStoryOpen(false)} onCreateStory={handleCreateStory} />}
-            {/* Fix: Changed s.userId to s.user.id to match Story type */}
             {isCreateHighlightOpen && <CreateHighlightModal userStories={stories.find(s => s.user.id === currentUser.id)?.stories || []} onClose={() => setCreateHighlightOpen(false)} onCreate={handleCreateHighlight} />}
             {isSuggestionsModalOpen && <SuggestionsModal users={suggestedUsers} currentUser={currentUser} onClose={() => setSuggestionsModalOpen(false)} onViewProfile={(user) => { setSuggestionsModalOpen(false); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={setUserToUnfollow} />}
             {isTrendsModalOpen && <TrendsModal topics={trendingTopics} onClose={() => setTrendsModalOpen(false)} />}

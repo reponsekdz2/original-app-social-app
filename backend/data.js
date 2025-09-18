@@ -1,11 +1,10 @@
-
 // This file acts as a simple in-memory database.
 
 // --- UTILITIES ---
 let nextIds = {
     user: 5,
     post: 4,
-    comment: 4,
+    comment: 5, // Incremented for new comment
     story: 4,
     storyItem: 5,
     reel: 3,
@@ -51,9 +50,10 @@ u4.following = [u1.id, u2.id];
 
 // --- Comments ---
 db.comments = [
-    { id: 'c1', userId: 'u2', text: 'This looks amazing!', timestamp: '2h', likes: 15, likedBy: ['u1', 'u3'], likedByUser: true }, // Liked by current user
-    { id: 'c2', userId: 'u3', text: 'Wow, what a classic!', timestamp: '1h', likes: 5, likedBy: [], likedByUser: false },
-    { id: 'c3', userId: 'u4', text: 'I need to see this!', timestamp: '30m', likes: 8, likedBy: [], likedByUser: false },
+    { id: 'c1', userId: 'u2', text: 'This looks amazing!', timestamp: '2h', likes: 15, likedBy: ['u1', 'u3'], replyIds: ['c4'] },
+    { id: 'c2', userId: 'u3', text: 'Wow, what a classic!', timestamp: '1h', likes: 5, likedBy: [], replyIds: [] },
+    { id: 'c3', userId: 'u4', text: 'I need to see this!', timestamp: '30m', likes: 8, likedBy: [], replyIds: [] },
+    { id: 'c4', userId: 'u1', text: 'Right?! The cinematography is breathtaking.', timestamp: '1h', likes: 2, likedBy: ['u2'], replyToId: 'c1', replyIds: [] },
 ];
 
 // --- Posts ---
@@ -188,6 +188,37 @@ export const findOrCreateConversation = (user1Id, user2Id) => {
     return convo;
 };
 
+const hydrateComments = (commentIds) => {
+    const allCommentsForPost = commentIds.map(id => db.comments.find(c => c.id === id)).filter(Boolean);
+    const commentMap = new Map();
+
+    // First pass: hydrate and map all comments
+    allCommentsForPost.forEach(comment => {
+        const hydratedComment = hydrate(comment, ['user', 'likedBy']);
+        hydratedComment.replies = [];
+        commentMap.set(comment.id, hydratedComment);
+    });
+
+    const topLevelComments = [];
+
+    // Second pass: build the tree
+    for (const hydratedComment of commentMap.values()) {
+        if (hydratedComment.replyToId) {
+            const parent = commentMap.get(hydratedComment.replyToId);
+            if (parent) {
+                parent.replies.push(hydratedComment);
+            } else {
+                 // Orphaned reply, treat as top-level
+                topLevelComments.push(hydratedComment);
+            }
+        } else {
+            topLevelComments.push(hydratedComment);
+        }
+    }
+
+    return topLevelComments;
+}
+
 
 export const hydrate = (obj, fields) => {
     if (!obj) return null;
@@ -195,8 +226,8 @@ export const hydrate = (obj, fields) => {
 
     for (const field of fields) {
         if (field === 'user') hydrated.user = findUser(obj.userId);
-        if (field === 'likedBy') hydrated.likedBy = obj.likedBy.map(findUser);
-        if (field === 'comments') hydrated.comments = obj.commentIds.map(id => hydrate(db.comments.find(c => c.id === id), ['user']));
+        if (field === 'likedBy') hydrated.likedBy = (obj.likedBy || []).map(findUser);
+        if (field === 'comments') hydrated.comments = hydrateComments(obj.commentIds);
         if (field === 'stories') hydrated.stories = obj.storyIds.map(findStoryItem).filter(Boolean); // for highlights
         if (field === 'userStories') hydrated.stories = db.stories.find(s => s.userId === obj.id); // for user object
         if (field === 'highlights') hydrated.highlights = db.highlights.filter(h => h.userId === obj.id).map(h => hydrate(h, ['stories']));

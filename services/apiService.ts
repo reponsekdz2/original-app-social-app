@@ -1,5 +1,3 @@
-
-
 // A service to centralize all API calls
 
 const API_BASE_URL = 'http://localhost:3000/api';
@@ -42,6 +40,17 @@ export const register = (userData: any) => request('/auth/register', {
 export const getMe = (userId: string) => request(`/auth/me/${userId}`);
 export const logout = () => request('/auth/logout', { method: 'POST' });
 
+export const forgotPassword = (identifier: string) => request('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ identifier }),
+});
+
+export const resetPassword = (identifier: string, password: string) => request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ identifier, password }),
+});
+
+
 // --- GET ---
 export const getPosts = () => request('/posts');
 export const getExplorePosts = () => request('/posts/explore');
@@ -83,9 +92,9 @@ export const togglePostSave = (postId: string, userId: string) => request(`/post
      body: JSON.stringify({ userId }),
 });
 
-export const addComment = (postId: string, userId: string, text: string) => request(`/posts/${postId}/comment`, {
+export const addComment = (postId: string, userId: string, text: string, replyToId?: string) => request(`/posts/${postId}/comment`, {
     method: 'POST',
-    body: JSON.stringify({ userId, text }),
+    body: JSON.stringify({ userId, text, replyToId }),
 });
 
 export const toggleCommentLike = (commentId: string, userId: string) => request(`/comments/${commentId}/toggle-like`, {

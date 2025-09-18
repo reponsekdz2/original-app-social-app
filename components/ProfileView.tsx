@@ -22,6 +22,7 @@ interface ProfileViewProps {
   onViewPost: (post: PostType) => void;
   onViewReel: (reel: ReelType) => void;
   onOpenCreateHighlightModal: () => void;
+  onMessage: (user: User) => void;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = (props) => {

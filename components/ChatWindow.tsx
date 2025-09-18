@@ -6,7 +6,9 @@ import Message from '../Message';
 import MessageInput from './MessageInput';
 import ChatSettingsPanel from './ChatSettingsPanel';
 import VerifiedBadge from './VerifiedBadge';
+import TypingIndicator from './TypingIndicator.tsx';
 import * as api from '../services/apiService';
+import { socketService } from '../services/socketService.ts';
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -22,12 +24,30 @@ interface ChatWindowProps {
 const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, setConversation, currentUser, onSendMessage, onViewProfile, onBack, onInitiateCall, onUpdateUserRelationship }) => {
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<MessageType | null>(null);
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const otherParticipant = conversation.participants.find(p => p.id !== currentUser.id);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation.messages]);
+  }, [conversation.messages, isOtherUserTyping]);
+  
+  useEffect(() => {
+    socketService.emit('join_conversation', conversation.id);
+
+    const handleTyping = () => setIsOtherUserTyping(true);
+    const handleStopTyping = () => setIsOtherUserTyping(false);
+
+    socketService.on('typing', handleTyping);
+    socketService.on('stop_typing', handleStopTyping);
+
+    return () => {
+        socketService.emit('leave_conversation', conversation.id);
+        socketService.off('typing', handleTyping);
+        socketService.off('stop_typing', handleStopTyping);
+    };
+  }, [conversation.id]);
+
 
   if (!otherParticipant) return <div>Conversation error</div>;
 
@@ -94,6 +114,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, setConversation, 
                     onDelete={() => handleDeleteMessage(msg.id)}
                 />
             ))}
+            {isOtherUserTyping && <TypingIndicator user={otherParticipant} />}
             <div ref={messagesEndRef} />
        </main>
        { isBlocked ? (
@@ -106,6 +127,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, setConversation, 
                     onSend={handleSendMessage}
                     replyingTo={replyingTo}
                     onCancelReply={() => setReplyingTo(null)}
+                    conversationId={conversation.id}
                 />
         </footer>
        )}

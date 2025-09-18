@@ -1,4 +1,3 @@
-
 // Fix: Create full type definitions for the application.
 export type View = 'home' | 'explore' | 'notifications' | 'messages' | 'reels' | 'saved' | 'premium' | 'profile' | 'settings' | 'activity' | 'help-center' | 'support-inbox' | 'archive' | 'premium-welcome';
 
@@ -36,6 +35,9 @@ export interface Comment {
   timestamp: string;
   likes: number;
   likedByUser: boolean;
+  likedBy: User[];
+  replyToId?: string;
+  replies: Comment[];
 }
 
 export interface Post {

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { User } from '../types';
 import LoginForm from './LoginForm';
@@ -8,6 +9,7 @@ import AuthWelcomeContent from './AuthWelcomeContent.tsx';
 
 interface AuthViewProps {
   onLoginSuccess: (user: User) => void;
+  onForgotPassword: () => void;
 }
 
 const SocialLogins: React.FC = () => (
@@ -35,7 +37,7 @@ const SocialLogins: React.FC = () => (
 );
 
 
-const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
+const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, onForgotPassword }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [isSwitching, setIsSwitching] = useState(false);
 
@@ -74,7 +76,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
               
               <div className={`transition-opacity duration-300 ${isSwitching ? 'opacity-0' : 'opacity-100'}`}>
                 {isLoginView ? (
-                  <LoginForm onLoginSuccess={onLoginSuccess} />
+                  <LoginForm onLoginSuccess={onLoginSuccess} onForgotPassword={onForgotPassword} />
                 ) : (
                   <RegisterForm onRegisterSuccess={onLoginSuccess} />
                 )}

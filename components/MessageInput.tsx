@@ -3,18 +3,21 @@ import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon.tsx';
 import type { Message } from '../types';
 import EmojiStickerPanel from './EmojiStickerPanel.tsx';
+import { socketService } from '../services/socketService.ts';
 
 interface MessageInputProps {
   onSend: (content: string, type: Message['type']) => void;
   replyingTo: Message | null;
   onCancelReply: () => void;
+  conversationId: string;
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCancelReply }) => {
+const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCancelReply, conversationId }) => {
   const [text, setText] = useState('');
   const [isEmojiPanelOpen, setEmojiPanelOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -26,10 +29,32 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+    
+    if (!socketService.socket) return;
+
+    if (!typingTimeoutRef.current) {
+        socketService.emit('typing', conversationId);
+    }
+    
+    if(typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+        socketService.emit('stop_typing', conversationId);
+        typingTimeoutRef.current = null;
+    }, 2000); // 2 seconds of inactivity
+  };
+
+
   const handleSendText = () => {
     if (text.trim()) {
       onSend(text, 'text');
       setText('');
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      socketService.emit('stop_typing', conversationId);
     }
   };
   
@@ -87,7 +112,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
             type="text" 
             placeholder="Message..."
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={handleTyping}
             onKeyPress={(e) => e.key === 'Enter' && handleSendText()}
             className="flex-1 bg-transparent focus:outline-none"
           />

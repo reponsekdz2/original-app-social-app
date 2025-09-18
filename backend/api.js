@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities, findMessage, findReel, findStoryItem, findOrCreateConversation } from './data.js';
 
@@ -71,7 +70,7 @@ router.post('/posts/:id/toggle-save', (req, res) => {
 });
 
 router.post('/posts/:id/comment', (req, res) => {
-    const { userId, text } = req.body;
+    const { userId, text, replyToId } = req.body;
     const post = findPost(req.params.id);
     const user = findUser(userId);
     if (!post || !user) return res.status(404).send('Post or user not found');
@@ -83,9 +82,23 @@ router.post('/posts/:id/comment', (req, res) => {
         timestamp: randomTimeAgo(),
         likes: 0,
         likedBy: [],
+        replyToId: replyToId || undefined,
+        replyIds: [],
     };
     db.comments.push(newComment);
-    post.commentIds.push(newComment.id);
+    
+    if (replyToId) {
+        const parentComment = findComment(replyToId);
+        if (parentComment) {
+            parentComment.replyIds.push(newComment.id);
+        } else {
+            // If parent comment doesn't exist, add it as a top-level comment
+            post.commentIds.push(newComment.id);
+        }
+    } else {
+        post.commentIds.push(newComment.id);
+    }
+
     if (post.userId !== userId) {
         createNotification({ recipientId: post.userId, type: 'comment', user, post, commentText: text });
     }
@@ -144,7 +157,7 @@ router.post('/comments/:id/toggle-like', (req, res) => {
         comment.likedBy.push(userId);
     }
     comment.likes = comment.likedBy.length;
-    res.json(hydrate(comment, ['user']));
+    res.json(hydrate(comment, ['user', 'likedBy']));
 });
 
 
@@ -305,6 +318,7 @@ router.post('/conversations/find-or-create', (req, res) => {
 
 router.post('/messages/direct', (req, res) => {
     const { senderId, recipientId, content, type, replyToId, sharedPostId, duration } = req.body;
+    const io = req.app.get('io');
 
     const sender = findUser(senderId);
     const recipient = findUser(recipientId);
@@ -325,7 +339,13 @@ router.post('/messages/direct', (req, res) => {
     db.messages.push(newMessage);
     convo.messages.push(newMessage.id);
 
-    res.status(201).json(hydrate(convo, ['participants', 'messages']));
+    const hydratedConvo = hydrate(convo, ['participants', 'messages']);
+    
+    // Emit to both sender and recipient so their conversation state is updated
+    io.to(senderId).emit('receive_message', { conversation: hydratedConvo });
+    io.to(recipientId).emit('receive_message', { conversation: hydratedConvo });
+
+    res.status(201).json(hydratedConvo);
 });
 
 router.delete('/conversations/:convoId/messages/:msgId', (req, res) => {
