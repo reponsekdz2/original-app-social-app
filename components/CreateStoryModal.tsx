@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
 // Fix: Corrected import path for types

@@ -1,4 +1,3 @@
-
 // Fix: Create the ChatWindow component.
 import React, { useState, useRef, useEffect } from 'react';
 // Fix: Corrected import path for types
@@ -23,10 +22,12 @@ interface ChatWindowProps {
   onViewProfile: (user: User) => void;
   onBack: () => void;
   onInitiateCall: (user: User, type: 'audio' | 'video') => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => void;
+// Fix: Corrected the action type to match the implementation.
+  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock') => void;
+  onReportUser: (user: User) => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, setConversation, currentUser, onSendMessage, onViewProfile, onBack, onInitiateCall, onUpdateUserRelationship }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, setConversation, currentUser, onSendMessage, onViewProfile, onBack, onInitiateCall, onUpdateUserRelationship, onReportUser }) => {
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<MessageType | null>(null);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
@@ -138,11 +139,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, setConversation, 
        )}
 
        {isSettingsOpen && (
+// Fix: Add missing `onViewProfile` and `onReport` props to `ChatSettingsPanel`.
             <ChatSettingsPanel 
                 user={otherParticipant} 
                 currentUser={currentUser}
                 onClose={() => setSettingsOpen(false)} 
                 onUpdateUserRelationship={onUpdateUserRelationship}
+                onViewProfile={onViewProfile}
+                onReport={onReportUser}
             />
         )}
     </div>

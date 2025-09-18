@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 // Fix: Corrected import path for types
 import type { Reel as ReelType, User } from '../types.ts';

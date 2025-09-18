@@ -1,18 +1,18 @@
 import React from 'react';
-// Fix: Add .ts extension to import to resolve module.
 import type { Post } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface ArchiveViewProps {
   posts: Post[];
   onViewPost: (post: Post) => void;
+  onUnarchivePost: (post: Post) => void;
 }
 
 const ArchiveView: React.FC<ArchiveViewProps> = ({ posts, onViewPost }) => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Archived Posts</h2>
-      <p className="text-xs text-gray-400 mb-6">Only you can see what you've archived</p>
+      <p className="text-xs text-gray-400 mb-6">Only you can see what you've archived. They won't appear on your profile.</p>
       {posts.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 lg:grid-cols-4 2xl:grid-cols-5">
           {posts.map((post) => {

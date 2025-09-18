@@ -14,10 +14,13 @@ interface MessagesViewProps {
   onSendMessage: (messageData: any) => void;
   onViewProfile: (user: User) => void;
   onInitiateCall: (user: User, type: 'audio' | 'video') => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => void;
+// Fix: Corrected the action type to match the implementation in child components.
+  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock') => void;
   onNewMessage: () => void;
   conversationToSelect: string | null;
   setConversationToSelect: (id: string | null) => void;
+// Fix: Added `onReportUser` prop to allow reporting from chat.
+  onReportUser: (user: User) => void;
 }
 
 const MessagesView: React.FC<MessagesViewProps> = ({ 
@@ -28,6 +31,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({
     onViewProfile, 
     onInitiateCall, 
     onUpdateUserRelationship,
+    onReportUser,
     onNewMessage,
     conversationToSelect,
     setConversationToSelect
@@ -110,6 +114,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({
           onBack={() => setSelectedConversation(null)}
           onInitiateCall={onInitiateCall}
           onUpdateUserRelationship={onUpdateUserRelationship}
+          onReportUser={onReportUser}
         />
       )}
     </div>

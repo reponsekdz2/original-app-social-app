@@ -7,10 +7,12 @@ interface ChatSettingsPanelProps {
   user: User;
   currentUser: User;
   onClose: () => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => void;
+  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock') => void;
+  onReport: (user: User) => void;
+  onViewProfile: (user: User) => void;
 }
 
-const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({ user, currentUser, onClose, onUpdateUserRelationship }) => {
+const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({ user, currentUser, onClose, onUpdateUserRelationship, onReport, onViewProfile }) => {
   const isMuted = currentUser.mutedUsers.includes(user.id);
   const isBlocked = currentUser.blockedUsers.includes(user.id);
 
@@ -27,7 +29,7 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({ user, currentUser
             </button>
         </div>
         
-        <div className="flex flex-col items-center text-center mb-6">
+        <div onClick={() => onViewProfile(user)} className="flex flex-col items-center text-center mb-6 cursor-pointer">
             <img src={user.avatar} alt={user.username} className="w-20 h-20 rounded-full mb-2" />
             <p className="font-semibold flex items-center gap-1">{user.username} {user.isVerified && <VerifiedBadge />}</p>
             <p className="text-xs text-gray-400">{user.followers.length} followers</p>
@@ -43,10 +45,10 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({ user, currentUser
         </div>
 
         <div className="mt-4 pt-4 border-t border-gray-700 space-y-2">
-            <button onClick={() => onUpdateUserRelationship(user, isBlocked ? 'unblock' : 'block')} className="w-full text-left p-2 text-red-500 hover:bg-red-500/10 rounded-md">
+            <button onClick={() => { onUpdateUserRelationship(user, isBlocked ? 'unblock' : 'block'); onClose(); }} className="w-full text-left p-2 text-red-500 hover:bg-red-500/10 rounded-md">
                 {isBlocked ? 'Unblock' : 'Block'}
             </button>
-             <button className="w-full text-left p-2 text-red-500 hover:bg-red-500/10 rounded-md">
+             <button onClick={() => { onReport(user); onClose(); }} className="w-full text-left p-2 text-red-500 hover:bg-red-500/10 rounded-md">
                 Report
             </button>
         </div>

@@ -11,31 +11,39 @@ interface PostWithOptionsModalProps {
   onEdit: (post: Post) => void;
   onDelete: (post: Post) => void;
   onArchive: (post: Post) => void;
+  onUnarchive?: (post: Post) => void;
   onReport: (post: Post) => void;
+  onShare: (post: Post) => void;
+  onCopyLink: () => void;
+  onViewProfile: (user: User) => void;
+  onGoToPost: (post: Post) => void;
 }
 
 const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
-  const { post, currentUser, onClose, onUnfollow, onFollow, onEdit, onDelete, onArchive, onReport } = props;
+  const { post, currentUser, onClose, onUnfollow, onFollow, onEdit, onDelete, onArchive, onUnarchive, onReport, onShare, onCopyLink, onViewProfile, onGoToPost } = props;
 
   const isCurrentUserPost = post.user.id === currentUser.id;
   const isFollowing = currentUser.following.some(u => u.id === post.user.id);
 
-  const userOptions = [
+  const options = [
+    // --- Destructive/Moderation Actions ---
     !isCurrentUserPost && { label: 'Report', action: () => onReport(post), className: 'text-red-500 font-bold' },
-    !isCurrentUserPost && (isFollowing 
-        ? { label: 'Unfollow', action: () => onUnfollow(post.user), className: 'text-red-500 font-bold' }
-        : { label: 'Follow', action: () => onFollow(post.user), className: 'font-bold' }
-    ),
-  ].filter(Boolean);
-
-  const postOptions = [
-    isCurrentUserPost && { label: 'Edit', action: () => onEdit(post) },
     isCurrentUserPost && { label: 'Delete', action: () => onDelete(post), className: 'text-red-500 font-bold' },
-    isCurrentUserPost && { label: 'Archive', action: () => onArchive(post) },
-    { label: 'Go to post', action: () => {} },
-    { label: 'Share to...', action: () => {} },
-    { label: 'Copy link', action: () => {} },
-    { label: 'About this account', action: () => {} },
+    !isCurrentUserPost && isFollowing && { label: 'Unfollow', action: () => onUnfollow(post.user), className: 'text-red-500 font-bold' },
+
+    // --- User-Specific Actions ---
+    isCurrentUserPost && { label: 'Edit', action: () => onEdit(post) },
+    isCurrentUserPost && (post.isArchived 
+        ? { label: 'Unarchive', action: () => onUnarchive && onUnarchive(post) }
+        : { label: 'Archive', action: () => onArchive(post) }
+    ),
+    !isCurrentUserPost && !isFollowing && { label: 'Follow', action: () => onFollow(post.user), className: 'font-bold' },
+
+    // --- General Actions ---
+    { label: 'Go to post', action: () => onGoToPost(post) },
+    { label: 'Share to...', action: () => onShare(post) },
+    { label: 'Copy link', action: onCopyLink },
+    { label: 'About this account', action: () => onViewProfile(post.user) },
   ].filter(Boolean);
 
   return (
@@ -45,13 +53,12 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col">
-          {userOptions.map((option, index) => (
-            <button key={index} onClick={() => { option.action(); onClose(); }} className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 transition-colors ${option.className || ''}`}>
-              {option.label}
-            </button>
-          ))}
-           {postOptions.map((option, index) => (
-            <button key={index} onClick={() => { option.action(); onClose(); }} className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 transition-colors ${option.className || ''}`}>
+          {options.map((option, index) => (
+            <button 
+              key={index} 
+              onClick={() => { if(option.action) option.action(); onClose(); }} 
+              className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 transition-colors ${option.className || ''}`}
+            >
               {option.label}
             </button>
           ))}
