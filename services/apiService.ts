@@ -60,6 +60,8 @@ export const getSuggestedUsers = (userId: string) => request(`/users/suggestions
 export const getSponsoredContent = () => request('/sponsored-content');
 export const getPremiumTestimonials = () => request('/premium/testimonials');
 export const getHelpArticles = () => request('/help/articles');
+// Fix: Add getStickers to fetch stickers from the backend.
+export const getStickers = () => request('/stickers');
 
 
 // --- POST ---
@@ -116,6 +118,12 @@ export const markNotificationsAsRead = (userId: string) => request(`/notificatio
     method: 'POST',
 });
 
+// Fix: Add updateUserRelationship to handle mute, block, etc.
+export const updateUserRelationship = (currentUserId: string, targetUserId: string, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => request('/users/relationship', {
+    method: 'POST',
+    body: JSON.stringify({ currentUserId, targetUserId, action }),
+});
+
 
 // --- PUT ---
 export const updateUserProfile = (userId: string, userData: any) => request(`/users/${userId}`, {
@@ -137,5 +145,10 @@ export const updatePost = (postId: string, caption: string) => request(`/posts/$
 
 // --- DELETE ---
 export const deletePost = (postId: string) => request(`/posts/${postId}`, {
+    method: 'DELETE',
+});
+
+// Fix: Add deleteMessage function.
+export const deleteMessage = (conversationId: string, messageId: string) => request(`/conversations/${conversationId}/messages/${messageId}`, {
     method: 'DELETE',
 });

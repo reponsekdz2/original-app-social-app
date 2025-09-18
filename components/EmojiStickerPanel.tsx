@@ -1,5 +1,6 @@
 // Fix: Create the EmojiStickerPanel component.
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import * as api from '../services/apiService';
 
 interface EmojiStickerPanelProps {
   onSelectEmoji: (emoji: string) => void;
@@ -7,13 +8,22 @@ interface EmojiStickerPanelProps {
 }
 
 const EMOJIS = ['😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '🎉'];
-const STICKERS = [
-  'https://via.placeholder.com/64/ff0000/FFFFFF?text=LOL',
-  'https://via.placeholder.com/64/00ff00/FFFFFF?text=OMG',
-  'https://via.placeholder.com/64/0000ff/FFFFFF?text=Nice',
-];
 
 const EmojiStickerPanel: React.FC<EmojiStickerPanelProps> = ({ onSelectEmoji, onSelectSticker }) => {
+  const [stickers, setStickers] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchStickers = async () => {
+        try {
+            const stickerUrls = await api.getStickers();
+            setStickers(stickerUrls);
+        } catch (error) {
+            console.error("Failed to fetch stickers:", error);
+        }
+    };
+    fetchStickers();
+  }, []);
+
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-3 w-64">
       <h4 className="font-semibold text-sm mb-2">Emojis</h4>
@@ -26,7 +36,7 @@ const EmojiStickerPanel: React.FC<EmojiStickerPanelProps> = ({ onSelectEmoji, on
       </div>
       <h4 className="font-semibold text-sm mb-2">Stickers</h4>
        <div className="flex gap-2">
-        {STICKERS.map(sticker => (
+        {stickers.map(sticker => (
           <button key={sticker} onClick={() => onSelectSticker(sticker)}>
             <img src={sticker} alt="sticker" className="w-16 h-16 rounded-md hover:scale-110 transition-transform" />
           </button>

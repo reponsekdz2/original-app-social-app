@@ -29,10 +29,11 @@ export const randomTimeAgo = () => {
 const db = {};
 
 // --- Users ---
-const u1 = { id: 'u1', username: 'movie_magic', name: 'Alex Rivera', email: 'alex@example.com', password: 'password123', phone: '123-456-7890', dob: '1990-05-15', avatar: 'https://i.pravatar.cc/150?u=movie_magic', isVerified: true, isPremium: true, isPrivate: false, bio: 'Bringing you the best of cinema. 🎬\nWriter, Director, Popcorn Enthusiast.', website: 'https://alexrivera.film', gender: 'Prefer not to say', followers: [], following: [], notificationSettings: { likes: true, comments: true, follows: true } };
-const u2 = { id: 'u2', username: 'series_scout', name: 'Brenda Jones', email: 'brenda@example.com', password: 'password123', phone: '234-567-8901', dob: '1992-08-22', avatar: 'https://i.pravatar.cc/150?u=series_scout', isPrivate: true, bio: 'Binge-watching my way through life. What should I watch next?', followers: [], following: [], notificationSettings: { likes: true, comments: true, follows: true } };
-const u3 = { id: 'u3', username: 'retro_reels', name: 'Casey Lee', email: 'casey@example.com', password: 'password123', phone: '345-678-9012', dob: '1988-11-30', avatar: 'https://i.pravatar.cc/150?u=retro_reels', isVerified: true, isPrivate: false, bio: 'Celebrating classic films and vintage vibes. 🎞️', followers: [], following: [], notificationSettings: { likes: true, comments: true, follows: true } };
-const u4 = { id: 'u4', username: 'indie_insights', name: 'Dana Smith', email: 'dana@example.com', password: 'password123', phone: '456-789-0123', dob: '1995-02-10', avatar: 'https://i.pravatar.cc/150?u=indie_insights', isPrivate: false, bio: 'Your source for hidden gems and independent cinema.', followers: [], following: [], notificationSettings: { likes: true, comments: true, follows: true } };
+// Fix: Add mutedUsers, blockedUsers, and restrictedUsers to each user object.
+const u1 = { id: 'u1', username: 'movie_magic', name: 'Alex Rivera', email: 'alex@example.com', password: 'password123', phone: '123-456-7890', dob: '1990-05-15', avatar: 'https://i.pravatar.cc/150?u=movie_magic', isVerified: true, isPremium: true, isPrivate: false, bio: 'Bringing you the best of cinema. 🎬\nWriter, Director, Popcorn Enthusiast.', website: 'https://alexrivera.film', gender: 'Prefer not to say', followers: [], following: [], notificationSettings: { likes: true, comments: true, follows: true }, mutedUsers: [], blockedUsers: [], restrictedUsers: [] };
+const u2 = { id: 'u2', username: 'series_scout', name: 'Brenda Jones', email: 'brenda@example.com', password: 'password123', phone: '234-567-8901', dob: '1992-08-22', avatar: 'https://i.pravatar.cc/150?u=series_scout', isPrivate: true, bio: 'Binge-watching my way through life. What should I watch next?', followers: [], following: [], notificationSettings: { likes: true, comments: true, follows: true }, mutedUsers: [], blockedUsers: [], restrictedUsers: [] };
+const u3 = { id: 'u3', username: 'retro_reels', name: 'Casey Lee', email: 'casey@example.com', password: 'password123', phone: '345-678-9012', dob: '1988-11-30', avatar: 'https://i.pravatar.cc/150?u=retro_reels', isVerified: true, isPrivate: false, bio: 'Celebrating classic films and vintage vibes. 🎞️', followers: [], following: [], notificationSettings: { likes: true, comments: true, follows: true }, mutedUsers: [], blockedUsers: [], restrictedUsers: [] };
+const u4 = { id: 'u4', username: 'indie_insights', name: 'Dana Smith', email: 'dana@example.com', password: 'password123', phone: '456-789-0123', dob: '1995-02-10', avatar: 'https://i.pravatar.cc/150?u=indie_insights', isPrivate: false, bio: 'Your source for hidden gems and independent cinema.', followers: [], following: [], notificationSettings: { likes: true, comments: true, follows: true }, mutedUsers: [], blockedUsers: [], restrictedUsers: [] };
 
 db.users = [u1, u2, u3, u4];
 
@@ -104,6 +105,16 @@ db.activities = [
 db.notifications = []; // Will be generated dynamically
 
 // --- Other Static Data (previously in frontend/constants.ts) ---
+// Fix: Create a stickers database.
+db.stickers = [
+  'https://via.placeholder.com/64/ff0000/FFFFFF?text=LOL',
+  'https://via.placeholder.com/64/00ff00/FFFFFF?text=OMG',
+  'https://via.placeholder.com/64/0000ff/FFFFFF?text=Nice',
+  'https://via.placeholder.com/64/ffff00/000000?text=Cool',
+  'https://via.placeholder.com/64/ff00ff/FFFFFF?text=Wow',
+  'https://via.placeholder.com/64/00ffff/FFFFFF?text=Haha',
+];
+
 db.sponsoredContent = [
     { id: 'ad1', company: 'CineMax Theaters', logo: 'https://i.pravatar.cc/150?u=cinemax', media: 'https://picsum.photos/id/30/200/200', mediaType: 'image', callToAction: 'Get tickets for the latest blockbusters!', link: '#' },
     { id: 'ad2', company: 'Streamify+', logo: 'https://i.pravatar.cc/150?u=streamify', media: 'https://picsum.photos/id/40/200/200', mediaType: 'image', callToAction: 'Start your free trial for exclusive shows.', link: '#' }
@@ -127,119 +138,84 @@ db.helpArticles = [
 
 db.supportTickets = [
     { id: 'st1', subject: 'Issue with video quality', status: 'Resolved', lastUpdated: '2 days ago', messages: [{ sender: 'user', text: 'My videos look blurry after upload.', timestamp: '3 days ago'}, { sender: 'support', text: 'We have identified and fixed the issue with our video processing. Please try re-uploading your video. Thank you for your patience.', timestamp: '2 days ago'}] },
-    { id: 'st2', subject: 'Cannot access my account', status: 'Open', lastUpdated: '1 hour ago', messages: [{ sender: 'user', text: 'I forgot my password and I am not receiving the password reset email.', timestamp: '2 hours ago'}, { sender: 'support', text: 'We are looking into your issue regarding email delivery and will get back to you shortly.', timestamp: '1 hour ago'}] }
+    { id: 'st2', subject: 'Cannot access my account', status: 'Open', lastUpdated: '1 hour ago', messages: [{ sender: 'user', text: 'I forgot my password and the reset link is not working.' , timestamp: '1 hour ago'}] }
 ];
 
+// --- DATA HYDRATION & ACCESSORS ---
 
-// --- DB HELPERS ---
 export const findUser = (id) => db.users.find(u => u.id === id);
 export const findPost = (id) => db.posts.find(p => p.id === id);
-export const findComment = (id) => db.comments.find(c => c.id === id);
+export const findComment = (id) => db.comments.find(c => c.id === c.id);
+export const findMessage = (id) => db.messages.find(m => m.id === id);
 
-export const createNotification = ({ recipientId, type, user, post, commentText }) => {
-    const newNotification = {
+export const hydrate = (obj, fields) => {
+    if (!obj) return null;
+    const hydrated = { ...obj };
+
+    for (const field of fields) {
+        if (field === 'user') hydrated.user = findUser(obj.userId);
+        if (field === 'likedBy') hydrated.likedBy = obj.likedBy.map(findUser);
+        if (field === 'comments') hydrated.comments = obj.commentIds.map(id => hydrate(db.comments.find(c => c.id === id), ['user']));
+        if (field === 'stories') hydrated.stories = db.stories.find(s => s.userId === obj.id);
+        if (field === 'highlights') hydrated.highlights = db.highlights.filter(h => h.userId === obj.id);
+        if (field === 'followers') hydrated.followers = obj.followers.map(findUser);
+        if (field === 'following') hydrated.following = obj.following.map(findUser);
+        if (field === 'post') hydrated.post = findPost(obj.postId);
+        if (field === 'targetUser') hydrated.targetUser = findUser(obj.targetUserId);
+        if (field === 'participants') hydrated.participants = obj.participants.map(findUser);
+        if (field === 'messages') {
+            hydrated.messages = obj.messages
+                .map(findMessage)
+                .filter(Boolean) // Filter out any undefined messages if an ID is invalid
+                .map(m => hydrate(m, ['replyTo']));
+        }
+        if (field === 'replyTo') hydrated.replyTo = findMessage(obj.replyToId);
+    }
+    return hydrated;
+};
+
+// --- DYNAMIC DATA GENERATION ---
+export const createNotification = (data) => {
+    const notif = {
         id: generateId('notification'),
-        recipientId,
-        type,
-        user,
-        post,
-        commentText,
-        timestamp: randomTimeAgo(),
         read: false,
+        timestamp: randomTimeAgo(),
+        ...data
     };
-    db.notifications.unshift(newNotification);
-    return newNotification;
+    db.notifications.unshift(notif);
 };
 
 export const generateFeedActivities = () => {
-    const activities = [];
-    const numActivities = 3; // Generate 3 random activities
+  const usersCopy = [...db.users];
+  const postsCopy = [...db.posts];
+  const activities = [];
+  
+  for(let i=0; i<3; i++) {
+    const user = usersCopy.splice(Math.floor(Math.random() * usersCopy.length), 1)[0];
+    const action = Math.random() > 0.5 ? 'liked' : 'followed';
 
-    for (let i = 0; i < numActivities; i++) {
-        const randomUser1 = db.users[Math.floor(Math.random() * db.users.length)];
-        const actionType = Math.random() > 0.5 ? 'liked' : 'followed';
-
-        if (actionType === 'liked' && db.posts.length > 0) {
-            const randomPost = db.posts[Math.floor(Math.random() * db.posts.length)];
-            // Ensure user doesn't like their own post in the feed
-            if (randomUser1.id !== randomPost.userId) {
-                activities.push({
-                    id: `fa${i + 1}`,
-                    user: randomUser1,
-                    action: 'liked',
-                    targetPost: hydrate(randomPost, ['user']),
-                    timestamp: randomTimeAgo(),
-                });
-            }
-        } else {
-            const randomUser2 = db.users[Math.floor(Math.random() * db.users.length)];
-            // Ensure user doesn't follow themselves
-            if (randomUser1.id !== randomUser2.id) {
-                activities.push({
-                    id: `fa${i + 1}`,
-                    user: randomUser1,
-                    action: 'followed',
-                    targetUser: randomUser2,
-                    timestamp: randomTimeAgo(),
-                });
-            }
-        }
+    if (action === 'liked' && postsCopy.length > 0) {
+      const targetPost = postsCopy.splice(Math.floor(Math.random() * postsCopy.length), 1)[0];
+      activities.push({
+        id: `fa${i}`,
+        user: hydrate(user, []),
+        action: 'liked',
+        targetPost: hydrate(targetPost, ['user']),
+        timestamp: randomTimeAgo(),
+      });
+    } else if (action === 'followed' && usersCopy.length > 0) {
+      const targetUser = usersCopy.splice(Math.floor(Math.random() * usersCopy.length), 1)[0];
+       activities.push({
+        id: `fa${i}`,
+        user: hydrate(user, []),
+        action: 'followed',
+        targetUser: hydrate(targetUser, []),
+        timestamp: randomTimeAgo(),
+      });
     }
-    // Ensure we return exactly the number of activities requested, handling cases where the if conditions might fail
-    while (activities.length < numActivities && db.users.length > 1 && db.posts.length > 0) {
-        // Fallback to a default activity if generation fails
-        activities.push({ id: `fa-fallback-${activities.length}`, user: db.users[1], action: 'liked', targetPost: hydrate(db.posts[0], ['user']), timestamp: '5m' });
-    }
-
-    return activities.slice(0, numActivities);
+  }
+  return activities;
 };
 
-
-// --- DATA HYDRATION ---
-// This function mimics joins in a real database
-export const hydrate = (obj, fields) => {
-    const hydratedObj = { ...obj };
-    for (const field of fields) {
-        switch (field) {
-            case 'user':
-                hydratedObj.user = findUser(obj.userId);
-                break;
-            case 'followers':
-                hydratedObj.followers = obj.followers.map(findUser);
-                break;
-            case 'following':
-                hydratedObj.following = obj.following.map(findUser);
-                break;
-            case 'likedBy':
-                hydratedObj.likedBy = obj.likedBy.map(findUser);
-                break;
-            case 'comments':
-                hydratedObj.comments = db.comments.filter(c => obj.commentIds.includes(c.id)).map(c => hydrate(c, ['user']));
-                break;
-            case 'stories':
-                hydratedObj.stories = db.stories.find(s => s.userId === obj.id);
-                break;
-             case 'highlights':
-                hydratedObj.highlights = db.highlights.filter(h => h.userId === obj.id);
-                break;
-            case 'participants':
-                hydratedObj.participants = obj.participants.map(findUser);
-                break;
-            case 'messages':
-                hydratedObj.messages = db.messages.filter(m => obj.messages.includes(m.id)).map(m => hydrate(m, ['replyTo']));
-                break;
-            case 'replyTo':
-                if (obj.replyToId) {
-                    const replyMsg = db.messages.find(m => m.id === obj.replyToId);
-                    hydratedObj.replyTo = replyMsg ? hydrate(replyMsg, ['user']) : null;
-                }
-                break;
-            case 'post':
-                if (obj.postId) hydratedObj.post = findPost(obj.postId);
-                break;
-        }
-    }
-    return hydratedObj;
-}
 
 export default db;

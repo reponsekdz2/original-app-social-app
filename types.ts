@@ -20,6 +20,10 @@ export interface User {
   following: User[];
   stories?: Story;
   highlights?: StoryHighlight[];
+  // Fix: Add relationship status arrays to User type.
+  mutedUsers: string[];
+  blockedUsers: string[];
+  restrictedUsers: string[];
 }
 
 export interface Comment {
@@ -78,13 +82,15 @@ export interface Reel {
 }
 
 export interface Message {
-    id: string;
+    id:string;
     senderId: string;
     content: string;
     timestamp: string;
     type: 'text' | 'image' | 'like' | 'voicenote' | 'sticker';
     replyTo?: Message;
     duration?: string;
+    // Fix: Add replyToId to enable backend persistence of replies.
+    replyToId?: string;
 }
 
 export interface Conversation {

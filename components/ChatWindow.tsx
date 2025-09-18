@@ -1,35 +1,59 @@
-
 // Fix: Create the ChatWindow component.
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Conversation, User, Message as MessageType } from '../types';
 import Icon from './Icon';
 import Message from '../Message';
 import MessageInput from './MessageInput';
 import ChatSettingsPanel from './ChatSettingsPanel';
 import VerifiedBadge from './VerifiedBadge';
+import * as api from '../services/apiService';
 
 interface ChatWindowProps {
   conversation: Conversation;
+  setConversation: React.Dispatch<React.SetStateAction<Conversation | null>>;
   currentUser: User;
   onSendMessage: (conversationId: string, message: Omit<MessageType, 'id' | 'senderId' | 'timestamp'>) => void;
   onViewProfile: (user: User) => void;
   onBack: () => void;
   onInitiateCall: (user: User, type: 'audio' | 'video') => void;
+  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, currentUser, onSendMessage, onViewProfile, onBack, onInitiateCall }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, setConversation, currentUser, onSendMessage, onViewProfile, onBack, onInitiateCall, onUpdateUserRelationship }) => {
   const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<MessageType | null>(null);
   const otherParticipant = conversation.participants.find(p => p.id !== currentUser.id);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversation.messages]);
 
   if (!otherParticipant) return <div>Conversation error</div>;
 
   const handleSendMessage = (content: string, type: MessageType['type']) => {
-    onSendMessage(conversation.id, { content, type });
+    onSendMessage(conversation.id, { content, type, replyToId: replyingTo?.id });
+    setReplyingTo(null);
   };
   
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+        await api.deleteMessage(conversation.id, messageId);
+        // Optimistically update UI
+        const updatedMessages = conversation.messages.filter(m => m.id !== messageId);
+        setConversation({ ...conversation, messages: updatedMessages });
+    } catch (error) {
+        console.error("Failed to delete message:", error);
+        // Optionally show an error to the user
+    }
+  };
+
+  const isMuted = currentUser.mutedUsers.includes(otherParticipant.id);
+  const isBlocked = currentUser.blockedUsers.includes(otherParticipant.id);
+  
   return (
-    <div className="flex-1 flex flex-col bg-gray-900 h-full relative">
-       <header className="p-3 border-b border-gray-800 flex items-center justify-between">
+    <div className="flex-1 flex flex-col bg-gray-900 h-full relative overflow-hidden">
+       <header className="p-3 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
                  <button onClick={onBack} className="lg:hidden p-1 -ml-1">
                     <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></Icon>
@@ -56,13 +80,39 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, currentUser, onSe
        </header>
        <main className="flex-1 overflow-y-auto p-4 space-y-4">
             {conversation.messages.map(msg => (
-                <Message key={msg.id} message={msg} currentUser={currentUser} otherUser={otherParticipant} />
+                <Message 
+                    key={msg.id} 
+                    message={msg} 
+                    currentUser={currentUser} 
+                    otherUser={otherParticipant}
+                    onReply={() => setReplyingTo(msg)}
+                    onDelete={() => handleDeleteMessage(msg.id)}
+                />
             ))}
+            <div ref={messagesEndRef} />
        </main>
-       <footer className="p-3">
-            <MessageInput onSend={handleSendMessage} />
-       </footer>
-       {isSettingsOpen && <ChatSettingsPanel user={otherParticipant} onClose={() => setSettingsOpen(false)} />}
+       { isBlocked ? (
+            <div className="p-3 text-center text-sm text-gray-400 bg-gray-800">
+                You can't reply to this conversation. <button onClick={() => onUpdateUserRelationship(otherParticipant, 'unblock')} className="text-red-500 font-semibold">Unblock</button>
+            </div>
+       ) : (
+        <footer className="p-3">
+                <MessageInput 
+                    onSend={handleSendMessage}
+                    replyingTo={replyingTo}
+                    onCancelReply={() => setReplyingTo(null)}
+                />
+        </footer>
+       )}
+
+       {isSettingsOpen && (
+            <ChatSettingsPanel 
+                user={otherParticipant} 
+                currentUser={currentUser}
+                onClose={() => setSettingsOpen(false)} 
+                onUpdateUserRelationship={onUpdateUserRelationship}
+            />
+        )}
     </div>
   );
 };

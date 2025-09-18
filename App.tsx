@@ -291,6 +291,18 @@ const App: React.FC = () => {
         }
     };
     
+    // Fix: Add a master handler for user relationships (mute, block, etc.).
+    const handleUpdateUserRelationship = async (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => {
+        if (!currentUser) return;
+        try {
+            const updatedCurrentUser = await api.updateUserRelationship(currentUser.id, targetUser.id, action);
+            setCurrentUser(updatedCurrentUser);
+        } catch (error) {
+            console.error(`Failed to ${action} user:`, error);
+            // Optionally show an error message to the user
+        }
+    };
+    
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen bg-black text-white text-xl">Loading talka...</div>;
     }
@@ -363,6 +375,8 @@ const App: React.FC = () => {
                     onSendMessage={handleSendMessage}
                     onViewProfile={(user) => handleNavigate('profile', user)}
                     onInitiateCall={handleInitiateCall}
+                    // Fix: Pass down the user relationship handler.
+                    onUpdateUserRelationship={handleUpdateUserRelationship}
                 />;
             case 'saved':
                 return <SavedView posts={posts.filter(p => p.isSaved)} onViewPost={setViewedPost} />;
@@ -455,12 +469,12 @@ const App: React.FC = () => {
         {isSuggestionsModalOpen && <SuggestionsModal users={suggestedUsers} currentUser={currentUser} onClose={() => setSuggestionsModalOpen(false)} onViewProfile={(user) => { setSuggestionsModalOpen(false); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {isTrendsModalOpen && <TrendsModal topics={trendingTopics} onClose={() => setTrendsModalOpen(false)} />}
         {callState && <CallModal user={callState.user} type={callState.type} onClose={() => setCallState(null)} />}
-        
+
         {/* Side Panels */}
-        {isSearchPanelOpen && <SearchView users={users} onClose={() => setSearchPanelOpen(false)} onViewProfile={(user) => {setSearchPanelOpen(false); handleNavigate('profile', user);}} />}
+        {isSearchPanelOpen && <SearchView users={users} onClose={() => setSearchPanelOpen(false)} onViewProfile={(user) => { setSearchPanelOpen(false); handleNavigate('profile', user); }} />}
         {isNotificationsPanelOpen && <NotificationsPanel activities={activities} onClose={() => setNotificationsPanelOpen(false)} />}
       </div>
     );
-}
+};
 
 export default App;

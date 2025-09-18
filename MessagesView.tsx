@@ -13,9 +13,10 @@ interface MessagesViewProps {
   onSendMessage: (conversationId: string, message: Omit<Message, 'id' | 'senderId' | 'timestamp'>) => void;
   onViewProfile: (user: User) => void;
   onInitiateCall: (user: User, type: 'audio' | 'video') => void;
+  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ conversations, setConversations, currentUser, onSendMessage, onViewProfile, onInitiateCall }) => {
+const MessagesView: React.FC<MessagesViewProps> = ({ conversations, setConversations, currentUser, onSendMessage, onViewProfile, onInitiateCall, onUpdateUserRelationship }) => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(conversations[0] || null);
 
   useEffect(() => {
@@ -67,12 +68,14 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations, setConversat
       {selectedConversation && (
         <ChatWindow 
           key={selectedConversation.id}
-          conversation={selectedConversation} 
+          conversation={selectedConversation}
+          setConversation={setSelectedConversation}
           currentUser={currentUser} 
           onSendMessage={onSendMessage}
           onViewProfile={onViewProfile}
           onBack={() => setSelectedConversation(null)}
           onInitiateCall={onInitiateCall}
+          onUpdateUserRelationship={onUpdateUserRelationship}
         />
       )}
     </div>

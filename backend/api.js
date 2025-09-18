@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities } from './data.js';
+import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities, findMessage } from './data.js';
 
 const router = Router();
 
@@ -204,6 +204,42 @@ router.put('/users/:id/settings', (req, res) => {
     res.json(hydrate(user, ['followers', 'following']));
 });
 
+// Fix: Add a new endpoint to handle user relationships (mute, block, etc.).
+router.post('/users/relationship', (req, res) => {
+    const { currentUserId, targetUserId, action } = req.body;
+    const currentUser = findUser(currentUserId);
+    if (!currentUser) return res.status(404).send('Current user not found');
+    
+    let list;
+    switch(action) {
+        case 'mute':
+        case 'unmute':
+            list = currentUser.mutedUsers;
+            break;
+        case 'block':
+        case 'unblock':
+            list = currentUser.blockedUsers;
+            break;
+        case 'restrict':
+        case 'unrestrict':
+            list = currentUser.restrictedUsers;
+            break;
+        default:
+            return res.status(400).send('Invalid action');
+    }
+
+    const isAdding = !action.startsWith('un');
+    const userIndex = list.indexOf(targetUserId);
+
+    if (isAdding && userIndex === -1) {
+        list.push(targetUserId);
+    } else if (!isAdding && userIndex > -1) {
+        list.splice(userIndex, 1);
+    }
+
+    res.json(hydrate(currentUser, ['followers', 'following']));
+});
+
 
 // --- MESSAGES & CALLS ---
 router.get('/conversations', (req, res) => {
@@ -237,6 +273,23 @@ router.post('/conversations/:id/messages', (req, res) => {
     convo.messages.push(newMessage.id);
     res.json(hydrate(convo, ['participants', 'messages']));
 });
+
+// Fix: Add an endpoint to delete a message.
+router.delete('/conversations/:convoId/messages/:msgId', (req, res) => {
+    const { convoId, msgId } = req.params;
+    const convo = db.conversations.find(c => c.id === convoId);
+    if (!convo) return res.status(404).send('Conversation not found');
+
+    const msgIndexInConvo = convo.messages.indexOf(msgId);
+    if (msgIndexInConvo > -1) {
+        convo.messages.splice(msgIndexInConvo, 1);
+    }
+
+    db.messages = db.messages.filter(m => m.id !== msgId);
+    
+    res.status(204).send();
+});
+
 
 router.post('/calls/initiate', (req, res) => {
     const { callerId, receiverId, type } = req.body;
@@ -297,6 +350,8 @@ router.get('/search/posts', (req, res) => {
 });
 
 // --- OTHER DATA ---
+// Fix: Add an endpoint to get stickers.
+router.get('/stickers', (req, res) => res.json(db.stickers));
 router.get('/stories', (req, res) => res.json(db.stories.map(s => hydrate(s, ['user']))));
 router.get('/reels', (req, res) => res.json(db.reels.map(r => hydrate(r, ['user', 'comments']))));
 router.get('/activities', (req, res) => res.json(db.activities.map(a => hydrate(a, ['user', 'post']))));
