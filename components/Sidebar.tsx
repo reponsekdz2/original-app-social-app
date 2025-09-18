@@ -1,12 +1,13 @@
 
 
+
 import React from 'react';
-import type { User, View, FeedActivity, SponsoredContent, Conversation } from '../types.ts';
+import type { User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types.ts';
 import Icon from './Icon.tsx';
 import FollowButton from './FollowButton.tsx';
 
 interface SidebarProps {
-  trendingTopics: string[];
+  trendingTopics: TrendingTopic[];
   suggestedUsers: User[];
   currentUser: User;
   feedActivities: FeedActivity[];
@@ -97,8 +98,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <p className="text-xs text-gray-500">Trending in your location</p>
                 <Icon className="w-5 h-5 text-gray-500"><path d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></Icon>
               </div>
-              <p className="font-bold">{topic}</p>
-              <p className="text-xs text-gray-500">{Math.floor(Math.random() * 20 + 5)}k posts</p>
+              <p className="font-bold">{topic.topic}</p>
+              <p className="text-xs text-gray-500">{topic.postCount > 1000 ? `${(topic.postCount / 1000).toFixed(1)}k` : topic.postCount} posts</p>
             </div>
           ))}
         </div>

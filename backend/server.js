@@ -1,8 +1,10 @@
+
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import apiRoutes from './api.js';
 import authRoutes from './auth.js';
+import aiRoutes from './ai.js';
 
 const app = express();
 const port = 3000;
@@ -32,6 +34,7 @@ app.use((req, res, next) => {
 // --- API Routes ---
 app.use('/api', apiRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Root endpoint for health check
 app.get('/', (req, res) => {

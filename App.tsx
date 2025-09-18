@@ -1,8 +1,9 @@
+
 // Fix: Create the main App component.
 import React, { useState, useEffect } from 'react';
 
 // Types
-import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings, Comment, Testimonial, HelpArticle, Notification } from './types.ts';
+import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings, Comment, Testimonial, HelpArticle, Notification, TrendingTopic } from './types.ts';
 
 // API Service
 import * as api from './services/apiService.ts';
@@ -57,6 +58,7 @@ const App: React.FC = () => {
     // Data State
     const [users, setUsers] = useState<User[]>([]);
     const [posts, setPosts] = useState<PostType[]>([]);
+    const [explorePosts, setExplorePosts] = useState<PostType[]>([]);
     const [stories, setStories] = useState<Story[]>([]);
     const [reels, setReels] = useState<ReelType[]>([]);
     const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -66,7 +68,7 @@ const App: React.FC = () => {
     
     // Data previously from constants, now from backend
     const [feedActivities, setFeedActivities] = useState<FeedActivity[]>([]);
-    const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
+    const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
     const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
     const [sponsoredContent, setSponsoredContent] = useState<SponsoredContent[]>([]);
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -113,13 +115,14 @@ const App: React.FC = () => {
                 postsData, usersData, storiesData, reelsData,
                 conversationsData, activitiesData, supportTicketsData,
                 feedActivitiesData, trendingTopicsData, suggestedUsersData,
-                sponsoredContentData, testimonialsData, helpArticlesData, notificationsData
+                sponsoredContentData, testimonialsData, helpArticlesData, notificationsData,
+                explorePostsData
             ] = await Promise.all([
                 api.getPosts(), api.getUsers(), api.getStories(), api.getReels(),
                 api.getConversations(), api.getActivities(), api.getSupportTickets(),
                 api.getFeedActivities(), api.getTrendingTopics(), api.getSuggestedUsers(userId),
                 api.getSponsoredContent(), api.getPremiumTestimonials(), api.getHelpArticles(),
-                api.getNotifications(userId),
+                api.getNotifications(userId), api.getExplorePosts()
             ]);
 
             setPosts(postsData);
@@ -136,6 +139,7 @@ const App: React.FC = () => {
             setTestimonials(testimonialsData);
             setHelpArticles(helpArticlesData);
             setNotifications(notificationsData);
+            setExplorePosts(explorePostsData);
 
         } catch (error) {
             console.error("Failed to fetch app data", error);
@@ -446,7 +450,7 @@ const App: React.FC = () => {
                     onUnfollow={(user) => setUserToUnfollow(user)}
                 />;
             case 'explore':
-                return <ExploreView posts={posts} onViewPost={setViewedPost} />;
+                return <ExploreView posts={explorePosts} onViewPost={setViewedPost} />;
             case 'reels':
                 return <ReelsView 
                     reels={reels} 

@@ -1,3 +1,4 @@
+
 // This file acts as a simple in-memory database.
 
 // --- UTILITIES ---
@@ -126,7 +127,14 @@ db.sponsoredContent = [
     { id: 'ad2', company: 'Streamify+', logo: 'https://i.pravatar.cc/150?u=streamify', media: 'https://picsum.photos/id/40/200/200', mediaType: 'image', callToAction: 'Start your free trial for exclusive shows.', link: '#' }
 ];
 
-db.trendingTopics = ['#TheWitcher', '#SquidGame2', '#ActionMovies', '#NetflixOriginal', '#Documentaries', '#ComedySpecials'];
+db.trendingTopics = [
+    { topic: '#TheWitcher', postCount: 25400 },
+    { topic: '#SquidGame2', postCount: 18100 },
+    { topic: '#ActionMovies', postCount: 15200 },
+    { topic: '#NetflixOriginal', postCount: 12800 },
+    { topic: '#Documentaries', postCount: 9700 },
+    { topic: '#ComedySpecials', postCount: 7300 },
+];
 
 db.testimonials = [
     { id: 't1', userId: 'u3', quote: "The 4K uploads are a game-changer for my classic film clips. The quality is just stunning!" },

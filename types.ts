@@ -1,3 +1,4 @@
+
 // Fix: Create full type definitions for the application.
 export type View = 'home' | 'explore' | 'notifications' | 'messages' | 'reels' | 'saved' | 'premium' | 'profile' | 'settings' | 'activity' | 'help-center' | 'support-inbox' | 'archive' | 'premium-welcome';
 
@@ -172,4 +173,9 @@ export interface VerificationRequest {
     userId: string;
     status: 'pending' | 'approved' | 'rejected';
     timestamp: string;
+}
+
+export interface TrendingTopic {
+    topic: string;
+    postCount: number;
 }

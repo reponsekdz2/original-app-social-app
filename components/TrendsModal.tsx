@@ -1,8 +1,10 @@
+
 import React from 'react';
 import Icon from './Icon.tsx';
+import type { TrendingTopic } from '../types.ts';
 
 interface TrendsModalProps {
-  topics: string[];
+  topics: TrendingTopic[];
   onClose: () => void;
 }
 
@@ -23,8 +25,8 @@ const TrendsModal: React.FC<TrendsModalProps> = ({ topics, onClose }) => {
           {topics.map((topic, index) => (
             <div key={index} className="p-3 hover:bg-gray-700 cursor-pointer">
               <p className="text-xs text-gray-500">Trending in your location</p>
-              <p className="font-semibold">{topic}</p>
-              <p className="text-xs text-gray-500">{Math.floor(Math.random() * 20 + 5)}k posts</p>
+              <p className="font-semibold">{topic.topic}</p>
+              <p className="text-xs text-gray-500">{topic.postCount > 1000 ? `${(topic.postCount / 1000).toFixed(1)}k` : topic.postCount} posts</p>
             </div>
           ))}
         </div>

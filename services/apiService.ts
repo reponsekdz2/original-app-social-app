@@ -1,3 +1,4 @@
+
 // A service to centralize all API calls
 
 const API_BASE_URL = 'http://localhost:3000/api';
@@ -42,6 +43,7 @@ export const logout = () => request('/auth/logout', { method: 'POST' });
 
 // --- GET ---
 export const getPosts = () => request('/posts');
+export const getExplorePosts = () => request('/posts/explore');
 export const getUsers = () => request('/users');
 export const getStories = () => request('/stories');
 export const getReels = () => request('/reels');
@@ -156,6 +158,24 @@ export const activatePremium = (userId: string) => request(`/users/${userId}/pre
 export const submitVerificationRequest = (userId: string) => request('/verification-requests', {
     method: 'POST',
     body: JSON.stringify({ userId }),
+});
+
+// --- AI Service POST requests ---
+export const generateCaption = (base64Data: string, mimeType: string) => request('/ai/generate-caption', {
+    method: 'POST',
+    body: JSON.stringify({ base64Data, mimeType }),
+});
+export const generateStoryImage = (prompt: string) => request('/ai/generate-story-image', {
+    method: 'POST',
+    body: JSON.stringify({ prompt }),
+});
+export const generateComment = (postCaption: string, style: string) => request('/ai/generate-comment', {
+    method: 'POST',
+    body: JSON.stringify({ postCaption, style }),
+});
+export const generateBio = (username: string, name: string) => request('/ai/generate-bio', {
+    method: 'POST',
+    body: JSON.stringify({ username, name }),
 });
 
 

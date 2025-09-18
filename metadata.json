@@ -1,6 +1,6 @@
 {
-  "name": "frechat",
-  "description": "A social media application inspired by Instagram, with a Netflix-themed red, black, and white color palette. It features stories, posts, and a full messaging system.",
+  "name": "talka",
+  "description": "A social media application inspired by modern content-sharing platforms, featuring stories, posts, and a full messaging system, with a sleek dark theme.",
   "requestFramePermissions": [
     "camera",
     "microphone"

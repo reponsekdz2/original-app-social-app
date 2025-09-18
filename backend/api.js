@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities, findMessage, findReel, findStoryItem, findOrCreateConversation } from './data.js';
 
@@ -7,6 +8,11 @@ const router = Router();
 router.get('/posts', (req, res) => {
   const posts = db.posts.map(p => hydrate(p, ['user', 'likedBy', 'comments']));
   res.json(posts);
+});
+
+router.get('/posts/explore', (req, res) => {
+    const shuffled = [...db.posts, ...db.posts, ...db.posts].sort(() => 0.5 - Math.random());
+    res.json(shuffled.map(p => hydrate(p, ['user', 'likedBy', 'comments'])));
 });
 
 router.post('/posts', (req, res) => {

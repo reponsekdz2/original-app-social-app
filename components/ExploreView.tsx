@@ -1,3 +1,4 @@
+
 import React from 'react';
 // Fix: Add .ts extension to import to resolve module.
 import type { Post } from '../types.ts';
@@ -9,12 +10,11 @@ interface ExploreViewProps {
 }
 
 const ExploreView: React.FC<ExploreViewProps> = ({ posts, onViewPost }) => {
-  const shuffledPosts = [...posts, ...posts, ...posts].sort(() => 0.5 - Math.random()); // Shuffle posts for variety
 
   return (
     <div className="pb-16 md:pb-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 lg:grid-cols-4 2xl:grid-cols-5">
-        {shuffledPosts.map((post, index) => {
+        {posts.map((post, index) => {
           const firstMedia = post.media[0];
           return (
             <div key={`${post.id}-${index}`} className="relative aspect-square group cursor-pointer" onClick={() => onViewPost(post)}>
