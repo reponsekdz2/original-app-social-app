@@ -319,7 +319,6 @@ router.post('/messages/direct', (req, res) => {
     res.status(201).json(hydrate(convo, ['participants', 'messages']));
 });
 
-// Fix: Add an endpoint to delete a message.
 router.delete('/conversations/:convoId/messages/:msgId', (req, res) => {
     const { convoId, msgId } = req.params;
     const convo = db.conversations.find(c => c.id === convoId);

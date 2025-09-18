@@ -15,6 +15,7 @@ interface SettingsViewProps {
   onToggleTwoFactor: (enabled: boolean) => void;
   onUpdateNotificationSettings: (setting: keyof User['notificationSettings'], value: boolean) => void;
   onNavigate: (view: View) => void;
+  onLogout: () => void;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ 
@@ -28,6 +29,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   onToggleTwoFactor,
   onUpdateNotificationSettings,
   onNavigate,
+  onLogout,
 }) => {
   const accountItems = [
     { label: 'Edit Profile', action: onEditProfile, icon: <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /> },
@@ -122,7 +124,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
         
         <div className="border-t border-gray-700 my-4 pt-4">
-          <button className="w-full text-left p-3 text-red-500 font-semibold flex items-center gap-4 hover:bg-gray-800 rounded-lg transition-colors">
+          <button onClick={onLogout} className="w-full text-left p-3 text-red-500 font-semibold flex items-center gap-4 hover:bg-gray-800 rounded-lg transition-colors">
               Log Out
           </button>
         </div>

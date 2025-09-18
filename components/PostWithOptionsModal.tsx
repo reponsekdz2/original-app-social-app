@@ -10,7 +10,7 @@ interface PostWithOptionsModalProps {
   onEdit: (post: Post) => void;
   onToggleArchive: (post: Post) => void;
   onToggleComments: (settings: { commentsDisabled: boolean }) => void;
-  onCopyLink: (postId: string) => void;
+  onCopyLink: () => void;
 }
 
 const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = ({
@@ -47,7 +47,7 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = ({
   };
   
   const handleCopyLink = () => {
-    onCopyLink(post.id);
+    onCopyLink();
     onClose();
   }
 

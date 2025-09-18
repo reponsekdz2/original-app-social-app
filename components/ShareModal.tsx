@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import type { Post, User } from '../types.ts';
+import type { Post, User, Reel, Story } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface ShareModalProps {
-  post: Post | null;
+  content: Post | Reel | Story | null;
   users: User[];
   onClose: () => void;
   onSendShare: (recipient: User) => void;
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ post, users, onClose, onSendShare }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ content, users, onClose, onSendShare }) => {
   const [sentToUsers, setSentToUsers] = useState<string[]>([]);
 
-  if (!post) return null;
+  if (!content) return null;
 
   const handleSend = (user: User) => {
     onSendShare(user);

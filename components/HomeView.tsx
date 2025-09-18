@@ -3,6 +3,8 @@ import React from 'react';
 import type { Post, Story, User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types.ts';
 import PostComponent from './Post.tsx';
 import Sidebar from './Sidebar.tsx';
+import StoryBubble from './StoryBubble.tsx';
+import Icon from './Icon.tsx';
 
 interface HomeViewProps {
   posts: Post[];
@@ -35,26 +37,47 @@ interface HomeViewProps {
 const HomeView: React.FC<HomeViewProps> = (props) => {
   return (
     <div className="flex justify-center container mx-auto gap-8 lg:gap-16 xl:gap-24">
-      <main className="w-full max-w-2xl xl:max-w-3xl h-[calc(100vh-4rem)] snap-y snap-mandatory overflow-y-auto scrollbar-hide">
-        {props.posts.map(post => (
-          <section key={post.id} className="h-full w-full snap-start flex items-center justify-center py-2 md:py-4">
-            <PostComponent 
-              post={post} 
-              currentUser={props.currentUser}
-              onToggleLike={props.onToggleLike}
-              onToggleSave={props.onToggleSave}
-              onComment={props.onComment}
-              onShare={props.onShare}
-              onViewLikes={props.onViewLikes}
-              onViewProfile={props.onViewProfile}
-              onViewPost={props.onViewPost}
-              onOptions={props.onOptions}
-              onFollow={props.onFollow}
-              onUnfollow={props.onUnfollow}
-            />
-          </section>
-        ))}
-      </main>
+       <div className="w-full max-w-2xl xl:max-w-3xl flex flex-col h-[calc(100vh-4rem)]">
+        {/* Stories Section */}
+        <div className="py-4 border-b border-gray-800">
+          <div className="flex items-center space-x-4 overflow-x-auto pb-2 scrollbar-hide px-4">
+             <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={props.onCreateStory}>
+                <div className="relative group w-28 h-40">
+                  <img src={props.currentUser.avatar} alt="Add story" className="w-full h-full rounded-xl object-cover" />
+                  <div className="absolute inset-0 bg-black/30 rounded-xl"></div>
+                  <div className="absolute bottom-2 -right-2 bg-red-600 rounded-full p-1 border-2 border-black">
+                     <Icon className="w-4 h-4 text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v12m6-6H6" /></Icon>
+                  </div>
+                </div>
+              <p className="text-xs w-28 truncate text-center">Your Story</p>
+            </div>
+            {props.stories.filter(s => s.user.id !== props.currentUser.id && s.stories.length > 0).map(story => (
+              <StoryBubble key={story.id} story={story} onView={props.onViewStory} />
+            ))}
+          </div>
+        </div>
+
+        <main className="flex-1 w-full snap-y snap-mandatory overflow-y-auto scrollbar-hide">
+            {props.posts.map(post => (
+            <section key={post.id} className="h-full w-full snap-start flex items-center justify-center py-2 md:py-4">
+                <PostComponent 
+                post={post} 
+                currentUser={props.currentUser}
+                onToggleLike={props.onToggleLike}
+                onToggleSave={props.onToggleSave}
+                onComment={props.onComment}
+                onShare={props.onShare}
+                onViewLikes={props.onViewLikes}
+                onViewProfile={props.onViewProfile}
+                onViewPost={props.onViewPost}
+                onOptions={props.onOptions}
+                onFollow={props.onFollow}
+                onUnfollow={props.onUnfollow}
+                />
+            </section>
+            ))}
+        </main>
+      </div>
       <Sidebar
         trendingTopics={props.trendingTopics}
         suggestedUsers={props.suggestedUsers}

@@ -1,4 +1,6 @@
 
+
+
 // Fix: Create the main App component.
 import React, { useState, useEffect } from 'react';
 
@@ -91,7 +93,7 @@ const App: React.FC = () => {
     const [usersForLikesModal, setUsersForLikesModal] = useState<User[] | null>(null);
     const [followList, setFollowList] = useState<{ title: 'Followers' | 'Following'; users: User[] } | null>(null);
     const [userToUnfollow, setUserToUnfollow] = useState<User | null>(null);
-    const [postToShare, setPostToShare] = useState<PostType | null>(null);
+    const [contentToShare, setContentToShare] = useState<PostType | ReelType | Story | null>(null);
     const [reelForComments, setReelForComments] = useState<ReelType | null>(null);
     const [isGetVerifiedOpen, setGetVerifiedOpen] = useState(false);
     const [isEditProfileOpen, setEditProfileOpen] = useState(false);
@@ -296,15 +298,24 @@ const App: React.FC = () => {
         updateConversation(updatedConvo);
     };
 
-    const handleSharePost = (recipient: User, post: PostType) => {
-        if (!currentUser) return;
-        handleSendDirectMessage({
-            recipientId: recipient.id,
-            content: `Check out this post!`,
-            type: 'share',
-            sharedPostId: post.id,
-        });
-        setPostToShare(null);
+    const handleSendShare = (recipient: User) => {
+        if (!currentUser || !contentToShare) return;
+
+        let messageData: any = { recipientId: recipient.id };
+
+        if ('media' in contentToShare && 'caption' in contentToShare) { // Post
+            messageData.type = 'share';
+            messageData.content = `Check out this post!`;
+            messageData.sharedPostId = contentToShare.id;
+        } else if ('video' in contentToShare) { // Reel
+            messageData.type = 'text';
+            messageData.content = `Check out this reel from @${contentToShare.user.username}!`;
+        } else if ('stories' in contentToShare) { // Story
+            messageData.type = 'text';
+            messageData.content = `Check out @${contentToShare.user.username}'s story!`;
+        }
+
+        handleSendDirectMessage(messageData);
     };
 
     const handleReplyToStory = (storyUser: User, content: string) => {
@@ -409,6 +420,12 @@ const App: React.FC = () => {
         setGetVerifiedOpen(false);
         // Add user feedback e.g., a toast notification
     };
+
+    const handleViewReel = (reelToView: ReelType) => {
+        const reorderedReels = [reelToView, ...reels.filter(r => r.id !== reelToView.id)];
+        setReels(reorderedReels);
+        handleNavigate('reels');
+    };
     
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen bg-black text-white text-xl">Loading talka...</div>;
@@ -435,7 +452,7 @@ const App: React.FC = () => {
                     onToggleLike={handleToggleLike}
                     onToggleSave={handleToggleSave}
                     onComment={handleComment}
-                    onShare={setPostToShare}
+                    onShare={setContentToShare}
                     onViewStory={(story) => setViewedStory({story, index: stories.findIndex(s => s.id === story.id)})}
                     onViewLikes={setUsersForLikesModal}
                     onViewProfile={(user) => handleNavigate('profile', user)}
@@ -457,12 +474,13 @@ const App: React.FC = () => {
                     currentUser={currentUser}
                     onLikeReel={handleLikeReel}
                     onCommentOnReel={setReelForComments}
-                    onShareReel={() => {}}
+                    onShareReel={(reel) => setContentToShare(reel)}
                 />;
             case 'profile':
                 return <ProfileView
                     user={profileUser}
                     posts={posts.filter(p => p.user.id === profileUser.id && !p.isArchived)}
+                    reels={reels.filter(r => r.user.id === profileUser.id)}
                     isCurrentUser={profileUser.id === currentUser.id}
                     currentUser={currentUser}
                     onEditProfile={() => setEditProfileOpen(true)}
@@ -473,6 +491,7 @@ const App: React.FC = () => {
                     onShowFollowing={(users) => setFollowList({title: 'Following', users})}
                     onEditPost={setEditingPost}
                     onViewPost={setViewedPost}
+                    onViewReel={handleViewReel}
                     onOpenCreateHighlightModal={() => setCreateHighlightOpen(true)}
                 />;
             case 'messages':
@@ -499,6 +518,7 @@ const App: React.FC = () => {
                     onToggleTwoFactor={() => {}}
                     onUpdateNotificationSettings={(key, value) => handleUpdateUserSettings({ notificationSettings: { ...currentUser.notificationSettings, [key]: value } })}
                     onNavigate={handleNavigate}
+                    onLogout={handleLogout}
                 />;
             case 'activity':
                 return <ActivityView activities={activities} />;
@@ -557,16 +577,17 @@ const App: React.FC = () => {
         />
 
         {/* Modals */}
-        {viewedPost && <PostModal post={viewedPost} currentUser={currentUser} onClose={() => setViewedPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={setPostToShare} onViewLikes={setUsersForLikesModal} onViewProfile={(user) => { setViewedPost(null); handleNavigate('profile', user); }} onOptions={setPostWithOptions} />}
-        {viewedStory && <StoryViewer stories={stories} startIndex={viewedStory.index} onClose={() => setViewedStory(null)} onViewProfile={(user) => { setViewedStory(null); handleNavigate('profile', user); }} onReply={handleReplyToStory} onShare={() => {}} />}
+        {viewedPost && <PostModal post={viewedPost} currentUser={currentUser} onClose={() => setViewedPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => setContentToShare(post)} onViewLikes={setUsersForLikesModal} onViewProfile={(user) => { setViewedPost(null); handleNavigate('profile', user); }} onOptions={setPostWithOptions} />}
+        {viewedStory && <StoryViewer stories={stories} startIndex={viewedStory.index} onClose={() => setViewedStory(null)} onViewProfile={(user) => { setViewedStory(null); handleNavigate('profile', user); }} onReply={handleReplyToStory} onShare={(story) => setContentToShare(story)} />}
         {isAccountSwitcherOpen && <AccountSwitcherModal users={users} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchUser={(user) => {setCurrentUser(user); setAccountSwitcherOpen(false); handleNavigate('home');}} />}
         {isCreatePostOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreatePostOpen(false)} onCreatePost={handleCreatePost} />}
         {editingPost && <EditPostModal post={editingPost} onClose={() => setEditingPost(null)} onSave={handleEditPostSave} />}
-        {postWithOptions && <PostWithOptionsModal post={postWithOptions} currentUser={currentUser} onClose={() => setPostWithOptions(null)} onUnfollow={(user) => setUserToUnfollow(user)} onDelete={handleDeletePost} onEdit={setEditingPost} onToggleArchive={handleToggleArchive} onToggleComments={(settings) => handleUpdatePostSettings(postWithOptions.id, settings)} onCopyLink={() => {}} />}
+        {postWithOptions && <PostWithOptionsModal post={postWithOptions} currentUser={currentUser} onClose={() => setPostWithOptions(null)} onUnfollow={(user) => setUserToUnfollow(user)} onDelete={handleDeletePost} onEdit={setEditingPost} onToggleArchive={handleToggleArchive} onToggleComments={(settings) => handleUpdatePostSettings(postWithOptions.id, settings)} onCopyLink={() => { navigator.clipboard.writeText(`${window.location.origin}/p/${postWithOptions.id}`); alert('Link copied!'); }} />}
         {usersForLikesModal && <ViewLikesModal users={usersForLikesModal} currentUser={currentUser} onClose={() => setUsersForLikesModal(null)} onViewProfile={(user) => { setUsersForLikesModal(null); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {followList && <FollowListModal title={followList.title} users={followList.users} currentUser={currentUser} onClose={() => setFollowList(null)} onViewProfile={(user) => { setFollowList(null); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {userToUnfollow && <UnfollowModal user={userToUnfollow} onCancel={() => setUserToUnfollow(null)} onConfirm={() => handleUnfollow(userToUnfollow)} />}
-        {postToShare && <ShareModal post={postToShare} users={users.filter(u => u.id !== currentUser.id)} onClose={() => setPostToShare(null)} onSendShare={(recipient) => handleSharePost(recipient, postToShare)} />}
+        {/* Fix: Changed prop name from 'post' to 'content' to match ShareModalProps definition. */}
+        {contentToShare && <ShareModal content={contentToShare} users={users.filter(u => u.id !== currentUser.id)} onClose={() => setContentToShare(null)} onSendShare={(recipient) => handleSendShare(recipient)} />}
         {reelForComments && <ReelCommentsModal reel={reelForComments} currentUser={currentUser} onClose={() => setReelForComments(null)} onComment={handleCommentOnReel} onViewProfile={(user) => { setReelForComments(null); handleNavigate('profile', user); }} />}
         {isGetVerifiedOpen && <GetVerifiedModal onClose={() => setGetVerifiedOpen(false)} onSubmit={handleSubmitVerification} />}
         {isEditProfileOpen && <EditProfileModal user={currentUser} onClose={() => setEditProfileOpen(false)} onSave={handleEditProfileSave} />}

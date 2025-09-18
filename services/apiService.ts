@@ -1,4 +1,5 @@
 
+
 // A service to centralize all API calls
 
 const API_BASE_URL = 'http://localhost:3000/api';
@@ -212,7 +213,6 @@ export const deletePost = (postId: string) => request(`/posts/${postId}`, {
     method: 'DELETE',
 });
 
-// Fix: Add deleteMessage function.
 export const deleteMessage = (conversationId: string, messageId: string) => request(`/conversations/${conversationId}/messages/${messageId}`, {
     method: 'DELETE',
 });
