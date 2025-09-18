@@ -108,6 +108,11 @@ export const sendDirectMessage = (messageData: any) => request(`/messages/direct
     body: JSON.stringify(messageData),
 });
 
+export const findOrCreateConversation = (userId1: string, userId2: string) => request('/conversations/find-or-create', {
+    method: 'POST',
+    body: JSON.stringify({ userId1, userId2 }),
+});
+
 export const initiateCall = (callerId: string, receiverId: string, type: 'audio' | 'video') => request('/calls/initiate', {
     method: 'POST',
     body: JSON.stringify({ callerId, receiverId, type }),

@@ -7,10 +7,12 @@ interface ShareModalProps {
   users: User[];
   onClose: () => void;
   onSendShare: (recipient: User) => void;
+  onCopyLink: () => void;
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ content, users, onClose, onSendShare }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ content, users, onClose, onSendShare, onCopyLink }) => {
   const [sentToUsers, setSentToUsers] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   if (!content) return null;
 
@@ -18,6 +20,10 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, users, onClose, onSend
     onSendShare(user);
     setSentToUsers(prev => [...prev, user.id]);
   };
+
+  const filteredUsers = searchTerm
+    ? users.filter(user => user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    : users;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
@@ -35,12 +41,14 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, users, onClose, onSend
              <input
                 type="text"
                 placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-gray-700 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-500"
             />
         </div>
         <div className="max-h-[50vh] overflow-y-auto px-4 pb-4">
           <ul className="space-y-3">
-            {users.map(user => {
+            {filteredUsers.map(user => {
               const isSent = sentToUsers.includes(user.id);
               return (
                 <li key={user.id} className="flex items-center justify-between">
@@ -65,7 +73,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, users, onClose, onSend
           </ul>
         </div>
         <div className="p-4 border-t border-gray-700">
-             <button className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-md">
+             <button onClick={onCopyLink} className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-md">
                 Copy Link
             </button>
         </div>

@@ -294,6 +294,15 @@ router.get('/conversations/:id', (req, res) => {
     }
 });
 
+router.post('/conversations/find-or-create', (req, res) => {
+    const { userId1, userId2 } = req.body;
+    if (!userId1 || !userId2) {
+        return res.status(400).json({ message: 'Both user IDs are required.' });
+    }
+    const convo = findOrCreateConversation(userId1, userId2);
+    res.json(hydrate(convo, ['participants', 'messages']));
+});
+
 router.post('/messages/direct', (req, res) => {
     const { senderId, recipientId, content, type, replyToId, sharedPostId, duration } = req.body;
 
