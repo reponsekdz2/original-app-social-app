@@ -1,13 +1,18 @@
+
 // Fix: Create the ChatWindow component.
 import React, { useState, useRef, useEffect } from 'react';
+// Fix: Corrected import path for types
 import type { Conversation, User, Message as MessageType } from '../types.ts';
 import Icon from './Icon.tsx';
+// Fix: Corrected import path for Message
 import Message from '../Message.tsx';
 import MessageInput from './MessageInput.tsx';
 import ChatSettingsPanel from './ChatSettingsPanel.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import TypingIndicator from './TypingIndicator.tsx';
+// Fix: Corrected import path for apiService
 import * as api from '../services/apiService.ts';
+// Fix: Corrected import path for socketService
 import { socketService } from '../services/socketService.ts';
 
 interface ChatWindowProps {

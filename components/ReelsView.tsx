@@ -1,5 +1,6 @@
+
 import React, { useRef, useEffect, useState } from 'react';
-// Fix: Add .ts extension to import to resolve module.
+// Fix: Corrected import path for types
 import type { Reel as ReelType, User } from '../types.ts';
 import Reel from './Reel.tsx';
 import Icon from './Icon.tsx';

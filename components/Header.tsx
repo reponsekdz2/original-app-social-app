@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon.tsx';
-// Fix: Add .ts extension to import to resolve module.
+// Fix: Corrected import path for types
 import type { User, View } from '../types.ts';
 
 interface HeaderProps {

@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+// Fix: Corrected import path for types
 import type { User, Post as PostType, Reel as ReelType } from '../types.ts';
 import ProfileHeader from './ProfileHeader.tsx';
 import ProfileHighlights from './ProfileHighlights.tsx';

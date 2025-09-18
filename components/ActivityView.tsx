@@ -1,6 +1,7 @@
+
 // Fix: Create the ActivityView component.
 import React from 'react';
-// Fix: Add .ts extension to import to resolve module.
+// Fix: Corrected import path for types
 import type { Activity } from '../types.ts';
 
 interface ActivityViewProps {

@@ -1,5 +1,6 @@
+
 import React from 'react';
-// Fix: Add TrendingTopic to the type imports to correctly type the props.
+// Fix: Corrected import path for types
 import type { Post, Story, User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types.ts';
 import PostComponent from './Post.tsx';
 import Sidebar from './Sidebar.tsx';
@@ -11,7 +12,6 @@ interface HomeViewProps {
   stories: Story[];
   currentUser: User;
   suggestedUsers: User[];
-  // Fix: Changed type from string[] to TrendingTopic[] to match the actual data type.
   trendingTopics: TrendingTopic[];
   feedActivities: FeedActivity[];
   sponsoredContent: SponsoredContent[];

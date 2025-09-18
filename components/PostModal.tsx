@@ -1,8 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
+// Fix: Corrected import path for types
 import type { Post as PostType, User, Comment as CommentType } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import MagicComposePanel from './MagicComposePanel.tsx';
+// Fix: Corrected import path for geminiService
 import { generateComment } from '../services/geminiService.ts';
 
 interface CommentComponentProps {

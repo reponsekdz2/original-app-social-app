@@ -1,6 +1,8 @@
+
 // Fix: Create the EmojiStickerPanel component.
 import React, { useState, useEffect } from 'react';
-import * as api from '../services/apiService';
+// Fix: Corrected import path for apiService and added extension
+import * as api from '../services/apiService.ts';
 
 interface EmojiStickerPanelProps {
   onSelectEmoji: (emoji: string) => void;

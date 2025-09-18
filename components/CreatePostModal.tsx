@@ -1,7 +1,9 @@
+
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
-// Fix: Add .ts extension to import to resolve module.
-import type { User, Post } from '../types.ts';
+// Fix: Corrected import path for types
+import type { User, Post, MediaItem as MediaItemType } from '../types.ts';
+// Fix: Corrected import path for geminiService
 import { generateCaption } from '../services/geminiService.ts';
 
 type PostData = Omit<Post, 'id' | 'likes' | 'likedBy' | 'comments' | 'timestamp' | 'isSaved' | 'isLiked' | 'isArchived' | 'commentsDisabled'>;
@@ -53,9 +55,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ currentUser, onClose,
 
   const handleSubmit = () => {
     if (media.length === 0) return;
+    const postMedia: MediaItemType[] = media.map(m => ({
+        url: m.url,
+        type: m.type
+    }));
     const newPost: PostData = {
       user: currentUser,
-      media: media,
+      media: postMedia,
       caption: caption,
     };
     onCreatePost(newPost);

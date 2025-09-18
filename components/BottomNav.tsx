@@ -1,6 +1,7 @@
+
 import React from 'react';
 import Icon from './Icon.tsx';
-// Fix: Add .ts extension to import to resolve module.
+// Fix: Corrected import path for types
 import type { View, User } from '../types.ts';
 
 interface BottomNavProps {

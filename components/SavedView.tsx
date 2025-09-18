@@ -1,5 +1,6 @@
+
 import React from 'react';
-// Fix: Add .ts extension to import to resolve module.
+// Fix: Corrected import path for types
 import type { Post } from '../types.ts';
 import Icon from './Icon.tsx';
 

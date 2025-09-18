@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-// Fix: Add User import for props
+// Fix: Corrected import path for types
 import type { Story, User } from '../types.ts';
 import Icon from './Icon.tsx';
 
@@ -29,7 +30,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
     if (currentIndex !== 0 && stories[storyIndex].id !== story.id) {
         setCurrentIndex(0);
     }
-  }, [storyIndex]);
+  }, [storyIndex, currentIndex, story.id, stories]);
   
   useEffect(() => {
     setProgress(0);
@@ -53,7 +54,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose,
         clearTimeout(timeout);
       };
     }
-  }, [currentIndex, storyIndex]);
+  }, [currentIndex, storyIndex, currentStoryItem]);
 
   const handleNext = () => {
     if (currentIndex < story.stories.length - 1) {

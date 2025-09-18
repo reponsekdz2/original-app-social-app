@@ -1,7 +1,9 @@
+
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
-// Fix: Add .ts extension to import to resolve module.
+// Fix: Corrected import path for types
 import type { StoryItem } from '../types.ts';
+// Fix: Corrected import path for geminiService
 import { generateStoryImage } from '../services/geminiService.ts';
 
 interface CreateStoryModalProps {

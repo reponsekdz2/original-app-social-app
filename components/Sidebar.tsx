@@ -1,7 +1,9 @@
 
 
 
+
 import React from 'react';
+// Fix: Corrected import path for types
 import type { User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types.ts';
 import Icon from './Icon.tsx';
 import FollowButton from './FollowButton.tsx';

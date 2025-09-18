@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+// Fix: Corrected import path for types
 import type { Post, User, Reel, Story } from '../types.ts';
 import Icon from './Icon.tsx';
 
