@@ -1,40 +1,28 @@
+// This file is now primarily for type exports if needed, as all mock data is being moved to the backend.
 
-export type View =
-  | 'home'
-  | 'explore'
-  | 'reels'
-  | 'messages'
-  | 'profile'
-  | 'settings'
-  | 'saved'
-  | 'premium'
-  | 'activity'
-  | 'archive'
-  | 'help'
-  | 'support'
-  | 'create'
-  | 'notifications'
-  | 'search'
-  | 'premium-welcome';
+export type View = 
+  'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 
+  'create' | 'notifications' | 'saved' | 'premium' | 'search' | 'activity' |
+  'premium-welcome' | 'help' | 'support' | 'archive';
 
 export interface User {
   id: string;
   username: string;
   name: string;
   avatar: string;
-  isVerified: boolean;
-  isPremium: boolean;
-  isPrivate: boolean;
+  email: string;
+  phone: string;
+  dob: string;
   bio?: string;
   website?: string;
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   followers: User[];
   following: User[];
-  posts?: Post[];
-  reels?: Reel[];
   stories?: Story[];
   highlights?: StoryHighlight[];
-  savedPosts?: Post[];
+  isVerified: boolean;
+  isPremium: boolean;
+  isPrivate: boolean;
   notificationSettings: {
     likes: boolean;
     comments: boolean;
@@ -44,11 +32,6 @@ export interface User {
   blockedUsers: string[];
 }
 
-export interface MediaItem {
-  url: string;
-  type: 'image' | 'video';
-}
-
 export interface Comment {
   id: string;
   user: User;
@@ -56,34 +39,26 @@ export interface Comment {
   timestamp: string;
   likes: number;
   likedBy: User[];
-  replies?: Comment[];
+}
+
+export interface PostMedia {
+  id: string;
+  url: string;
+  type: 'image' | 'video';
 }
 
 export interface Post {
   id: string;
   user: User;
-  media: MediaItem[];
+  media: PostMedia[];
   caption: string;
   likes: number;
   likedBy: User[];
   comments: Comment[];
+  savedBy: User[];
   timestamp: string;
-  isSaved: boolean;
-  isLiked: boolean;
-  isArchived: boolean;
-  commentsDisabled: boolean;
-}
-
-export interface Reel {
-    id: string;
-    user: User;
-    video: string;
-    caption: string;
-    likes: number;
-    shares: number;
-    likedBy: User[];
-    comments: Comment[];
-    timestamp: string;
+  location?: string;
+  isArchived?: boolean;
 }
 
 export interface StoryItem {
@@ -106,38 +81,16 @@ export interface StoryHighlight {
   stories: StoryItem[];
 }
 
-export interface TrendingTopic {
-  topic: string;
-  postCount: number;
-}
-
-export interface FeedActivity {
+export interface Reel {
   id: string;
   user: User;
-  action: 'liked' | 'followed';
-  targetPost?: Post;
-  targetUser?: User;
+  video: string;
+  caption: string;
+  likes: number;
+  likedBy: User[];
+  comments: Comment[];
+  shares: number;
   timestamp: string;
-}
-
-export interface SponsoredContent {
-  id: string;
-  company: string;
-  logo: string;
-  media: string;
-  link: string;
-  callToAction: string;
-}
-
-export interface Message {
-    id: string;
-    senderId: string;
-    content: string;
-    timestamp: string;
-    type: 'text' | 'image' | 'like' | 'sticker' | 'voicenote' | 'share';
-    replyTo?: Message;
-    sharedPost?: Post;
-    duration?: string; // for voicenotes
 }
 
 export interface Conversation {
@@ -146,34 +99,66 @@ export interface Conversation {
   messages: Message[];
 }
 
-export interface Notification {
+export interface Message {
   id: string;
-  type: 'like' | 'comment' | 'follow' | 'mention';
-  user: User;
-  post?: Post;
-  commentText?: string;
+  senderId: string;
+  content: string;
   timestamp: string;
+  type: 'text' | 'image' | 'sticker' | 'voicenote';
   read: boolean;
 }
 
-export type Activity = Notification;
-
-export interface Testimonial {
+export interface Notification {
     id: string;
     user: User;
-    quote: string;
+    type: 'like' | 'comment' | 'follow' | 'mention';
+    post?: Post;
+    commentText?: string;
+    timestamp: string;
+    read: boolean;
+}
+
+export type Activity = Notification; // For ActivityView
+
+export interface FeedActivity {
+    id: string;
+    user: User;
+    action: 'liked' | 'followed';
+    targetPost?: Post;
+    targetUser?: User;
+    timestamp: string;
+}
+
+export interface TrendingTopic {
+    topic: string;
+    postCount: number;
+}
+
+export interface SponsoredContent {
+  id: string;
+  company: string;
+  logo: string;
+  media: string;
+  callToAction: string;
+  link: string;
+}
+
+export interface Testimonial {
+  id: string;
+  user: User;
+  quote: string;
 }
 
 export interface HelpArticle {
-    id: string;
-    title: string;
-    content: string;
-    category: string;
+  id: string;
+  title: string;
+  content: string;
+  category: string;
 }
 
 export interface SupportTicket {
-    id: string;
-    subject: string;
-    status: 'Open' | 'Pending' | 'Resolved';
-    lastUpdated: string;
+  id: string;
+  subject: string;
+  lastUpdated: string;
+  status: 'Open' | 'Resolved' | 'Pending';
 }

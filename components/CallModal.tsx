@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import type { User } from '../types';
-import Icon from './Icon';
+// Fix: Add .ts extension to types import
+import type { User } from '../types.ts';
+// Fix: Add .tsx extension to Icon import
+import Icon from './Icon.tsx';
 
 interface CallModalProps {
   user: User;
