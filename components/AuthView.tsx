@@ -3,6 +3,7 @@ import type { User } from '../types';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import AuthImageCarousel from './AuthImageCarousel';
+import AuthWelcomeContent from './AuthWelcomeContent.tsx';
 
 interface AuthViewProps {
   onLoginSuccess: (user: User) => void;
@@ -38,16 +39,24 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
 
   return (
     <main className="min-h-screen w-full bg-[#111] flex items-center justify-center p-4">
-      <div className="container mx-auto flex items-center justify-center gap-16">
-        {/* Image Carousel - Hidden on mobile */}
-        <AuthImageCarousel />
+      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 items-center justify-center max-w-7xl">
+        
+        {/* Column 1: Welcome Content (Left) */}
+        <div className="hidden lg:flex justify-center">
+            <AuthWelcomeContent />
+        </div>
 
-        {/* Form Container */}
-        <div className="w-full max-w-md flex-shrink-0">
+        {/* Column 2: Image Carousel (Middle) */}
+        <div className="flex justify-center row-start-1 lg:row-start-auto">
+             <AuthImageCarousel />
+        </div>
+
+        {/* Column 3: Form (Right) */}
+        <div className="w-full max-w-md mx-auto lg:mx-0">
           <div className="bg-black/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white">
             <div className="p-8">
               <div className="text-center mb-8">
-                <h1 className="text-4xl font-serif font-bold text-red-600">Netflixgram</h1>
+                <h1 className="text-4xl font-serif font-bold text-red-600">talka</h1>
                 <p className="text-gray-300 mt-2">
                   {isLoginView ? 'Welcome back! The spotlight awaits.' : 'Join the cast and share your story.'}
                 </p>

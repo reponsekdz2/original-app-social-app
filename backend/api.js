@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate } from './data.js';
+import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities } from './data.js';
 
 const router = Router();
 
@@ -132,6 +132,15 @@ router.post('/comments/:id/toggle-like', (req, res) => {
 // --- USERS ---
 router.get('/users', (req, res) => {
     res.json(db.users.map(u => hydrate(u, ['followers', 'following', 'stories', 'highlights'])));
+});
+
+router.get('/users/suggestions/:userId', (req, res) => {
+    const { userId } = req.params;
+    const currentUser = findUser(userId);
+    if (!currentUser) return res.status(404).send('User not found');
+
+    const suggestions = db.users.filter(u => u.id !== userId && !currentUser.following.includes(u.id));
+    res.json(suggestions.map(u => hydrate(u, ['followers', 'following'])));
 });
 
 router.post('/users/follow', (req, res) => {
@@ -292,5 +301,11 @@ router.get('/stories', (req, res) => res.json(db.stories.map(s => hydrate(s, ['u
 router.get('/reels', (req, res) => res.json(db.reels.map(r => hydrate(r, ['user', 'comments']))));
 router.get('/activities', (req, res) => res.json(db.activities.map(a => hydrate(a, ['user', 'post']))));
 router.get('/support-tickets', (req, res) => res.json(db.supportTickets));
+router.get('/sponsored-content', (req, res) => res.json(db.sponsoredContent));
+router.get('/trends', (req, res) => res.json(db.trendingTopics));
+router.get('/premium/testimonials', (req, res) => res.json(db.testimonials.map(t => hydrate(t, ['user']))));
+router.get('/help/articles', (req, res) => res.json(db.helpArticles));
+router.get('/feed/activities', (req, res) => res.json(generateFeedActivities()));
+
 
 export default router;

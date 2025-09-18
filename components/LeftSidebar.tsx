@@ -49,8 +49,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
   return (
     <aside className="fixed top-0 left-0 h-screen bg-black border-r border-gray-800 p-3 z-40 hidden md:flex flex-col">
        <div className="py-4 px-2 mb-4">
-        <h1 onClick={() => onNavigate('home')} className="text-2xl font-serif font-bold text-white hidden lg:block cursor-pointer">Netflixgram</h1>
-        <h1 onClick={() => onNavigate('home')} className="text-3xl font-serif font-bold text-red-600 block lg:hidden cursor-pointer">N</h1>
+        <h1 onClick={() => onNavigate('home')} className="text-2xl font-serif font-bold text-white hidden lg:block cursor-pointer">talka</h1>
+        <h1 onClick={() => onNavigate('home')} className="text-3xl font-serif font-bold text-red-600 block lg:hidden cursor-pointer">t</h1>
        </div>
        <nav className="flex-1">
         <ul>

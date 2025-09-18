@@ -35,7 +35,7 @@ app.use('/api/auth', authRoutes);
 
 // Root endpoint for health check
 app.get('/', (req, res) => {
-    res.status(200).send('Netflixgram backend is running and healthy!');
+    res.status(200).send('talka backend is running and healthy!');
 });
 
 

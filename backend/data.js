@@ -103,11 +103,33 @@ db.activities = [
 ];
 db.notifications = []; // Will be generated dynamically
 
-// --- Other Static Data ---
+// --- Other Static Data (previously in frontend/constants.ts) ---
+db.sponsoredContent = [
+    { id: 'ad1', company: 'CineMax Theaters', logo: 'https://i.pravatar.cc/150?u=cinemax', media: 'https://picsum.photos/id/30/200/200', mediaType: 'image', callToAction: 'Get tickets for the latest blockbusters!', link: '#' },
+    { id: 'ad2', company: 'Streamify+', logo: 'https://i.pravatar.cc/150?u=streamify', media: 'https://picsum.photos/id/40/200/200', mediaType: 'image', callToAction: 'Start your free trial for exclusive shows.', link: '#' }
+];
+
+db.trendingTopics = ['#TheWitcher', '#SquidGame2', '#ActionMovies', '#NetflixOriginal', '#Documentaries', '#ComedySpecials'];
+
+db.testimonials = [
+    { id: 't1', userId: 'u3', quote: "The 4K uploads are a game-changer for my classic film clips. The quality is just stunning!" },
+    { id: 't2', userId: 'u4', quote: "As a creator, the ad-free experience helps me focus. Plus, the verified badge gives my profile that extra layer of trust." },
+    { id: 't3', userId: 'u2', quote: "Magic Compose is so much fun! I use it all the time to come up with witty comments. Highly recommend Premium!" }
+];
+
+db.helpArticles = [
+    { id: 'hc1', category: 'Account & Profile', title: 'How to change your password', content: 'Go to Settings > Privacy & Security > Change Password. You will be asked to enter your current password and then a new password.'},
+    { id: 'hc2', category: 'Account & Profile', title: 'How to edit your profile', content: 'Navigate to your profile and tap the "Edit Profile" button to change your name, bio, website, and profile picture.'},
+    { id: 'hc3', category: 'Privacy & Security', title: 'Making your account private', content: 'In Settings > Privacy & Security, you can toggle the "Private Account" switch. When your account is private, only people you approve can see your posts and stories.'},
+    { id: 'hc4', category: 'Privacy & Security', title: 'What is Two-Factor Authentication?', content: 'It adds an extra layer of security to your account by requiring a second verification method when you log in from an unrecognized device.'},
+    { id: 'hc5', category: 'Troubleshooting', title: 'Why is my video not uploading?', content: 'Ensure you have a stable internet connection and that the video format is supported (e.g., MP4, MOV). If the problem persists, try restarting the app.'},
+];
+
 db.supportTickets = [
     { id: 'st1', subject: 'Issue with video quality', status: 'Resolved', lastUpdated: '2 days ago', messages: [{ sender: 'user', text: 'My videos look blurry after upload.', timestamp: '3 days ago'}, { sender: 'support', text: 'We have identified and fixed the issue with our video processing. Please try re-uploading your video. Thank you for your patience.', timestamp: '2 days ago'}] },
     { id: 'st2', subject: 'Cannot access my account', status: 'Open', lastUpdated: '1 hour ago', messages: [{ sender: 'user', text: 'I forgot my password and I am not receiving the password reset email.', timestamp: '2 hours ago'}, { sender: 'support', text: 'We are looking into your issue regarding email delivery and will get back to you shortly.', timestamp: '1 hour ago'}] }
 ];
+
 
 // --- DB HELPERS ---
 export const findUser = (id) => db.users.find(u => u.id === id);
@@ -128,6 +150,50 @@ export const createNotification = ({ recipientId, type, user, post, commentText 
     db.notifications.unshift(newNotification);
     return newNotification;
 };
+
+export const generateFeedActivities = () => {
+    const activities = [];
+    const numActivities = 3; // Generate 3 random activities
+
+    for (let i = 0; i < numActivities; i++) {
+        const randomUser1 = db.users[Math.floor(Math.random() * db.users.length)];
+        const actionType = Math.random() > 0.5 ? 'liked' : 'followed';
+
+        if (actionType === 'liked' && db.posts.length > 0) {
+            const randomPost = db.posts[Math.floor(Math.random() * db.posts.length)];
+            // Ensure user doesn't like their own post in the feed
+            if (randomUser1.id !== randomPost.userId) {
+                activities.push({
+                    id: `fa${i + 1}`,
+                    user: randomUser1,
+                    action: 'liked',
+                    targetPost: hydrate(randomPost, ['user']),
+                    timestamp: randomTimeAgo(),
+                });
+            }
+        } else {
+            const randomUser2 = db.users[Math.floor(Math.random() * db.users.length)];
+            // Ensure user doesn't follow themselves
+            if (randomUser1.id !== randomUser2.id) {
+                activities.push({
+                    id: `fa${i + 1}`,
+                    user: randomUser1,
+                    action: 'followed',
+                    targetUser: randomUser2,
+                    timestamp: randomTimeAgo(),
+                });
+            }
+        }
+    }
+    // Ensure we return exactly the number of activities requested, handling cases where the if conditions might fail
+    while (activities.length < numActivities && db.users.length > 1 && db.posts.length > 0) {
+        // Fallback to a default activity if generation fails
+        activities.push({ id: `fa-fallback-${activities.length}`, user: db.users[1], action: 'liked', targetPost: hydrate(db.posts[0], ['user']), timestamp: '5m' });
+    }
+
+    return activities.slice(0, numActivities);
+};
+
 
 // --- DATA HYDRATION ---
 // This function mimics joins in a real database

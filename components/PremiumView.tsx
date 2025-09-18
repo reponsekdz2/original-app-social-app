@@ -37,7 +37,7 @@ const PremiumView: React.FC<PremiumViewProps> = ({ onShowPaymentModal, isCurrent
                         <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 6.22a.75.75 0 00-1.06-1.06L11 11.69 8.78 9.47a.75.75 0 00-1.06 1.06l2.75 2.75a.75.75 0 001.06 0l4.5-4.5z" clipRule="evenodd" />
                     </Icon>
                     <h1 className="text-4xl font-bold text-white mb-3">Welcome to Premium!</h1>
-                    <p className="text-gray-300">Your subscription is active. You can now enjoy all the exclusive features of Netflixgram Premium.</p>
+                    <p className="text-gray-300">Your subscription is active. You can now enjoy all the exclusive features of talka Premium.</p>
                 </div>
             </div>
         );
@@ -46,7 +46,7 @@ const PremiumView: React.FC<PremiumViewProps> = ({ onShowPaymentModal, isCurrent
     return (
         <div className="p-4 md:p-8">
             <div className="text-center max-w-3xl mx-auto">
-                <h1 className="text-4xl md:text-5xl font-bold text-red-600 mb-4 font-serif tracking-wide">Unlock Netflixgram Premium</h1>
+                <h1 className="text-4xl md:text-5xl font-bold text-red-600 mb-4 font-serif tracking-wide">Unlock talka Premium</h1>
                 <p className="text-lg text-gray-300 mb-12">Supercharge your social experience with exclusive features, advanced AI tools, and an ad-free experience.</p>
             </div>
 

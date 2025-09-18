@@ -2,13 +2,10 @@
 import React, { useState, useEffect } from 'react';
 
 // Types
-import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings, Comment } from './types.ts';
+import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings, Comment, Testimonial, HelpArticle } from './types.ts';
 
 // API Service
 import * as api from './services/apiService.ts';
-
-// Data
-import { MOCK_ADS, MOCK_FEED_ACTIVITIES, MOCK_HELP_ARTICLES, MOCK_TESTIMONIALS, MOCK_TRENDING_TOPICS } from './constants.ts';
 
 // Components
 import LeftSidebar from './components/LeftSidebar';
@@ -66,6 +63,14 @@ const App: React.FC = () => {
     const [activities, setActivities] = useState<Activity[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({ likes: true, comments: true, follows: true });
+    
+    // Data previously from constants, now from backend
+    const [feedActivities, setFeedActivities] = useState<FeedActivity[]>([]);
+    const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
+    const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
+    const [sponsoredContent, setSponsoredContent] = useState<SponsoredContent[]>([]);
+    const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+    const [helpArticles, setHelpArticles] = useState<HelpArticle[]>([]);
 
 
     // UI State
@@ -102,24 +107,18 @@ const App: React.FC = () => {
     const [isSearchPanelOpen, setSearchPanelOpen] = useState(false);
     const [isNotificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
 
-    const fetchAllData = async () => {
+    const fetchAllData = async (userId: string) => {
         try {
             const [
-                postsData,
-                usersData,
-                storiesData,
-                reelsData,
-                conversationsData,
-                activitiesData,
-                supportTicketsData
+                postsData, usersData, storiesData, reelsData,
+                conversationsData, activitiesData, supportTicketsData,
+                feedActivitiesData, trendingTopicsData, suggestedUsersData,
+                sponsoredContentData, testimonialsData, helpArticlesData
             ] = await Promise.all([
-                api.getPosts(),
-                api.getUsers(),
-                api.getStories(),
-                api.getReels(),
-                api.getConversations(),
-                api.getActivities(),
-                api.getSupportTickets(),
+                api.getPosts(), api.getUsers(), api.getStories(), api.getReels(),
+                api.getConversations(), api.getActivities(), api.getSupportTickets(),
+                api.getFeedActivities(), api.getTrendingTopics(), api.getSuggestedUsers(userId),
+                api.getSponsoredContent(), api.getPremiumTestimonials(), api.getHelpArticles(),
             ]);
 
             setPosts(postsData);
@@ -129,6 +128,12 @@ const App: React.FC = () => {
             setConversations(conversationsData);
             setActivities(activitiesData);
             setSupportTickets(supportTicketsData);
+            setFeedActivities(feedActivitiesData);
+            setTrendingTopics(trendingTopicsData);
+            setSuggestedUsers(suggestedUsersData);
+            setSponsoredContent(sponsoredContentData);
+            setTestimonials(testimonialsData);
+            setHelpArticles(helpArticlesData);
 
         } catch (error) {
             console.error("Failed to fetch app data", error);
@@ -139,7 +144,7 @@ const App: React.FC = () => {
         localStorage.setItem('currentUserId', user.id);
         setCurrentUser(user);
         setIsLoading(true);
-        fetchAllData().finally(() => setIsLoading(false));
+        fetchAllData(user.id).finally(() => setIsLoading(false));
     };
 
     useEffect(() => {
@@ -149,7 +154,7 @@ const App: React.FC = () => {
                 try {
                     const user = await api.getMe(userId);
                     setCurrentUser(user);
-                    await fetchAllData();
+                    await fetchAllData(userId);
                 } catch (error) {
                     console.error("Session check failed", error);
                     localStorage.removeItem('currentUserId');
@@ -195,7 +200,6 @@ const App: React.FC = () => {
     };
     
     const handleToggleSave = async (postId: string) => {
-        // Fix: Add a check for currentUser and pass currentUser.id to the API call.
         if (!currentUser) return;
         const updatedPost = await api.togglePostSave(postId, currentUser.id);
         setPosts(posts.map(p => p.id === postId ? updatedPost : p));
@@ -214,17 +218,19 @@ const App: React.FC = () => {
       if (!currentUser) return;
       const { currentUser: updatedCurrentUser } = await api.followUser(currentUser.id, userToFollow.id);
       setCurrentUser(updatedCurrentUser);
-      // Refresh all user data to get updated follower counts
-      const updatedUsers = await api.getUsers();
+      // Refresh all user data to get updated follower counts and suggestions
+      const [updatedUsers, updatedSuggestions] = await Promise.all([api.getUsers(), api.getSuggestedUsers(currentUser.id)]);
       setUsers(updatedUsers);
+      setSuggestedUsers(updatedSuggestions);
     };
 
     const handleUnfollow = async (userToUnfollow: User) => {
         if (!currentUser) return;
         const { currentUser: updatedCurrentUser } = await api.unfollowUser(currentUser.id, userToUnfollow.id);
         setCurrentUser(updatedCurrentUser);
-        const updatedUsers = await api.getUsers();
+        const [updatedUsers, updatedSuggestions] = await Promise.all([api.getUsers(), api.getSuggestedUsers(currentUser.id)]);
         setUsers(updatedUsers);
+        setSuggestedUsers(updatedSuggestions);
         setUserToUnfollow(null);
     };
     
@@ -261,36 +267,16 @@ const App: React.FC = () => {
     const handleSendMessage = async (conversationId: string, messageContent: Omit<Message, 'id' | 'senderId' | 'timestamp'>) => {
         if (!currentUser) return;
         
-        // Optimistic update
-        const newMessage: Message = {
-            id: `temp-${Date.now()}`,
-            senderId: currentUser.id,
-            timestamp: 'Just now',
-            ...messageContent,
-        };
-        const updatedConversations = conversations.map(c => {
-            if (c.id === conversationId) {
-                return { ...c, messages: [...c.messages, newMessage] };
-            }
-            return c;
-        });
+        const newMessage: Message = { id: `temp-${Date.now()}`, senderId: currentUser.id, timestamp: 'Just now', ...messageContent };
+        const updatedConversations = conversations.map(c => c.id === conversationId ? { ...c, messages: [...c.messages, newMessage] } : c);
         setConversations(updatedConversations);
 
         try {
-            const updatedConversation = await api.sendMessage(conversationId, {
-                ...messageContent,
-                senderId: currentUser.id,
-            });
+            const updatedConversation = await api.sendMessage(conversationId, { ...messageContent, senderId: currentUser.id });
             setConversations(convos => convos.map(c => c.id === conversationId ? updatedConversation : c));
         } catch (error) {
             console.error("Failed to send message, reverting");
-            // Revert optimistic update on error
-             const revertedConversations = conversations.map(c => {
-                if (c.id === conversationId) {
-                    return { ...c, messages: c.messages.filter(m => m.id !== newMessage.id) };
-                }
-                return c;
-            });
+            const revertedConversations = conversations.map(c => c.id === conversationId ? { ...c, messages: c.messages.filter(m => m.id !== newMessage.id) } : c);
             setConversations(revertedConversations);
         }
     };
@@ -306,7 +292,7 @@ const App: React.FC = () => {
     };
     
     if (isLoading) {
-        return <div className="flex items-center justify-center h-screen bg-black text-white text-xl">Loading Netflixgram...</div>;
+        return <div className="flex items-center justify-center h-screen bg-black text-white text-xl">Loading talka...</div>;
     }
 
     if (!currentUser) {
@@ -322,10 +308,10 @@ const App: React.FC = () => {
                     posts={posts.filter(p => !p.isArchived)}
                     stories={stories}
                     currentUser={currentUser}
-                    suggestedUsers={users.filter(u => u.id !== currentUser.id && !currentUser.following.some(f => f.id === u.id))}
-                    trendingTopics={MOCK_TRENDING_TOPICS}
-                    feedActivities={MOCK_FEED_ACTIVITIES}
-                    sponsoredContent={MOCK_ADS}
+                    suggestedUsers={suggestedUsers}
+                    trendingTopics={trendingTopics}
+                    feedActivities={feedActivities}
+                    sponsoredContent={sponsoredContent}
                     conversations={conversations}
                     onToggleLike={handleToggleLike}
                     onToggleSave={handleToggleSave}
@@ -399,12 +385,12 @@ const App: React.FC = () => {
                 return <PremiumView 
                     onShowPaymentModal={() => setPaymentModalOpen(true)}
                     isCurrentUserPremium={!!currentUser.isPremium}
-                    testimonials={MOCK_TESTIMONIALS}
+                    testimonials={testimonials}
                 />;
             case 'premium-welcome':
                 return <PremiumWelcomeView onNavigate={handleNavigate} />;
             case 'help-center':
-                 return <HelpCenterView articles={MOCK_HELP_ARTICLES} onBack={() => handleNavigate('settings')} />;
+                 return <HelpCenterView articles={helpArticles} onBack={() => handleNavigate('settings')} />;
             case 'support-inbox':
                 return <SupportInboxView tickets={supportTickets} onBack={() => handleNavigate('settings')} onNewRequest={() => setNewSupportRequestOpen(true)} />;
             case 'archive':
@@ -466,8 +452,8 @@ const App: React.FC = () => {
         {isNewSupportRequestOpen && <NewSupportRequestModal onClose={() => setNewSupportRequestOpen(false)} onSubmit={(subject, description) => { setSupportTickets([{ id: `st${Date.now()}`, subject, status: 'Open', lastUpdated: '1m ago', messages: [{ sender: 'user', text: description, timestamp: '1m ago' }]}, ...supportTickets]); setNewSupportRequestOpen(false); }} />}
         {isCreateStoryOpen && <CreateStoryModal onClose={() => setCreateStoryOpen(false)} onCreateStory={() => setCreateStoryOpen(false)} />}
         {isCreateHighlightOpen && <CreateHighlightModal userStories={stories.flatMap(s => s.stories)} onClose={() => setCreateHighlightOpen(false)} onCreate={() => setCreateHighlightOpen(false)} />}
-        {isSuggestionsModalOpen && <SuggestionsModal users={users.filter(u => u.id !== currentUser.id && !currentUser.following.some(f => f.id === u.id))} currentUser={currentUser} onClose={() => setSuggestionsModalOpen(false)} onViewProfile={(user) => { setSuggestionsModalOpen(null); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
-        {isTrendsModalOpen && <TrendsModal topics={MOCK_TRENDING_TOPICS} onClose={() => setTrendsModalOpen(false)} />}
+        {isSuggestionsModalOpen && <SuggestionsModal users={suggestedUsers} currentUser={currentUser} onClose={() => setSuggestionsModalOpen(false)} onViewProfile={(user) => { setSuggestionsModalOpen(false); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
+        {isTrendsModalOpen && <TrendsModal topics={trendingTopics} onClose={() => setTrendsModalOpen(false)} />}
         {callState && <CallModal user={callState.user} type={callState.type} onClose={() => setCallState(null)} />}
         
         {/* Side Panels */}

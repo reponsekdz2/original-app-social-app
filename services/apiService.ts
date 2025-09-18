@@ -53,6 +53,14 @@ export const getNotifications = (userId: string) => request(`/notifications/${us
 export const searchUsers = (query: string) => request(`/search/users?q=${encodeURIComponent(query)}`);
 export const searchPosts = (query: string) => request(`/search/posts?q=${encodeURIComponent(query)}`);
 
+// Get data that was previously mocked
+export const getFeedActivities = () => request('/feed/activities');
+export const getTrendingTopics = () => request('/trends');
+export const getSuggestedUsers = (userId: string) => request(`/users/suggestions/${userId}`);
+export const getSponsoredContent = () => request('/sponsored-content');
+export const getPremiumTestimonials = () => request('/premium/testimonials');
+export const getHelpArticles = () => request('/help/articles');
+
 
 // --- POST ---
 export const createPost = (postData: any) => request('/posts', {
