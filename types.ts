@@ -91,11 +91,13 @@ export interface Message {
     senderId: string;
     content: string;
     timestamp: string;
-    type: 'text' | 'image' | 'like' | 'voicenote' | 'sticker';
+    type: 'text' | 'image' | 'like' | 'voicenote' | 'sticker' | 'share';
     replyTo?: Message;
     duration?: string;
     // Fix: Add replyToId to enable backend persistence of replies.
     replyToId?: string;
+    sharedPostId?: string;
+    sharedPost?: Post;
 }
 
 export interface Conversation {
@@ -163,4 +165,11 @@ export interface NotificationSettings {
   likes: boolean;
   comments: boolean;
   follows: boolean;
+}
+
+export interface VerificationRequest {
+    id: string;
+    userId: string;
+    status: 'pending' | 'approved' | 'rejected';
+    timestamp: string;
 }

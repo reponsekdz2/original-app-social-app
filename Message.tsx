@@ -36,6 +36,18 @@ const Message: React.FC<MessageProps> = ({ message, currentUser, otherUser, onRe
              return <img src={message.content} alt="sticker message" className="w-24 h-24" />;
         case 'voicenote':
             return <VoicenoteMessage duration={message.duration || '0:00'} isCurrentUser={isCurrentUser} />;
+        case 'share':
+            if (!message.sharedPost) return <div className="p-3 rounded-2xl bg-gray-700 text-sm text-gray-400">Post unavailable.</div>;
+            return (
+                <div className="p-2 bg-gray-700 rounded-2xl w-56 cursor-pointer hover:bg-gray-600 transition-colors">
+                    <img src={message.sharedPost.media[0].url} alt={`Shared post by ${message.sharedPost.user.username}`} className="w-full h-32 object-cover rounded-lg" />
+                    <div className="flex items-center gap-2 mt-2 px-1">
+                        <img src={message.sharedPost.user.avatar} alt={message.sharedPost.user.username} className="w-5 h-5 rounded-full" />
+                        <p className="text-xs font-semibold text-white">@{message.sharedPost.user.username}</p>
+                    </div>
+                    <p className="text-xs text-gray-300 mt-1 px-1 truncate">{message.sharedPost.caption}</p>
+                </div>
+            );
         case 'text':
         default:
             return (

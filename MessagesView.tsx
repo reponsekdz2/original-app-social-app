@@ -10,7 +10,7 @@ interface MessagesViewProps {
   conversations: Conversation[];
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
   currentUser: User;
-  onSendMessage: (conversationId: string, message: Omit<Message, 'id' | 'senderId' | 'timestamp'>) => void;
+  onSendMessage: (messageData: any) => void;
   onViewProfile: (user: User) => void;
   onInitiateCall: (user: User, type: 'audio' | 'video') => void;
   onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => void;
@@ -58,7 +58,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations, setConversat
                 <img src={otherUser.avatar} alt={otherUser.username} className="w-14 h-14 rounded-full" />
                 <div className="flex-1">
                   <p className="font-semibold text-sm">{otherUser.username}</p>
-                  <p className="text-sm text-gray-400 truncate">{lastMessage.content}</p>
+                  <p className="text-sm text-gray-400 truncate">{lastMessage?.content}</p>
                 </div>
               </button>
             )

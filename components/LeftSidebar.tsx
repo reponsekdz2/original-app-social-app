@@ -10,6 +10,7 @@ interface LeftSidebarProps {
   onShowNotifications: () => void;
   onCreatePost: () => void;
   onSwitchAccount: () => void;
+  onLogout: () => void;
 }
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({ 
@@ -19,7 +20,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
     onShowSearch, 
     onShowNotifications, 
     onCreatePost,
-    onSwitchAccount
+    onSwitchAccount,
+    onLogout
 }) => {
     const [isMoreMenuOpen, setMoreMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -87,7 +89,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
                     </button>
                     <div className="border-t border-gray-700 my-1"></div>
                      <button onClick={() => { onSwitchAccount(); setMoreMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700">Switch Accounts</button>
-                    <button className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700">Log Out</button>
+                    <button onClick={onLogout} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-700">Log Out</button>
                 </div>
             )}
        </div>

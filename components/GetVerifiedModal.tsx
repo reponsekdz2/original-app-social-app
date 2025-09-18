@@ -4,9 +4,10 @@ import Icon from './Icon.tsx';
 
 interface GetVerifiedModalProps {
   onClose: () => void;
+  onSubmit: () => void;
 }
 
-const GetVerifiedModal: React.FC<GetVerifiedModalProps> = ({ onClose }) => {
+const GetVerifiedModal: React.FC<GetVerifiedModalProps> = ({ onClose, onSubmit }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
       <div 
@@ -21,7 +22,7 @@ const GetVerifiedModal: React.FC<GetVerifiedModalProps> = ({ onClose }) => {
           A verified badge lets people know that you're the real deal. Apply now to confirm your authenticity and get a blue checkmark next to your name.
         </p>
         <button 
-          onClick={onClose}
+          onClick={onSubmit}
           className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md transition-colors"
         >
           Start Application

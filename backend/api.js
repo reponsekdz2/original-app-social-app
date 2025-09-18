@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities, findMessage, findReel, findStoryItem } from './data.js';
+import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities, findMessage, findReel, findStoryItem, findOrCreateConversation } from './data.js';
 
 const router = Router();
 
@@ -229,6 +229,13 @@ router.put('/users/:id/password', (req, res) => {
     res.status(200).json({ message: 'Password updated successfully' });
 });
 
+router.post('/users/:id/premium', (req, res) => {
+    const user = findUser(req.params.id);
+    if (!user) return res.status(404).send('User not found');
+    user.isPremium = true;
+    res.json(hydrate(user, ['followers', 'following']));
+});
+
 
 // Fix: Add a new endpoint to handle user relationships (mute, block, etc.).
 router.post('/users/relationship', (req, res) => {
@@ -281,10 +288,14 @@ router.get('/conversations/:id', (req, res) => {
     }
 });
 
-router.post('/conversations/:id/messages', (req, res) => {
-    const { senderId, content, type, replyToId, duration } = req.body;
-    const convo = db.conversations.find(c => c.id === req.params.id);
-    if (!convo) return res.status(404).send('Conversation not found');
+router.post('/messages/direct', (req, res) => {
+    const { senderId, recipientId, content, type, replyToId, sharedPostId, duration } = req.body;
+
+    const sender = findUser(senderId);
+    const recipient = findUser(recipientId);
+    if (!sender || !recipient) return res.status(404).send('User not found');
+
+    const convo = findOrCreateConversation(senderId, recipientId);
 
     const newMessage = {
         id: generateId('message'),
@@ -292,12 +303,14 @@ router.post('/conversations/:id/messages', (req, res) => {
         content,
         type,
         replyToId,
+        sharedPostId,
         duration,
         timestamp: 'Just now',
     };
     db.messages.push(newMessage);
     convo.messages.push(newMessage.id);
-    res.json(hydrate(convo, ['participants', 'messages']));
+
+    res.status(201).json(hydrate(convo, ['participants', 'messages']));
 });
 
 // Fix: Add an endpoint to delete a message.
@@ -423,7 +436,7 @@ router.post('/highlights', (req, res) => {
 });
 
 
-// --- SUPPORT ---
+// --- SUPPORT & VERIFICATION ---
 router.post('/support-tickets', (req, res) => {
     const { subject, description } = req.body;
     const newTicket = {
@@ -435,6 +448,21 @@ router.post('/support-tickets', (req, res) => {
     };
     db.supportTickets.unshift(newTicket);
     res.status(201).json(newTicket);
+});
+
+router.post('/verification-requests', (req, res) => {
+    const { userId } = req.body;
+    if (!findUser(userId)) return res.status(404).send('User not found');
+
+    const newRequest = {
+        id: generateId('verificationRequest'),
+        userId,
+        status: 'pending',
+        timestamp: new Date().toISOString(),
+    };
+    db.verificationRequests.push(newRequest);
+    console.log('New verification request submitted:', newRequest);
+    res.status(201).json(newRequest);
 });
 
 

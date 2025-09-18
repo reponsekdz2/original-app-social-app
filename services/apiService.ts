@@ -100,7 +100,7 @@ export const unfollowUser = (currentUserId: string, targetUserId: string) => req
     body: JSON.stringify({ currentUserId, targetUserId }),
 });
 
-export const sendMessage = (conversationId: string, messageData: any) => request(`/conversations/${conversationId}/messages`, {
+export const sendDirectMessage = (messageData: any) => request(`/messages/direct`, {
     method: 'POST',
     body: JSON.stringify(messageData),
 });
@@ -147,6 +147,15 @@ export const createHighlight = (userId: string, title: string, storyIds: string[
 export const createSupportTicket = (subject: string, description: string) => request('/support-tickets', {
     method: 'POST',
     body: JSON.stringify({ subject, description }),
+});
+
+export const activatePremium = (userId: string) => request(`/users/${userId}/premium`, {
+    method: 'POST',
+});
+
+export const submitVerificationRequest = (userId: string) => request('/verification-requests', {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
 });
 
 

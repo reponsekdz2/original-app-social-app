@@ -14,6 +14,7 @@ let nextIds = {
     notification: 1,
     highlight: 3,
     ticket: 3,
+    verificationRequest: 1,
 };
 
 export const generateId = (type) => `${type.slice(0,1)}${nextIds[type]++}`;
@@ -146,6 +147,8 @@ db.supportTickets = [
     { id: 'st2', subject: 'Cannot access my account', status: 'Open', lastUpdated: '1 hour ago', messages: [{ sender: 'user', text: 'I forgot my password and the reset link is not working.' , timestamp: '1 hour ago'}] }
 ];
 
+db.verificationRequests = [];
+
 // --- DATA HYDRATION & ACCESSORS ---
 
 export const findUser = (id) => db.users.find(u => u.id === id);
@@ -160,6 +163,22 @@ export const findStoryItem = (id) => {
     }
     return null;
 }
+
+export const findOrCreateConversation = (user1Id, user2Id) => {
+    let convo = db.conversations.find(c => 
+        c.participants.includes(user1Id) && c.participants.includes(user2Id)
+    );
+    if (!convo) {
+        convo = {
+            id: generateId('conversation'),
+            participants: [user1Id, user2Id],
+            messages: [],
+            lastMessageSeen: {},
+        };
+        db.conversations.unshift(convo);
+    }
+    return convo;
+};
 
 
 export const hydrate = (obj, fields) => {
@@ -182,9 +201,10 @@ export const hydrate = (obj, fields) => {
             hydrated.messages = obj.messages
                 .map(findMessage)
                 .filter(Boolean) // Filter out any undefined messages if an ID is invalid
-                .map(m => hydrate(m, ['replyTo']));
+                .map(m => hydrate(m, ['replyTo', 'sharedPost']));
         }
         if (field === 'replyTo') hydrated.replyTo = findMessage(obj.replyToId);
+        if (field === 'sharedPost') hydrated.sharedPost = hydrate(findPost(obj.sharedPostId), ['user']);
     }
     return hydrated;
 };

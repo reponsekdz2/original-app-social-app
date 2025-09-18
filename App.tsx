@@ -149,6 +149,17 @@ const App: React.FC = () => {
         fetchAllData(user.id).finally(() => setIsLoading(false));
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('currentUserId');
+        setCurrentUser(null);
+        // Reset all state
+        setPosts([]);
+        setUsers([]);
+        setStories([]);
+        setReels([]);
+        setConversations([]);
+    };
+
     useEffect(() => {
         const checkSession = async () => {
             const userId = localStorage.getItem('currentUserId');
@@ -159,8 +170,7 @@ const App: React.FC = () => {
                     await fetchAllData(userId);
                 } catch (error) {
                     console.error("Session check failed", error);
-                    localStorage.removeItem('currentUserId');
-                    setCurrentUser(null);
+                    handleLogout();
                 }
             }
             setIsLoading(false);
@@ -183,6 +193,16 @@ const App: React.FC = () => {
         }
         setCurrentView(view);
         window.scrollTo(0, 0);
+    };
+
+    const updateConversation = (updatedConvo: Conversation) => {
+        setConversations(prev => {
+            const exists = prev.some(c => c.id === updatedConvo.id);
+            if (exists) {
+                return prev.map(c => c.id === updatedConvo.id ? updatedConvo : c);
+            }
+            return [updatedConvo, ...prev];
+        });
     };
     
     // Data mutation handlers
@@ -266,21 +286,30 @@ const App: React.FC = () => {
         setPosts(posts.map(p => p.id === post.id ? updatedPost : p));
     }
 
-    const handleSendMessage = async (conversationId: string, messageContent: Omit<Message, 'id' | 'senderId' | 'timestamp'>) => {
+    const handleSendDirectMessage = async (messageData: any) => {
         if (!currentUser) return;
-        
-        const newMessage: Message = { id: `temp-${Date.now()}`, senderId: currentUser.id, timestamp: 'Just now', ...messageContent };
-        const updatedConversations = conversations.map(c => c.id === conversationId ? { ...c, messages: [...c.messages, newMessage] } : c);
-        setConversations(updatedConversations);
+        const updatedConvo = await api.sendDirectMessage({ senderId: currentUser.id, ...messageData });
+        updateConversation(updatedConvo);
+    };
 
-        try {
-            const updatedConversation = await api.sendMessage(conversationId, { ...messageContent, senderId: currentUser.id });
-            setConversations(convos => convos.map(c => c.id === conversationId ? updatedConversation : c));
-        } catch (error) {
-            console.error("Failed to send message, reverting");
-            const revertedConversations = conversations.map(c => c.id === conversationId ? { ...c, messages: c.messages.filter(m => m.id !== newMessage.id) } : c);
-            setConversations(revertedConversations);
-        }
+    const handleSharePost = (recipient: User, post: PostType) => {
+        if (!currentUser) return;
+        handleSendDirectMessage({
+            recipientId: recipient.id,
+            content: `Check out this post!`,
+            type: 'share',
+            sharedPostId: post.id,
+        });
+        setPostToShare(null);
+    };
+
+    const handleReplyToStory = (storyUser: User, content: string) => {
+        if (!currentUser) return;
+        handleSendDirectMessage({
+            recipientId: storyUser.id,
+            content,
+            type: 'text',
+        });
     };
     
     const handleInitiateCall = async (receiver: User, type: 'audio' | 'video') => {
@@ -293,7 +322,6 @@ const App: React.FC = () => {
         }
     };
     
-    // Fix: Add a master handler for user relationships (mute, block, etc.).
     const handleUpdateUserRelationship = async (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => {
         if (!currentUser) return;
         try {
@@ -301,7 +329,6 @@ const App: React.FC = () => {
             setCurrentUser(updatedCurrentUser);
         } catch (error) {
             console.error(`Failed to ${action} user:`, error);
-            // Optionally show an error message to the user
         }
     };
 
@@ -328,7 +355,7 @@ const App: React.FC = () => {
     const handleCreateHighlight = async (title: string, storyIds: string[]) => {
         if (!currentUser) return;
         const updatedUser = await api.createHighlight(currentUser.id, title, storyIds);
-        setCurrentUser(updatedUser); // Highlights are on the user object
+        setCurrentUser(updatedUser);
         setCreateHighlightOpen(false);
     };
     
@@ -348,7 +375,6 @@ const App: React.FC = () => {
         if (!currentUser) return;
         await api.changePassword(currentUser.id, passwords);
         setChangePasswordOpen(false);
-        // Add user feedback e.g., a toast notification
     };
     
     const handleUpdateUserSettings = async (settings: any) => {
@@ -360,11 +386,24 @@ const App: React.FC = () => {
     const handleShowNotifications = async () => {
         if (!currentUser) return;
         setNotificationsPanelOpen(true);
-        // Optimistically mark as read in UI
         const updatedNotifications = notifications.map(n => ({...n, read: true}));
         setNotifications(updatedNotifications);
-        // Tell backend to mark as read
         await api.markNotificationsAsRead(currentUser.id);
+    };
+
+    const handleActivatePremium = async () => {
+        if (!currentUser) return;
+        const updatedUser = await api.activatePremium(currentUser.id);
+        setCurrentUser(updatedUser);
+        setPaymentModalOpen(false); 
+        handleNavigate('premium-welcome');
+    };
+
+    const handleSubmitVerification = async () => {
+        if (!currentUser) return;
+        await api.submitVerificationRequest(currentUser.id);
+        setGetVerifiedOpen(false);
+        // Add user feedback e.g., a toast notification
     };
     
     if (isLoading) {
@@ -437,10 +476,9 @@ const App: React.FC = () => {
                     conversations={conversations} 
                     setConversations={setConversations}
                     currentUser={currentUser}
-                    onSendMessage={handleSendMessage}
+                    onSendMessage={handleSendDirectMessage}
                     onViewProfile={(user) => handleNavigate('profile', user)}
                     onInitiateCall={handleInitiateCall}
-                    // Fix: Pass down the user relationship handler.
                     onUpdateUserRelationship={handleUpdateUserRelationship}
                 />;
             case 'saved':
@@ -490,6 +528,7 @@ const App: React.FC = () => {
             onShowNotifications={handleShowNotifications}
             onCreatePost={() => setCreatePostOpen(true)}
             onSwitchAccount={() => setAccountSwitcherOpen(true)}
+            onLogout={handleLogout}
           />
           <div className="flex-1 md:ml-[72px] lg:ml-64">
               <Header 
@@ -498,6 +537,7 @@ const App: React.FC = () => {
                 onSwitchAccount={() => setAccountSwitcherOpen(true)}
                 onCreatePost={() => setCreatePostOpen(true)}
                 onShowNotifications={handleShowNotifications}
+                onLogout={handleLogout}
               />
               <main className={currentView === 'home' ? '' : 'container mx-auto'}>
                 {renderView()}
@@ -514,7 +554,7 @@ const App: React.FC = () => {
 
         {/* Modals */}
         {viewedPost && <PostModal post={viewedPost} currentUser={currentUser} onClose={() => setViewedPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={setPostToShare} onViewLikes={setUsersForLikesModal} onViewProfile={(user) => { setViewedPost(null); handleNavigate('profile', user); }} onOptions={setPostWithOptions} />}
-        {viewedStory && <StoryViewer stories={stories} startIndex={viewedStory.index} onClose={() => setViewedStory(null)} onViewProfile={(user) => { setViewedStory(null); handleNavigate('profile', user); }} onReply={() => {}} onShare={() => {}} />}
+        {viewedStory && <StoryViewer stories={stories} startIndex={viewedStory.index} onClose={() => setViewedStory(null)} onViewProfile={(user) => { setViewedStory(null); handleNavigate('profile', user); }} onReply={handleReplyToStory} onShare={() => {}} />}
         {isAccountSwitcherOpen && <AccountSwitcherModal users={users} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchUser={(user) => {setCurrentUser(user); setAccountSwitcherOpen(false); handleNavigate('home');}} />}
         {isCreatePostOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreatePostOpen(false)} onCreatePost={handleCreatePost} />}
         {editingPost && <EditPostModal post={editingPost} onClose={() => setEditingPost(null)} onSave={handleEditPostSave} />}
@@ -522,12 +562,12 @@ const App: React.FC = () => {
         {usersForLikesModal && <ViewLikesModal users={usersForLikesModal} currentUser={currentUser} onClose={() => setUsersForLikesModal(null)} onViewProfile={(user) => { setUsersForLikesModal(null); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {followList && <FollowListModal title={followList.title} users={followList.users} currentUser={currentUser} onClose={() => setFollowList(null)} onViewProfile={(user) => { setFollowList(null); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {userToUnfollow && <UnfollowModal user={userToUnfollow} onCancel={() => setUserToUnfollow(null)} onConfirm={() => handleUnfollow(userToUnfollow)} />}
-        {postToShare && <ShareModal post={postToShare} users={users.filter(u => u.id !== currentUser.id)} onClose={() => setPostToShare(null)} onSendShare={() => {}} />}
+        {postToShare && <ShareModal post={postToShare} users={users.filter(u => u.id !== currentUser.id)} onClose={() => setPostToShare(null)} onSendShare={(recipient) => handleSharePost(recipient, postToShare)} />}
         {reelForComments && <ReelCommentsModal reel={reelForComments} currentUser={currentUser} onClose={() => setReelForComments(null)} onComment={handleCommentOnReel} onViewProfile={(user) => { setReelForComments(null); handleNavigate('profile', user); }} />}
-        {isGetVerifiedOpen && <GetVerifiedModal onClose={() => setGetVerifiedOpen(false)} />}
+        {isGetVerifiedOpen && <GetVerifiedModal onClose={() => setGetVerifiedOpen(false)} onSubmit={handleSubmitVerification} />}
         {isEditProfileOpen && <EditProfileModal user={currentUser} onClose={() => setEditProfileOpen(false)} onSave={handleEditProfileSave} />}
         {isChangePasswordOpen && <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} onSave={handleChangePassword} />}
-        {isPaymentModalOpen && <PaymentModal onClose={() => setPaymentModalOpen(false)} onSuccess={() => { setCurrentUser({...currentUser, isPremium: true }); setPaymentModalOpen(false); handleNavigate('premium-welcome'); }} />}
+        {isPaymentModalOpen && <PaymentModal onClose={() => setPaymentModalOpen(false)} onConfirmPayment={handleActivatePremium} />}
         {isNewSupportRequestOpen && <NewSupportRequestModal onClose={() => setNewSupportRequestOpen(false)} onSubmit={handleCreateSupportTicket} />}
         {isCreateStoryOpen && <CreateStoryModal onClose={() => setCreateStoryOpen(false)} onCreateStory={handleCreateStory} />}
         {isCreateHighlightOpen && <CreateHighlightModal userStories={stories.find(s => s.user.id === currentUser.id)?.stories || []} onClose={() => setCreateHighlightOpen(false)} onCreate={handleCreateHighlight} />}

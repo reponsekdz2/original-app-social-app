@@ -12,7 +12,7 @@ interface ChatWindowProps {
   conversation: Conversation;
   setConversation: React.Dispatch<React.SetStateAction<Conversation | null>>;
   currentUser: User;
-  onSendMessage: (conversationId: string, message: Omit<MessageType, 'id' | 'senderId' | 'timestamp'>) => void;
+  onSendMessage: (messageData: any) => void;
   onViewProfile: (user: User) => void;
   onBack: () => void;
   onInitiateCall: (user: User, type: 'audio' | 'video') => void;
@@ -32,7 +32,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, setConversation, 
   if (!otherParticipant) return <div>Conversation error</div>;
 
   const handleSendMessage = (content: string, type: MessageType['type']) => {
-    onSendMessage(conversation.id, { content, type, replyToId: replyingTo?.id });
+    onSendMessage({ 
+        recipientId: otherParticipant.id,
+        content, 
+        type, 
+        replyToId: replyingTo?.id 
+    });
     setReplyingTo(null);
   };
   

@@ -3,10 +3,10 @@ import Icon from './Icon.tsx';
 
 interface PaymentModalProps {
   onClose: () => void;
-  onSuccess: () => void;
+  onConfirmPayment: () => void;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onSuccess }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onConfirmPayment }) => {
   const [status, setStatus] = useState<'idle' | 'processing' | 'success'>('idle');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -17,7 +17,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onSuccess }) => {
     setTimeout(() => {
       setStatus('success');
       setTimeout(() => {
-        onSuccess();
+        onConfirmPayment();
       }, 1500); // Show success message for 1.5s before closing
     }, 2000); // Simulate 2s processing time
   };
