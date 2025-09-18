@@ -1,10 +1,10 @@
 
 
 import React, { useState } from 'react';
-import type { User } from '../types';
-import LoginForm from './LoginForm';
-import RegisterForm from './RegisterForm';
-import AuthImageCarousel from './AuthImageCarousel';
+import type { User } from '../types.ts';
+import LoginForm from './LoginForm.tsx';
+import RegisterForm from './RegisterForm.tsx';
+import AuthImageCarousel from './AuthImageCarousel.tsx';
 import AuthWelcomeContent from './AuthWelcomeContent.tsx';
 
 interface AuthViewProps {

@@ -1,8 +1,8 @@
 // Fix: Create the Message component.
 import React, { useState } from 'react';
-import type { Message as MessageType, User } from './types';
-import Icon from './components/Icon';
-import VoicenoteMessage from './components/VoicenoteMessage';
+import type { Message as MessageType, User } from './types.ts';
+import Icon from './components/Icon.tsx';
+import VoicenoteMessage from './components/VoicenoteMessage.tsx';
 
 interface MessageProps {
   message: MessageType;

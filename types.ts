@@ -1,31 +1,39 @@
-// Fix: Create full type definitions for the application.
-export type View = 'home' | 'explore' | 'notifications' | 'messages' | 'reels' | 'saved' | 'premium' | 'profile' | 'settings' | 'activity' | 'help-center' | 'support-inbox' | 'archive' | 'premium-welcome';
+// types.ts
+
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'premium' | 'activity' | 'login';
 
 export interface User {
   id: string;
   username: string;
   name: string;
   avatar: string;
-  email?: string; // Made optional as it's part of auth
-  password?: string; // Made optional as it's part of auth
-  isVerified?: boolean;
-  isPremium?: boolean;
-  isPrivate: boolean;
-  bio: string;
+  email: string;
+  phone: string;
+  dob: string;
+  bio?: string;
   website?: string;
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
-  phone?: string;
-  dob?: string; // Date of Birth
+  isVerified: boolean;
+  isPremium: boolean;
+  isPrivate: boolean;
   followers: User[];
   following: User[];
-  stories?: Story;
+  stories?: Story[];
   highlights?: StoryHighlight[];
-  // Fix: Add relationship status arrays to User type.
-  mutedUsers: string[];
-  blockedUsers: string[];
-  restrictedUsers: string[];
-  // Fix: Add notificationSettings property to the User type.
-  notificationSettings: NotificationSettings;
+  savedPosts?: Post[];
+  archivedPosts?: Post[];
+  mutedUsers: string[]; // array of user IDs
+  blockedUsers: string[]; // array of user IDs
+  notificationSettings: {
+    likes: boolean;
+    comments: boolean;
+    follows: boolean;
+  };
+}
+
+export interface MediaItem {
+  url: string;
+  type: 'image' | 'video';
 }
 
 export interface Comment {
@@ -34,150 +42,135 @@ export interface Comment {
   text: string;
   timestamp: string;
   likes: number;
-  likedByUser: boolean;
   likedBy: User[];
-  replyToId?: string;
-  replies: Comment[];
+  replies?: Comment[];
 }
 
 export interface Post {
   id: string;
   user: User;
-  media: { url: string; type: 'image' | 'video' }[];
+  media: MediaItem[];
   caption: string;
   likes: number;
   likedBy: User[];
   comments: Comment[];
   timestamp: string;
-  isSaved: boolean;
   isLiked: boolean;
-  isArchived?: boolean;
-  commentsDisabled?: boolean;
+  isSaved: boolean;
+  isArchived: boolean;
+  commentsDisabled: boolean;
+}
+
+export interface Reel {
+  id: string;
+  user: User;
+  video: string;
+  caption: string;
+  likes: number;
+  likedBy: User[];
+  comments: Comment[];
+  shares: number;
+  isLiked: boolean;
+  timestamp: string;
 }
 
 export interface StoryItem {
   id: string;
   media: string;
   mediaType: 'image' | 'video';
-  duration: number;
+  duration: number; // in ms for images
 }
 
 export interface Story {
-  id:string;
+  id: string;
   user: User;
   stories: StoryItem[];
 }
 
 export interface StoryHighlight {
-    id: string;
-    title: string;
-    cover: string;
-    stories: StoryItem[];
+  id: string;
+  title: string;
+  cover: string;
+  stories: StoryItem[];
 }
 
-export interface Reel {
-    id: string;
-    user: User;
-    video: string;
-    caption: string;
-    likes: number;
-    comments: Comment[];
-    isLiked: boolean;
-    shares: number;
-    audio?: { title: string; artist: string };
-    likedBy: User[]; // Changed from isLiked for robust backend state
-    commentIds: string[]; // Changed from comments for robust backend state
-}
-
-export interface Message {
-    id:string;
-    senderId: string;
-    content: string;
-    timestamp: string;
-    type: 'text' | 'image' | 'like' | 'voicenote' | 'sticker' | 'share';
-    replyTo?: Message;
-    duration?: string;
-    // Fix: Add replyToId to enable backend persistence of replies.
-    replyToId?: string;
-    sharedPostId?: string;
-    sharedPost?: Post;
-}
-
-export interface Conversation {
-    id: string;
-    participants: User[];
-    messages: Message[];
-    lastMessageSeenId: string;
+export interface Notification {
+  id: string;
+  user: User;
+  type: 'like' | 'comment' | 'follow' | 'mention';
+  post?: Post;
+  commentText?: string;
+  timestamp: string;
+  read: boolean;
 }
 
 export interface Activity {
-    id: string;
-    type: 'like' | 'comment' | 'follow' | 'mention';
-    user: User;
-    post?: Post;
-    commentText?: string;
-    timestamp: string;
-}
-
-export interface Notification extends Activity {
-    read: boolean;
-}
-
-
-export interface SponsoredContent {
-    id: string;
-    company: string;
-    logo: string;
-    media: string;
-    mediaType: 'image' | 'video';
-    callToAction: string;
-    link: string;
-}
-
-export interface FeedActivity {
   id: string;
   user: User;
-  action: 'liked' | 'followed';
-  targetPost?: Post;
-  targetUser?: User;
+  type: 'like' | 'comment' | 'follow' | 'mention';
+  post?: Post;
+  commentText?: string;
   timestamp: string;
 }
 
-export interface Testimonial {
+export interface FeedActivity {
     id: string;
     user: User;
-    quote: string;
-}
-
-export interface HelpArticle {
-    id: string;
-    category: string;
-    title: string;
-    content: string;
-}
-
-export interface SupportTicket {
-    id: string;
-    subject: string;
-    status: 'Open' | 'Resolved' | 'Pending';
-    lastUpdated: string;
-    messages: { sender: 'user' | 'support'; text: string; timestamp: string }[];
-}
-
-export interface NotificationSettings {
-  likes: boolean;
-  comments: boolean;
-  follows: boolean;
-}
-
-export interface VerificationRequest {
-    id: string;
-    userId: string;
-    status: 'pending' | 'approved' | 'rejected';
+    action: 'liked' | 'followed';
+    targetPost?: Post;
+    targetUser?: User;
     timestamp: string;
+}
+
+export interface SponsoredContent {
+  id: string;
+  company: string;
+  logo: string;
+  media: string;
+  callToAction: string;
+  link: string;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+  type: 'text' | 'image' | 'like' | 'sticker' | 'voicenote' | 'share';
+  replyTo?: Message;
+  sharedPost?: Post;
+  duration?: string; // for voicenotes
+}
+
+export interface Conversation {
+  id: string;
+  participants: User[];
+  messages: Message[];
+  unreadCount: number;
 }
 
 export interface TrendingTopic {
     topic: string;
     postCount: number;
+}
+
+export interface Testimonial {
+  id: string;
+  user: User;
+  quote: string;
+}
+
+export interface HelpArticle {
+  id: string;
+  category: string;
+  title: string;
+  content: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  subject: string;
+  status: 'Open' | 'Pending' | 'Resolved';
+  lastUpdated: string;
+  messages: { from: 'user' | 'support'; content: string; timestamp: string }[];
 }

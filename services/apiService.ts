@@ -1,8 +1,8 @@
-// A service to centralize all API calls
+import type { User, Post, Conversation } from '../types.ts';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
-const request = async (endpoint: string, options: RequestInit = {}) => {
+const apiRequest = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
@@ -12,221 +12,92 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
       ...options,
     });
     if (!response.ok) {
-      // Try to parse the error body
-      const errorBody = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-      throw new Error(errorBody.message || `HTTP error! status: ${response.status}`);
-    }
-    if (response.status === 204) { // No Content
-        return null;
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'An API error occurred');
     }
     return response.json();
   } catch (error) {
-    console.error(`API call to ${endpoint} failed:`, error);
+    console.error(`API Error on ${endpoint}:`, error);
     throw error;
   }
 };
 
-// --- AUTH ---
-export const login = (identifier: string, password: string) => request('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ identifier, password }),
+// Auth
+export const login = (identifier: string, password: string): Promise<User> => apiRequest('/auth/login', {
+  method: 'POST',
+  body: JSON.stringify({ identifier, password }),
 });
 
-export const register = (userData: any) => request('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(userData),
+export const register = (userData: Omit<User, 'id' | 'avatar' | 'isVerified' | 'isPremium' | 'isPrivate' | 'followers' | 'following' | 'notificationSettings' | 'mutedUsers' | 'blockedUsers'> & {password: string}): Promise<User> => apiRequest('/auth/register', {
+  method: 'POST',
+  body: JSON.stringify(userData),
 });
 
-export const getMe = (userId: string) => request(`/auth/me/${userId}`);
-export const logout = () => request('/auth/logout', { method: 'POST' });
-
-export const forgotPassword = (identifier: string) => request('/auth/forgot-password', {
+export const forgotPassword = (identifier: string): Promise<{message: string}> => apiRequest('/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ identifier }),
 });
 
-export const resetPassword = (identifier: string, password: string) => request('/auth/reset-password', {
-    method: 'POST',
-    body: JSON.stringify({ identifier, password }),
+
+// AI Generation
+export const generateCaption = (base64Data: string, mimeType: string): Promise<{ caption: string }> => apiRequest('/ai/generate-caption', {
+  method: 'POST',
+  body: JSON.stringify({ base64Data, mimeType }),
 });
 
-
-// --- GET ---
-export const getPosts = () => request('/posts');
-export const getExplorePosts = () => request('/posts/explore');
-export const getUsers = () => request('/users');
-export const getStories = () => request('/stories');
-export const getReels = () => request('/reels');
-export const getConversations = () => request('/conversations');
-export const getConversationById = (id: string) => request(`/conversations/${id}`);
-export const getActivities = () => request('/activities');
-export const getSupportTickets = () => request('/support-tickets');
-export const getNotifications = (userId: string) => request(`/notifications/${userId}`);
-export const searchUsers = (query: string) => request(`/search/users?q=${encodeURIComponent(query)}`);
-export const searchPosts = (query: string) => request(`/search/posts?q=${encodeURIComponent(query)}`);
-
-// Get data that was previously mocked
-export const getFeedActivities = () => request('/feed/activities');
-export const getTrendingTopics = () => request('/trends');
-export const getSuggestedUsers = (userId: string) => request(`/users/suggestions/${userId}`);
-export const getSponsoredContent = () => request('/sponsored-content');
-export const getPremiumTestimonials = () => request('/premium/testimonials');
-export const getHelpArticles = () => request('/help/articles');
-// Fix: Add getStickers to fetch stickers from the backend.
-export const getStickers = () => request('/stickers');
-
-
-// --- POST ---
-export const createPost = (postData: any) => request('/posts', {
-    method: 'POST',
-    body: JSON.stringify(postData),
-});
-
-export const togglePostLike = (postId: string, userId: string) => request(`/posts/${postId}/toggle-like`, {
-    method: 'POST',
-    body: JSON.stringify({ userId }),
-});
-
-export const togglePostSave = (postId: string, userId: string) => request(`/posts/${postId}/toggle-save`, {
-    method: 'POST',
-     body: JSON.stringify({ userId }),
-});
-
-export const addComment = (postId: string, userId: string, text: string, replyToId?: string) => request(`/posts/${postId}/comment`, {
-    method: 'POST',
-    body: JSON.stringify({ userId, text, replyToId }),
-});
-
-export const toggleCommentLike = (commentId: string, userId: string) => request(`/comments/${commentId}/toggle-like`, {
-    method: 'POST',
-    body: JSON.stringify({ userId }),
-});
-
-export const followUser = (currentUserId: string, targetUserId: string) => request('/users/follow', {
-    method: 'POST',
-    body: JSON.stringify({ currentUserId, targetUserId }),
-});
-
-export const unfollowUser = (currentUserId: string, targetUserId: string) => request('/users/unfollow', {
-    method: 'POST',
-    body: JSON.stringify({ currentUserId, targetUserId }),
-});
-
-export const sendDirectMessage = (messageData: any) => request(`/messages/direct`, {
-    method: 'POST',
-    body: JSON.stringify(messageData),
-});
-
-export const findOrCreateConversation = (userId1: string, userId2: string) => request('/conversations/find-or-create', {
-    method: 'POST',
-    body: JSON.stringify({ userId1, userId2 }),
-});
-
-export const initiateCall = (callerId: string, receiverId: string, type: 'audio' | 'video') => request('/calls/initiate', {
-    method: 'POST',
-    body: JSON.stringify({ callerId, receiverId, type }),
-});
-
-export const toggleArchivePost = (postId: string) => request(`/posts/${postId}/archive`, {
-    method: 'POST',
-});
-
-export const markNotificationsAsRead = (userId: string) => request(`/notifications/${userId}/mark-read`, {
-    method: 'POST',
-});
-
-// Fix: Add updateUserRelationship to handle mute, block, etc.
-export const updateUserRelationship = (currentUserId: string, targetUserId: string, action: 'mute' | 'unmute' | 'block' | 'unblock' | 'restrict' | 'unrestrict') => request('/users/relationship', {
-    method: 'POST',
-    body: JSON.stringify({ currentUserId, targetUserId, action }),
-});
-
-export const toggleReelLike = (reelId: string, userId: string) => request(`/reels/${reelId}/toggle-like`, {
-    method: 'POST',
-    body: JSON.stringify({ userId }),
-});
-
-export const addReelComment = (reelId: string, userId: string, text: string) => request(`/reels/${reelId}/comment`, {
-    method: 'POST',
-    body: JSON.stringify({ userId, text }),
-});
-
-export const createStory = (userId: string, storyItem: any) => request(`/stories`, {
-    method: 'POST',
-    body: JSON.stringify({ userId, storyItem }),
-});
-
-export const createHighlight = (userId: string, title: string, storyIds: string[]) => request('/highlights', {
-    method: 'POST',
-    body: JSON.stringify({ userId, title, storyIds }),
-});
-
-export const createSupportTicket = (subject: string, description: string) => request('/support-tickets', {
-    method: 'POST',
-    body: JSON.stringify({ subject, description }),
-});
-
-export const activatePremium = (userId: string) => request(`/users/${userId}/premium`, {
-    method: 'POST',
-});
-
-export const submitVerificationRequest = (userId: string) => request('/verification-requests', {
-    method: 'POST',
-    body: JSON.stringify({ userId }),
-});
-
-// --- AI Service POST requests ---
-export const generateCaption = (base64Data: string, mimeType: string) => request('/ai/generate-caption', {
-    method: 'POST',
-    body: JSON.stringify({ base64Data, mimeType }),
-});
-export const generateStoryImage = (prompt: string) => request('/ai/generate-story-image', {
+export const generateStoryImage = (prompt: string): Promise<{ imageB64: string }> => apiRequest('/ai/generate-story-image', {
     method: 'POST',
     body: JSON.stringify({ prompt }),
 });
-export const generateComment = (postCaption: string, style: string) => request('/ai/generate-comment', {
+
+export const generateComment = (postCaption: string, style: string): Promise<{ comment: string }> => apiRequest('/ai/generate-comment', {
     method: 'POST',
     body: JSON.stringify({ postCaption, style }),
 });
-export const generateBio = (username: string, name: string) => request('/ai/generate-bio', {
+
+export const generateBio = (username: string, name: string): Promise<{ bio: string }> => apiRequest('/ai/generate-bio', {
     method: 'POST',
     body: JSON.stringify({ username, name }),
 });
 
+// Mocked sticker fetch
+export const getStickers = async (): Promise<string[]> => {
+    // In a real app, this would be an API call.
+    return Promise.resolve([
+        '/stickers/sticker1.webp',
+        '/stickers/sticker2.webp',
+        '/stickers/sticker3.webp',
+    ]);
+};
 
-// --- PUT ---
-export const updateUserProfile = (userId: string, userData: any) => request(`/users/${userId}`, {
+// Messages
+export const deleteMessage = (conversationId: string, messageId: string): Promise<{ success: boolean }> => apiRequest(`/conversations/${conversationId}/messages/${messageId}`, {
+    method: 'DELETE',
+});
+
+// This is just a placeholder to show how it might be used. The backend doesn't have this implemented.
+export const getConversations = (): Promise<Conversation[]> => apiRequest('/conversations');
+
+// Other data fetching. In a real app, these would be separate endpoints.
+// For this app, we'll assume a single data fetch endpoint for mock data.
+export const getAppData = (userId: string): Promise<any> => apiRequest(`/app-data/${userId}`);
+
+export const updateUser = (userId: string, userData: Partial<User>): Promise<User> => apiRequest(`/users/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
 });
 
-export const updateUserSettings = (userId: string, settings: any) => request(`/users/${userId}/settings`, {
-    method: 'PUT',
-    body: JSON.stringify(settings),
+export const followUser = (currentUserId: string, targetUserId: string): Promise<{ success: true }> => apiRequest('/users/follow', {
+    method: 'POST',
+    body: JSON.stringify({ currentUserId, targetUserId }),
 });
 
-
-export const updatePost = (postId: string, caption: string) => request(`/posts/${postId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ caption }),
+export const unfollowUser = (currentUserId: string, targetUserId: string): Promise<{ success: true }> => apiRequest('/users/unfollow', {
+    method: 'POST',
+    body: JSON.stringify({ currentUserId, targetUserId }),
 });
 
-export const updatePostSettings = (postId: string, settings: { commentsDisabled: boolean }) => request(`/posts/${postId}/settings`, {
-    method: 'PUT',
-    body: JSON.stringify(settings),
-});
-
-export const changePassword = (userId: string, passwords: any) => request(`/users/${userId}/password`, {
-    method: 'PUT',
-    body: JSON.stringify(passwords),
-});
-
-
-// --- DELETE ---
-export const deletePost = (postId: string) => request(`/posts/${postId}`, {
-    method: 'DELETE',
-});
-
-export const deleteMessage = (conversationId: string, messageId: string) => request(`/conversations/${conversationId}/messages/${messageId}`, {
-    method: 'DELETE',
+export const createPost = (postData: any): Promise<Post> => apiRequest('/posts', {
+    method: 'POST',
+    body: JSON.stringify(postData),
 });

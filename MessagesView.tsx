@@ -1,9 +1,9 @@
 // Fix: Create the MessagesView component.
 import React, { useState, useEffect } from 'react';
-import type { Conversation, User, Message } from './types';
-import ChatWindow from './components/ChatWindow';
-import Icon from './components/Icon';
-import * as api from './services/apiService';
+import type { Conversation, User, Message } from './types.ts';
+import ChatWindow from './components/ChatWindow.tsx';
+import Icon from './components/Icon.tsx';
+import * as api from './services/apiService.ts';
 import { socketService } from './services/socketService.ts';
 
 

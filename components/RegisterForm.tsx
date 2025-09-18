@@ -1,8 +1,9 @@
 
+
 import React, { useState } from 'react';
-import type { User } from '../types';
-import * as api from '../services/apiService';
-import Icon from './Icon';
+import type { User } from '../types.ts';
+import * as api from '../services/apiService.ts';
+import Icon from './Icon.tsx';
 
 interface RegisterFormProps {
   onRegisterSuccess: (user: User) => void;

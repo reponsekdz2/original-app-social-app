@@ -1,104 +1,63 @@
 import React from 'react';
 import type { Post, User } from '../types.ts';
+import Icon from './Icon.tsx';
 
 interface PostWithOptionsModalProps {
   post: Post;
   currentUser: User;
   onClose: () => void;
   onUnfollow: (user: User) => void;
-  onDelete: (postId: string) => void;
+  onFollow: (user: User) => void;
   onEdit: (post: Post) => void;
-  onToggleArchive: (post: Post) => void;
-  onToggleComments: (settings: { commentsDisabled: boolean }) => void;
-  onCopyLink: () => void;
+  onDelete: (post: Post) => void;
+  onArchive: (post: Post) => void;
+  onReport: (post: Post) => void;
 }
 
-const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = ({
-  post,
-  currentUser,
-  onClose,
-  onUnfollow,
-  onDelete,
-  onEdit,
-  onToggleArchive,
-  onToggleComments,
-  onCopyLink,
-}) => {
-  const isOwnPost = post.user.id === currentUser.id;
+const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
+  const { post, currentUser, onClose, onUnfollow, onFollow, onEdit, onDelete, onArchive, onReport } = props;
 
-  const handleUnfollow = () => {
-    onUnfollow(post.user);
-    onClose();
-  };
-  
-  const handleEdit = () => {
-    onEdit(post);
-    onClose();
-  };
-  
-  const handleDelete = () => {
-    onDelete(post.id);
-    onClose();
-  };
+  const isCurrentUserPost = post.user.id === currentUser.id;
+  const isFollowing = currentUser.following.some(u => u.id === post.user.id);
 
-  const handleToggleArchive = () => {
-    onToggleArchive(post);
-    onClose();
-  };
-  
-  const handleCopyLink = () => {
-    onCopyLink();
-    onClose();
-  }
+  const userOptions = [
+    !isCurrentUserPost && { label: 'Report', action: () => onReport(post), className: 'text-red-500 font-bold' },
+    !isCurrentUserPost && (isFollowing 
+        ? { label: 'Unfollow', action: () => onUnfollow(post.user), className: 'text-red-500 font-bold' }
+        : { label: 'Follow', action: () => onFollow(post.user), className: 'font-bold' }
+    ),
+  ].filter(Boolean);
 
-  const handleToggleComments = () => {
-      onToggleComments({ commentsDisabled: !post.commentsDisabled });
-      onClose();
-  }
-
-  const ownPostOptions = [
-    { label: post.isArchived ? 'Unarchive' : 'Archive', action: handleToggleArchive, className: '' },
-    { label: 'Edit', action: handleEdit, className: '' },
-    { label: post.commentsDisabled ? 'Turn on commenting' : 'Turn off commenting', action: handleToggleComments, className: '' },
-    { label: 'Delete', action: handleDelete, className: 'text-red-500 font-bold' },
-  ];
-
-  const otherUserPostOptions = [
-    { label: 'Unfollow', action: handleUnfollow, className: 'text-red-500 font-bold' },
-    { label: 'Add to favorites', action: onClose, className: '' },
-    { label: 'Report', action: onClose, className: 'text-red-500' },
-  ];
-
-  const commonOptions = [
-      { label: 'Copy Link', action: handleCopyLink, className: '' },
-      { label: 'Share to...', action: onClose, className: '' },
-  ];
-
-  const options = isOwnPost ? ownPostOptions : otherUserPostOptions;
+  const postOptions = [
+    isCurrentUserPost && { label: 'Edit', action: () => onEdit(post) },
+    isCurrentUserPost && { label: 'Delete', action: () => onDelete(post), className: 'text-red-500 font-bold' },
+    isCurrentUserPost && { label: 'Archive', action: () => onArchive(post) },
+    { label: 'Go to post', action: () => {} },
+    { label: 'Share to...', action: () => {} },
+    { label: 'Copy link', action: () => {} },
+    { label: 'About this account', action: () => {} },
+  ].filter(Boolean);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-col text-center divide-y divide-gray-700">
-          {options.map((option) => (
-            <button
-              key={option.label}
-              onClick={option.action}
-              className={`py-3 text-sm ${option.className || ''}`}
-            >
+      <div 
+        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm border border-gray-700"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col">
+          {userOptions.map((option, index) => (
+            <button key={index} onClick={() => { option.action(); onClose(); }} className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 transition-colors ${option.className || ''}`}>
               {option.label}
             </button>
           ))}
-          {commonOptions.map((option) => (
-             <button
-              key={option.label}
-              onClick={option.action}
-              className={`py-3 text-sm ${option.className || ''}`}
-            >
+           {postOptions.map((option, index) => (
+            <button key={index} onClick={() => { option.action(); onClose(); }} className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 transition-colors ${option.className || ''}`}>
               {option.label}
             </button>
           ))}
-          <button onClick={onClose} className="py-3 text-sm">Cancel</button>
+           <button onClick={onClose} className="w-full py-3 text-sm hover:bg-gray-700/50 transition-colors">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
