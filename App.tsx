@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Types
-import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings, Comment, Testimonial, HelpArticle } from './types.ts';
+import type { View, User, Post as PostType, Story, Reel as ReelType, FeedActivity, SponsoredContent, Conversation, Message, Activity, SupportTicket, StoryItem, Post, StoryHighlight, NotificationSettings, Comment, Testimonial, HelpArticle, Notification } from './types.ts';
 
 // API Service
 import * as api from './services/apiService.ts';
@@ -62,7 +62,7 @@ const App: React.FC = () => {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
-    const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({ likes: true, comments: true, follows: true });
+    const [notifications, setNotifications] = useState<Notification[]>([]);
     
     // Data previously from constants, now from backend
     const [feedActivities, setFeedActivities] = useState<FeedActivity[]>([]);
@@ -113,12 +113,13 @@ const App: React.FC = () => {
                 postsData, usersData, storiesData, reelsData,
                 conversationsData, activitiesData, supportTicketsData,
                 feedActivitiesData, trendingTopicsData, suggestedUsersData,
-                sponsoredContentData, testimonialsData, helpArticlesData
+                sponsoredContentData, testimonialsData, helpArticlesData, notificationsData
             ] = await Promise.all([
                 api.getPosts(), api.getUsers(), api.getStories(), api.getReels(),
                 api.getConversations(), api.getActivities(), api.getSupportTickets(),
                 api.getFeedActivities(), api.getTrendingTopics(), api.getSuggestedUsers(userId),
                 api.getSponsoredContent(), api.getPremiumTestimonials(), api.getHelpArticles(),
+                api.getNotifications(userId),
             ]);
 
             setPosts(postsData);
@@ -134,6 +135,7 @@ const App: React.FC = () => {
             setSponsoredContent(sponsoredContentData);
             setTestimonials(testimonialsData);
             setHelpArticles(helpArticlesData);
+            setNotifications(notificationsData);
 
         } catch (error) {
             console.error("Failed to fetch app data", error);
@@ -242,7 +244,7 @@ const App: React.FC = () => {
         setEditProfileOpen(false);
     };
 
-    const handleCreatePost = async (postData: Omit<Post, 'id' | 'likes' | 'likedBy' | 'comments' | 'timestamp' | 'isSaved' | 'isLiked'>) => {
+    const handleCreatePost = async (postData: Omit<Post, 'id' | 'likes' | 'likedBy' | 'comments' | 'timestamp' | 'isSaved' | 'isLiked' | 'commentsDisabled'>) => {
         const newPost = await api.createPost(postData);
         setPosts([newPost, ...posts]);
         setCreatePostOpen(false);
@@ -302,6 +304,68 @@ const App: React.FC = () => {
             // Optionally show an error message to the user
         }
     };
+
+    const handleLikeReel = async (reelId: string) => {
+        if (!currentUser) return;
+        const updatedReel = await api.toggleReelLike(reelId, currentUser.id);
+        setReels(reels.map(r => r.id === reelId ? updatedReel : r));
+    };
+
+    const handleCommentOnReel = async (reelId: string, text: string) => {
+        if (!currentUser) return;
+        const updatedReel = await api.addReelComment(reelId, currentUser.id, text);
+        setReels(reels.map(r => r.id === reelId ? updatedReel : r));
+        setReelForComments(updatedReel);
+    };
+
+    const handleCreateStory = async (storyItem: Omit<StoryItem, 'id'>) => {
+        if (!currentUser) return;
+        const updatedStories = await api.createStory(currentUser.id, storyItem);
+        setStories(updatedStories);
+        setCreateStoryOpen(false);
+    };
+
+    const handleCreateHighlight = async (title: string, storyIds: string[]) => {
+        if (!currentUser) return;
+        const updatedUser = await api.createHighlight(currentUser.id, title, storyIds);
+        setCurrentUser(updatedUser); // Highlights are on the user object
+        setCreateHighlightOpen(false);
+    };
+    
+    const handleUpdatePostSettings = async (postId: string, settings: { commentsDisabled: boolean }) => {
+        const updatedPost = await api.updatePostSettings(postId, settings);
+        setPosts(posts.map(p => p.id === postId ? updatedPost : p));
+        setPostWithOptions(null);
+    };
+
+    const handleCreateSupportTicket = async (subject: string, description: string) => {
+        const newTicket = await api.createSupportTicket(subject, description);
+        setSupportTickets([newTicket, ...supportTickets]);
+        setNewSupportRequestOpen(false);
+    };
+
+    const handleChangePassword = async (passwords: any) => {
+        if (!currentUser) return;
+        await api.changePassword(currentUser.id, passwords);
+        setChangePasswordOpen(false);
+        // Add user feedback e.g., a toast notification
+    };
+    
+    const handleUpdateUserSettings = async (settings: any) => {
+        if (!currentUser) return;
+        const updatedUser = await api.updateUserSettings(currentUser.id, settings);
+        setCurrentUser(updatedUser);
+    };
+
+    const handleShowNotifications = async () => {
+        if (!currentUser) return;
+        setNotificationsPanelOpen(true);
+        // Optimistically mark as read in UI
+        const updatedNotifications = notifications.map(n => ({...n, read: true}));
+        setNotifications(updatedNotifications);
+        // Tell backend to mark as read
+        await api.markNotificationsAsRead(currentUser.id);
+    };
     
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen bg-black text-white text-xl">Loading talka...</div>;
@@ -347,7 +411,8 @@ const App: React.FC = () => {
             case 'reels':
                 return <ReelsView 
                     reels={reels} 
-                    onLikeReel={(reelId) => setReels(reels.map(r => r.id === reelId ? {...r, isLiked: !r.isLiked, likes: r.isLiked ? r.likes-1 : r.likes+1 } : r))}
+                    currentUser={currentUser}
+                    onLikeReel={handleLikeReel}
                     onCommentOnReel={setReelForComments}
                     onShareReel={() => {}}
                 />;
@@ -382,15 +447,15 @@ const App: React.FC = () => {
                 return <SavedView posts={posts.filter(p => p.isSaved)} onViewPost={setViewedPost} />;
             case 'settings':
                 return <SettingsView 
+                    currentUser={currentUser}
                     onGetVerified={() => setGetVerifiedOpen(true)}
                     onEditProfile={() => setEditProfileOpen(true)}
                     onChangePassword={() => setChangePasswordOpen(true)}
                     isPrivateAccount={currentUser.isPrivate}
-                    onTogglePrivateAccount={(val) => setCurrentUser({...currentUser, isPrivate: val})}
+                    onTogglePrivateAccount={(val) => handleUpdateUserSettings({ isPrivate: val })}
                     isTwoFactorEnabled={false}
                     onToggleTwoFactor={() => {}}
-                    notificationSettings={notificationSettings}
-                    onUpdateNotificationSettings={(key, value) => setNotificationSettings({...notificationSettings, [key]: value})}
+                    onUpdateNotificationSettings={(key, value) => handleUpdateUserSettings({ notificationSettings: { ...currentUser.notificationSettings, [key]: value } })}
                     onNavigate={handleNavigate}
                 />;
             case 'activity':
@@ -422,7 +487,7 @@ const App: React.FC = () => {
             currentView={currentView}
             onNavigate={handleNavigate}
             onShowSearch={() => setSearchPanelOpen(true)}
-            onShowNotifications={() => setNotificationsPanelOpen(true)}
+            onShowNotifications={handleShowNotifications}
             onCreatePost={() => setCreatePostOpen(true)}
             onSwitchAccount={() => setAccountSwitcherOpen(true)}
           />
@@ -432,7 +497,7 @@ const App: React.FC = () => {
                 onNavigate={handleNavigate}
                 onSwitchAccount={() => setAccountSwitcherOpen(true)}
                 onCreatePost={() => setCreatePostOpen(true)}
-                onShowNotifications={() => setNotificationsPanelOpen(true)}
+                onShowNotifications={handleShowNotifications}
               />
               <main className={currentView === 'home' ? '' : 'container mx-auto'}>
                 {renderView()}
@@ -453,26 +518,26 @@ const App: React.FC = () => {
         {isAccountSwitcherOpen && <AccountSwitcherModal users={users} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchUser={(user) => {setCurrentUser(user); setAccountSwitcherOpen(false); handleNavigate('home');}} />}
         {isCreatePostOpen && <CreatePostModal currentUser={currentUser} onClose={() => setCreatePostOpen(false)} onCreatePost={handleCreatePost} />}
         {editingPost && <EditPostModal post={editingPost} onClose={() => setEditingPost(null)} onSave={handleEditPostSave} />}
-        {postWithOptions && <PostWithOptionsModal post={postWithOptions} currentUser={currentUser} onClose={() => setPostWithOptions(null)} onUnfollow={(user) => setUserToUnfollow(user)} onDelete={handleDeletePost} onEdit={setEditingPost} onToggleArchive={handleToggleArchive} onToggleComments={() => {}} onCopyLink={() => {}} />}
+        {postWithOptions && <PostWithOptionsModal post={postWithOptions} currentUser={currentUser} onClose={() => setPostWithOptions(null)} onUnfollow={(user) => setUserToUnfollow(user)} onDelete={handleDeletePost} onEdit={setEditingPost} onToggleArchive={handleToggleArchive} onToggleComments={(settings) => handleUpdatePostSettings(postWithOptions.id, settings)} onCopyLink={() => {}} />}
         {usersForLikesModal && <ViewLikesModal users={usersForLikesModal} currentUser={currentUser} onClose={() => setUsersForLikesModal(null)} onViewProfile={(user) => { setUsersForLikesModal(null); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {followList && <FollowListModal title={followList.title} users={followList.users} currentUser={currentUser} onClose={() => setFollowList(null)} onViewProfile={(user) => { setFollowList(null); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {userToUnfollow && <UnfollowModal user={userToUnfollow} onCancel={() => setUserToUnfollow(null)} onConfirm={() => handleUnfollow(userToUnfollow)} />}
         {postToShare && <ShareModal post={postToShare} users={users.filter(u => u.id !== currentUser.id)} onClose={() => setPostToShare(null)} onSendShare={() => {}} />}
-        {reelForComments && <ReelCommentsModal reel={reelForComments} currentUser={currentUser} onClose={() => setReelForComments(null)} onComment={() => {}} onViewProfile={(user) => { setReelForComments(null); handleNavigate('profile', user); }} />}
+        {reelForComments && <ReelCommentsModal reel={reelForComments} currentUser={currentUser} onClose={() => setReelForComments(null)} onComment={handleCommentOnReel} onViewProfile={(user) => { setReelForComments(null); handleNavigate('profile', user); }} />}
         {isGetVerifiedOpen && <GetVerifiedModal onClose={() => setGetVerifiedOpen(false)} />}
         {isEditProfileOpen && <EditProfileModal user={currentUser} onClose={() => setEditProfileOpen(false)} onSave={handleEditProfileSave} />}
-        {isChangePasswordOpen && <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />}
+        {isChangePasswordOpen && <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} onSave={handleChangePassword} />}
         {isPaymentModalOpen && <PaymentModal onClose={() => setPaymentModalOpen(false)} onSuccess={() => { setCurrentUser({...currentUser, isPremium: true }); setPaymentModalOpen(false); handleNavigate('premium-welcome'); }} />}
-        {isNewSupportRequestOpen && <NewSupportRequestModal onClose={() => setNewSupportRequestOpen(false)} onSubmit={(subject, description) => { setSupportTickets([{ id: `st${Date.now()}`, subject, status: 'Open', lastUpdated: '1m ago', messages: [{ sender: 'user', text: description, timestamp: '1m ago' }]}, ...supportTickets]); setNewSupportRequestOpen(false); }} />}
-        {isCreateStoryOpen && <CreateStoryModal onClose={() => setCreateStoryOpen(false)} onCreateStory={() => setCreateStoryOpen(false)} />}
-        {isCreateHighlightOpen && <CreateHighlightModal userStories={stories.flatMap(s => s.stories)} onClose={() => setCreateHighlightOpen(false)} onCreate={() => setCreateHighlightOpen(false)} />}
+        {isNewSupportRequestOpen && <NewSupportRequestModal onClose={() => setNewSupportRequestOpen(false)} onSubmit={handleCreateSupportTicket} />}
+        {isCreateStoryOpen && <CreateStoryModal onClose={() => setCreateStoryOpen(false)} onCreateStory={handleCreateStory} />}
+        {isCreateHighlightOpen && <CreateHighlightModal userStories={stories.find(s => s.user.id === currentUser.id)?.stories || []} onClose={() => setCreateHighlightOpen(false)} onCreate={handleCreateHighlight} />}
         {isSuggestionsModalOpen && <SuggestionsModal users={suggestedUsers} currentUser={currentUser} onClose={() => setSuggestionsModalOpen(false)} onViewProfile={(user) => { setSuggestionsModalOpen(false); handleNavigate('profile', user); }} onFollow={handleFollow} onUnfollow={(user) => setUserToUnfollow(user)} />}
         {isTrendsModalOpen && <TrendsModal topics={trendingTopics} onClose={() => setTrendsModalOpen(false)} />}
         {callState && <CallModal user={callState.user} type={callState.type} onClose={() => setCallState(null)} />}
 
         {/* Side Panels */}
         {isSearchPanelOpen && <SearchView users={users} onClose={() => setSearchPanelOpen(false)} onViewProfile={(user) => { setSearchPanelOpen(false); handleNavigate('profile', user); }} />}
-        {isNotificationsPanelOpen && <NotificationsPanel activities={activities} onClose={() => setNotificationsPanelOpen(false)} />}
+        {isNotificationsPanelOpen && <NotificationsPanel notifications={notifications} onClose={() => setNotificationsPanelOpen(false)} />}
       </div>
     );
 };

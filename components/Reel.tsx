@@ -2,19 +2,22 @@
 // Fix: Add useEffect to the import from React.
 import React, { useRef, useState, useEffect } from 'react';
 // Fix: Add .ts extension to import to resolve module.
-import type { Reel as ReelType } from '../types.ts';
+import type { Reel as ReelType, User } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface ReelProps {
   reel: ReelType;
+  currentUser: User;
   onLike: () => void;
   onComment: () => void;
   onShare: () => void;
 }
 
-const Reel: React.FC<ReelProps> = ({ reel, onLike, onComment, onShare }) => {
+const Reel: React.FC<ReelProps> = ({ reel, currentUser, onLike, onComment, onShare }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const isLiked = reel.likedBy.some(u => u.id === currentUser.id);
+
 
   const handleVideoPress = () => {
     if (videoRef.current) {
@@ -61,7 +64,7 @@ const Reel: React.FC<ReelProps> = ({ reel, onLike, onComment, onShare }) => {
       </div>
        <div className="absolute bottom-4 right-4 flex flex-col items-center space-y-4 text-white">
             <button onClick={onLike} className="flex flex-col items-center">
-                <Icon className={`w-8 h-8 ${reel.isLiked ? 'text-red-500' : ''}`} fill={reel.isLiked ? 'currentColor' : 'none'}>
+                <Icon className={`w-8 h-8 ${isLiked ? 'text-red-500' : ''}`} fill={isLiked ? 'currentColor' : 'none'}>
                     <path stroke="currentColor" strokeWidth="1.5" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                 </Icon>
                 <span className="text-sm font-semibold">{reel.likes.toLocaleString()}</span>

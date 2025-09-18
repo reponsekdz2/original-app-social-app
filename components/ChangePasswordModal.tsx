@@ -4,19 +4,27 @@ import Icon from './Icon.tsx';
 
 interface ChangePasswordModalProps {
   onClose: () => void;
+  onSave: (passwords: { current: string, new: string }) => void;
 }
 
-const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) => {
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSave }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd add validation and an API call here.
-    // For this mock, we'll just close the modal.
-    console.log('Password change submitted (mock)');
-    onClose();
+    setError('');
+    if (newPassword !== confirmPassword) {
+      setError("New passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError("New password must be at least 8 characters long.");
+      return;
+    }
+    onSave({ current: currentPassword, new: newPassword });
   };
 
   return (
@@ -30,6 +38,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
           <button onClick={onClose} className="absolute top-3 right-3"><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && <p className="text-red-500 text-sm bg-red-500/10 p-2 rounded-md">{error}</p>}
           <div>
             <label htmlFor="current-password" className="block text-sm font-medium text-gray-400 mb-1">Current Password</label>
             <input

@@ -24,6 +24,8 @@ export interface User {
   mutedUsers: string[];
   blockedUsers: string[];
   restrictedUsers: string[];
+  // Fix: Add notificationSettings property to the User type.
+  notificationSettings: NotificationSettings;
 }
 
 export interface Comment {
@@ -47,6 +49,7 @@ export interface Post {
   isSaved: boolean;
   isLiked: boolean;
   isArchived?: boolean;
+  commentsDisabled?: boolean;
 }
 
 export interface StoryItem {
@@ -79,6 +82,8 @@ export interface Reel {
     isLiked: boolean;
     shares: number;
     audio?: { title: string; artist: string };
+    likedBy: User[]; // Changed from isLiked for robust backend state
+    commentIds: string[]; // Changed from comments for robust backend state
 }
 
 export interface Message {
@@ -108,6 +113,11 @@ export interface Activity {
     commentText?: string;
     timestamp: string;
 }
+
+export interface Notification extends Activity {
+    read: boolean;
+}
+
 
 export interface SponsoredContent {
     id: string;

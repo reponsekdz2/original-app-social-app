@@ -124,6 +124,31 @@ export const updateUserRelationship = (currentUserId: string, targetUserId: stri
     body: JSON.stringify({ currentUserId, targetUserId, action }),
 });
 
+export const toggleReelLike = (reelId: string, userId: string) => request(`/reels/${reelId}/toggle-like`, {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
+});
+
+export const addReelComment = (reelId: string, userId: string, text: string) => request(`/reels/${reelId}/comment`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, text }),
+});
+
+export const createStory = (userId: string, storyItem: any) => request(`/stories`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, storyItem }),
+});
+
+export const createHighlight = (userId: string, title: string, storyIds: string[]) => request('/highlights', {
+    method: 'POST',
+    body: JSON.stringify({ userId, title, storyIds }),
+});
+
+export const createSupportTicket = (subject: string, description: string) => request('/support-tickets', {
+    method: 'POST',
+    body: JSON.stringify({ subject, description }),
+});
+
 
 // --- PUT ---
 export const updateUserProfile = (userId: string, userData: any) => request(`/users/${userId}`, {
@@ -140,6 +165,16 @@ export const updateUserSettings = (userId: string, settings: any) => request(`/u
 export const updatePost = (postId: string, caption: string) => request(`/posts/${postId}`, {
     method: 'PUT',
     body: JSON.stringify({ caption }),
+});
+
+export const updatePostSettings = (postId: string, settings: { commentsDisabled: boolean }) => request(`/posts/${postId}/settings`, {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+});
+
+export const changePassword = (userId: string, passwords: any) => request(`/users/${userId}/password`, {
+    method: 'PUT',
+    body: JSON.stringify(passwords),
 });
 
 

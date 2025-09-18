@@ -1,15 +1,15 @@
 // Fix: Create the NotificationsPanel component.
 import React from 'react';
 // Fix: Add .ts extension to import to resolve module.
-import type { Activity } from '../types.ts';
+import type { Notification } from '../types.ts';
 
 interface NotificationsPanelProps {
-  activities: Activity[];
+  notifications: Notification[];
   onClose: () => void;
 }
 
-const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ activities, onClose }) => {
-  const renderActivityText = (activity: Activity) => {
+const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose }) => {
+  const renderActivityText = (activity: Notification) => {
     switch (activity.type) {
       case 'like':
         return <>liked your post.</>;
@@ -33,9 +33,10 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ activities, onC
             <div className="p-6 h-full flex flex-col">
                 <h2 className="text-2xl font-bold mb-6">Notifications</h2>
                  <div className="border-t border-gray-800 flex-1 overflow-y-auto -mx-6">
-                    {activities.map(activity => (
-                        <div key={activity.id} className="flex items-center gap-3 p-4 hover:bg-gray-900">
-                            <img src={activity.user.avatar} alt={activity.user.username} className="w-11 h-11 rounded-full object-cover" />
+                    {notifications.map(activity => (
+                        <div key={activity.id} className={`flex items-center gap-3 p-4 hover:bg-gray-900 relative ${!activity.read ? 'bg-red-500/10' : ''}`}>
+                            {!activity.read && <div className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-500"></div>}
+                            <img src={activity.user.avatar} alt={activity.user.username} className="w-11 h-11 rounded-full object-cover ml-4" />
                             <p className="text-sm flex-1">
                                 <span className="font-bold">{activity.user.username}</span> {renderActivityText(activity)}
                                 <span className="text-gray-500"> · {activity.timestamp}</span>

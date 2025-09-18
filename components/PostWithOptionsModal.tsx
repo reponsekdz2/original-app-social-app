@@ -9,7 +9,7 @@ interface PostWithOptionsModalProps {
   onDelete: (postId: string) => void;
   onEdit: (post: Post) => void;
   onToggleArchive: (post: Post) => void;
-  onToggleComments: (postId: string) => void;
+  onToggleComments: (settings: { commentsDisabled: boolean }) => void;
   onCopyLink: (postId: string) => void;
 }
 
@@ -51,10 +51,15 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = ({
     onClose();
   }
 
+  const handleToggleComments = () => {
+      onToggleComments({ commentsDisabled: !post.commentsDisabled });
+      onClose();
+  }
+
   const ownPostOptions = [
     { label: post.isArchived ? 'Unarchive' : 'Archive', action: handleToggleArchive, className: '' },
     { label: 'Edit', action: handleEdit, className: '' },
-    { label: 'Turn off commenting', action: () => onToggleComments(post.id), className: '' },
+    { label: post.commentsDisabled ? 'Turn on commenting' : 'Turn off commenting', action: handleToggleComments, className: '' },
     { label: 'Delete', action: handleDelete, className: 'text-red-500 font-bold' },
   ];
 

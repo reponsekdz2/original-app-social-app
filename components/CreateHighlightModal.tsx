@@ -5,7 +5,7 @@ import Icon from './Icon.tsx';
 interface CreateHighlightModalProps {
   userStories: StoryItem[];
   onClose: () => void;
-  onCreate: (title: string, stories: StoryItem[]) => void;
+  onCreate: (title: string, storyIds: string[]) => void;
 }
 
 const CreateHighlightModal: React.FC<CreateHighlightModalProps> = ({ userStories, onClose, onCreate }) => {
@@ -21,8 +21,8 @@ const CreateHighlightModal: React.FC<CreateHighlightModalProps> = ({ userStories
   };
 
   const handleCreate = () => {
-    const selectedStories = userStories.filter(s => selectedStoryIds.includes(s.id));
-    onCreate(title, selectedStories);
+    if (isCreateDisabled) return;
+    onCreate(title, selectedStoryIds);
   };
 
   const isCreateDisabled = !title.trim() || selectedStoryIds.length === 0;

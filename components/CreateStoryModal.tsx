@@ -57,19 +57,24 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    let storyData: Omit<StoryItem, 'id'> | null = null;
     if (mode === 'upload' && mediaPreview && mediaType) {
-       onCreateStory({
+       storyData = {
         media: mediaPreview,
         mediaType: mediaType,
         duration: mediaType === 'image' ? 7000 : 0, // duration is handled by video player for videos
-      });
+      };
     } else if (mode === 'ai' && generatedImage) {
-      onCreateStory({
+      storyData = {
         media: `data:image/jpeg;base64,${generatedImage}`,
         mediaType: 'image',
         duration: 7000,
-      });
+      };
+    }
+
+    if (storyData) {
+        await onCreateStory(storyData);
     }
   };
 

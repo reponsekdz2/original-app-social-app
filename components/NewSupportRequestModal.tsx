@@ -9,11 +9,20 @@ interface NewSupportRequestModalProps {
 const NewSupportRequestModal: React.FC<NewSupportRequestModalProps> = ({ onClose, onSubmit }) => {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim() || !description.trim()) return;
-    onSubmit(subject, description);
+    if (!subject.trim() || !description.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+        await onSubmit(subject, description);
+    } catch (error) {
+        console.error("Failed to submit ticket", error);
+        // Optionally show an error message to the user
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -36,6 +45,7 @@ const NewSupportRequestModal: React.FC<NewSupportRequestModalProps> = ({ onClose
               onChange={(e) => setSubject(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-red-500"
               required
+              disabled={isSubmitting}
             />
           </div>
           <div>
@@ -48,15 +58,17 @@ const NewSupportRequestModal: React.FC<NewSupportRequestModalProps> = ({ onClose
               className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-red-500 resize-none"
               placeholder="Please describe your issue in detail..."
               required
+              disabled={isSubmitting}
             />
           </div>
           <div className="pt-2">
             <button 
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed"
-              disabled={!subject.trim() || !description.trim()}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed flex items-center justify-center"
+              disabled={!subject.trim() || !description.trim() || isSubmitting}
             >
-              Submit Request
+              {isSubmitting && <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
+              {isSubmitting ? 'Submitting...' : 'Submit Request'}
             </button>
           </div>
         </form>

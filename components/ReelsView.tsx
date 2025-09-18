@@ -1,17 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react';
 // Fix: Add .ts extension to import to resolve module.
-import type { Reel as ReelType } from '../types.ts';
+import type { Reel as ReelType, User } from '../types.ts';
 import Reel from './Reel.tsx';
 import Icon from './Icon.tsx';
 
 interface ReelsViewProps {
   reels: ReelType[];
+  currentUser: User;
   onLikeReel: (reelId: string) => void;
   onCommentOnReel: (reel: ReelType) => void;
   onShareReel: (reel: ReelType) => void;
 }
 
-const ReelsView: React.FC<ReelsViewProps> = ({ reels, onLikeReel, onCommentOnReel, onShareReel }) => {
+const ReelsView: React.FC<ReelsViewProps> = ({ reels, currentUser, onLikeReel, onCommentOnReel, onShareReel }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -82,6 +83,7 @@ const ReelsView: React.FC<ReelsViewProps> = ({ reels, onLikeReel, onCommentOnRee
             <div className="h-full w-full max-w-sm aspect-[9/16]">
               <Reel
                 reel={reel}
+                currentUser={currentUser}
                 onLike={() => onLikeReel(reel.id)}
                 onComment={() => onCommentOnReel(reel)}
                 onShare={() => onShareReel(reel)}

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities, findMessage } from './data.js';
+import db, { findUser, findPost, findComment, createNotification, generateId, randomTimeAgo, hydrate, generateFeedActivities, findMessage, findReel, findStoryItem } from './data.js';
 
 const router = Router();
 
@@ -23,8 +23,9 @@ router.post('/posts', (req, res) => {
         likedBy: [],
         commentIds: [],
         timestamp: '1m',
-        isSaved: false, // This would be user-specific
-        isLiked: false, // This would be user-specific
+        isSaved: false,
+        isLiked: false, 
+        commentsDisabled: false,
     };
     db.posts.unshift(newPost);
     res.status(201).json(hydrate(newPost, ['user', 'likedBy', 'comments']));
@@ -111,6 +112,18 @@ router.post('/posts/:id/archive', (req, res) => {
     }
 });
 
+router.put('/posts/:id/settings', (req, res) => {
+    const { commentsDisabled } = req.body;
+    const post = findPost(req.params.id);
+    if (post) {
+        post.commentsDisabled = !!commentsDisabled;
+        res.json(hydrate(post, ['user', 'likedBy', 'comments']));
+    } else {
+        res.status(404).send('Post not found');
+    }
+});
+
+
 // --- COMMENTS ---
 router.post('/comments/:id/toggle-like', (req, res) => {
     const { userId } = req.body;
@@ -131,7 +144,7 @@ router.post('/comments/:id/toggle-like', (req, res) => {
 
 // --- USERS ---
 router.get('/users', (req, res) => {
-    res.json(db.users.map(u => hydrate(u, ['followers', 'following', 'stories', 'highlights'])));
+    res.json(db.users.map(u => hydrate(u, ['followers', 'following', 'userStories', 'highlights'])));
 });
 
 router.get('/users/suggestions/:userId', (req, res) => {
@@ -203,6 +216,19 @@ router.put('/users/:id/settings', (req, res) => {
 
     res.json(hydrate(user, ['followers', 'following']));
 });
+
+router.put('/users/:id/password', (req, res) => {
+    const { id } = req.params;
+    const { current, new: newPassword } = req.body;
+    const user = findUser(id);
+    if (!user) return res.status(404).send('User not found');
+    if (user.password !== current) return res.status(403).json({ message: 'Incorrect current password.' });
+    
+    user.password = newPassword;
+    console.log(`Password for ${user.username} changed successfully.`);
+    res.status(200).json({ message: 'Password updated successfully' });
+});
+
 
 // Fix: Add a new endpoint to handle user relationships (mute, block, etc.).
 router.post('/users/relationship', (req, res) => {
@@ -333,6 +359,85 @@ router.post('/notifications/:userId/mark-read', (req, res) => {
     res.json({ message: 'Notifications marked as read' });
 });
 
+// --- REELS ---
+router.post('/reels/:id/toggle-like', (req, res) => {
+    const { userId } = req.body;
+    const reel = findReel(req.params.id);
+    const user = findUser(userId);
+    if (!reel || !user) return res.status(404).json({ message: "Reel or user not found" });
+
+    const likeIndex = reel.likedBy.indexOf(userId);
+    if (likeIndex > -1) {
+        reel.likedBy.splice(likeIndex, 1);
+    } else {
+        reel.likedBy.push(userId);
+    }
+    reel.likes = reel.likedBy.length;
+    res.json(hydrate(reel, ['user', 'comments', 'likedBy']));
+});
+
+router.post('/reels/:id/comment', (req, res) => {
+    const { userId, text } = req.body;
+    const reel = findReel(req.params.id);
+    if (!reel) return res.status(404).send('Reel not found');
+
+    const newComment = {
+        id: generateId('comment'),
+        userId,
+        text,
+        timestamp: randomTimeAgo(),
+        likes: 0,
+        likedBy: [],
+    };
+    db.comments.push(newComment);
+    reel.commentIds.push(newComment.id);
+    res.json(hydrate(reel, ['user', 'comments', 'likedBy']));
+});
+
+
+// --- STORIES & HIGHLIGHTS ---
+router.post('/stories', (req, res) => {
+    const { userId, storyItem } = req.body;
+    const userStory = db.stories.find(s => s.userId === userId);
+    if (!userStory) return res.status(404).send('User story container not found');
+    
+    const newStoryItem = { ...storyItem, id: generateId('storyItem') };
+    userStory.stories.push(newStoryItem);
+    res.json(db.stories.map(s => hydrate(s, ['user'])));
+});
+
+router.post('/highlights', (req, res) => {
+    const { userId, title, storyIds } = req.body;
+    const coverStory = findStoryItem(storyIds[0]);
+    if (!coverStory) return res.status(400).send('Cover story not found');
+
+    const newHighlight = {
+        id: generateId('highlight'),
+        userId,
+        title,
+        cover: coverStory.media,
+        storyIds,
+    };
+    db.highlights.push(newHighlight);
+    res.json(hydrate(findUser(userId), ['followers', 'following', 'userStories', 'highlights']));
+});
+
+
+// --- SUPPORT ---
+router.post('/support-tickets', (req, res) => {
+    const { subject, description } = req.body;
+    const newTicket = {
+        id: generateId('ticket'),
+        subject,
+        status: 'Open',
+        lastUpdated: '1m ago',
+        messages: [{ sender: 'user', text: description, timestamp: '1m ago' }],
+    };
+    db.supportTickets.unshift(newTicket);
+    res.status(201).json(newTicket);
+});
+
+
 
 // --- SEARCH ---
 router.get('/search/users', (req, res) => {
@@ -353,7 +458,7 @@ router.get('/search/posts', (req, res) => {
 // Fix: Add an endpoint to get stickers.
 router.get('/stickers', (req, res) => res.json(db.stickers));
 router.get('/stories', (req, res) => res.json(db.stories.map(s => hydrate(s, ['user']))));
-router.get('/reels', (req, res) => res.json(db.reels.map(r => hydrate(r, ['user', 'comments']))));
+router.get('/reels', (req, res) => res.json(db.reels.map(r => hydrate(r, ['user', 'comments', 'likedBy']))));
 router.get('/activities', (req, res) => res.json(db.activities.map(a => hydrate(a, ['user', 'post']))));
 router.get('/support-tickets', (req, res) => res.json(db.supportTickets));
 router.get('/sponsored-content', (req, res) => res.json(db.sponsoredContent));

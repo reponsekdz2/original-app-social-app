@@ -56,30 +56,31 @@ db.comments = [
 
 // --- Posts ---
 db.posts = [
-  { id: 'p1', userId: 'u1', media: [{ url: 'https://picsum.photos/id/10/1080/1080', type: 'image' }, { url: 'https://picsum.photos/id/11/1080/1080', type: 'image' }, { url: 'https://picsum.photos/id/12/1080/1080', type: 'image' }], caption: 'Lost in the city lights. A selection of scenes that speak a thousand words. What movies do these remind you of?', likes: 3, likedBy: ['u2', 'u3', 'u4'], commentIds: ['c1', 'c2', 'c3'], timestamp: '1d', isSaved: false, isLiked: true, isArchived: false },
-  { id: 'p2', userId: 'u2', media: [{ url: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', type: 'video' }], caption: 'The final season is going to be epic. Can\'t wait to see how it all ends!', likes: 2, likedBy: ['u1', 'u4'], commentIds: [], timestamp: '2d', isSaved: true, isLiked: false },
-  { id: 'p3', userId: 'u3', media: [{ url: 'https://picsum.photos/id/22/1080/1350', type: 'image' }], caption: 'They don\'t make them like they used to. A true masterpiece from the golden age of Hollywood.', likes: 3, likedBy: ['u1', 'u2', 'u4'], commentIds: ['c2'], timestamp: '3d', isSaved: false, isLiked: false, isArchived: true }
+  { id: 'p1', userId: 'u1', media: [{ url: 'https://picsum.photos/id/10/1080/1080', type: 'image' }, { url: 'https://picsum.photos/id/11/1080/1080', type: 'image' }, { url: 'https://picsum.photos/id/12/1080/1080', type: 'image' }], caption: 'Lost in the city lights. A selection of scenes that speak a thousand words. What movies do these remind you of?', likes: 3, likedBy: ['u2', 'u3', 'u4'], commentIds: ['c1', 'c2', 'c3'], timestamp: '1d', isSaved: false, isLiked: true, isArchived: false, commentsDisabled: false },
+  { id: 'p2', userId: 'u2', media: [{ url: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', type: 'video' }], caption: 'The final season is going to be epic. Can\'t wait to see how it all ends!', likes: 2, likedBy: ['u1', 'u4'], commentIds: [], timestamp: '2d', isSaved: true, isLiked: false, commentsDisabled: false },
+  { id: 'p3', userId: 'u3', media: [{ url: 'https://picsum.photos/id/22/1080/1350', type: 'image' }], caption: 'They don\'t make them like they used to. A true masterpiece from the golden age of Hollywood.', likes: 3, likedBy: ['u1', 'u2', 'u4'], commentIds: ['c2'], timestamp: '3d', isSaved: false, isLiked: false, isArchived: true, commentsDisabled: false }
 ];
 
 // --- Stories ---
 const storyItems1 = [{ id: 'si1', media: 'https://picsum.photos/id/101/1080/1920', mediaType: 'image', duration: 7000 }, { id: 'si2', media: 'https://videos.pexels.com/video-files/2099039/2099039-sd_540_960_30fps.mp4', mediaType: 'video', duration: 15000 }];
 const storyItems2 = [{ id: 'si3', media: 'https://picsum.photos/id/103/1080/1920', mediaType: 'image', duration: 7000 }];
 db.stories = [
-    { id: 's1', userId: 'u2', stories: storyItems1 },
-    { id: 's2', userId: 'u3', stories: storyItems2 },
-    { id: 's3', userId: 'u4', stories: [{id: 'si4', media: 'https://picsum.photos/id/104/1080/1920', mediaType: 'image', duration: 7000}] },
+    { id: 's1', userId: 'u1', stories: [] },
+    { id: 's2', userId: 'u2', stories: storyItems1 },
+    { id: 's3', userId: 'u3', stories: storyItems2 },
+    { id: 's4', userId: 'u4', stories: [{id: 'si4', media: 'https://picsum.photos/id/104/1080/1920', mediaType: 'image', duration: 7000}] },
 ];
 
 // --- Highlights ---
 db.highlights = [
-    { id: 'h1', userId: 'u1', title: 'LA Trip', cover: 'https://picsum.photos/id/111/200/200', stories: storyItems1 },
-    { id: 'h2', userId: 'u1', title: 'Best of 2023', cover: 'https://picsum.photos/id/112/200/200', stories: storyItems2 },
+    { id: 'h1', userId: 'u1', title: 'LA Trip', cover: 'https://picsum.photos/id/111/200/200', storyIds: ['si1', 'si2'] },
+    { id: 'h2', userId: 'u1', title: 'Best of 2023', cover: 'https://picsum.photos/id/112/200/200', storyIds: ['si3'] },
 ];
 
 // --- Reels ---
 db.reels = [
-    { id: 'r1', userId: 'u1', video: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', caption: 'Epic movie moments!', likes: 12000, commentIds: [], isLiked: false, shares: 120, audio: { title: 'Cinematic Score', artist: 'Composer' } },
-    { id: 'r2', userId: 'u2', video: 'https://videos.pexels.com/video-files/2099039/2099039-sd_540_960_30fps.mp4', caption: 'Favorite TV show intros', likes: 8500, commentIds: ['c1'], isLiked: true, shares: 98, audio: { title: 'Catchy Theme', artist: 'TV Band' } },
+    { id: 'r1', userId: 'u1', video: 'https://videos.pexels.com/video-files/3209828/3209828-sd_640_360_30fps.mp4', caption: 'Epic movie moments!', likes: 12000, commentIds: [], likedBy: ['u2', 'u3'], shares: 120, audio: { title: 'Cinematic Score', artist: 'Composer' } },
+    { id: 'r2', userId: 'u2', video: 'https://videos.pexels.com/video-files/2099039/2099039-sd_540_960_30fps.mp4', caption: 'Favorite TV show intros', likes: 8500, commentIds: ['c1'], likedBy: ['u1'], shares: 98, audio: { title: 'Catchy Theme', artist: 'TV Band' } },
 ];
 
 // --- Messages & Conversations ---
@@ -102,7 +103,11 @@ db.activities = [
     { id: 'a3', type: 'follow', userId: 'u4', targetUserId: 'u1', timestamp: '5h' },
     { id: 'a4', type: 'like', userId: 'u3', postId: 'p2', timestamp: '8h' },
 ];
-db.notifications = []; // Will be generated dynamically
+db.notifications = [
+    { id: 'n1', type: 'like', userId: 'u2', postId: 'p1', timestamp: '2h', read: false, recipientId: 'u1' },
+    { id: 'n2', type: 'comment', userId: 'u3', postId: 'p1', commentText: 'So cool!', timestamp: '3h', read: false, recipientId: 'u1' },
+    { id: 'n3', type: 'follow', userId: 'u4', targetUserId: 'u1', timestamp: '5h', read: true, recipientId: 'u1' },
+];
 
 // --- Other Static Data (previously in frontend/constants.ts) ---
 // Fix: Create a stickers database.
@@ -145,8 +150,17 @@ db.supportTickets = [
 
 export const findUser = (id) => db.users.find(u => u.id === id);
 export const findPost = (id) => db.posts.find(p => p.id === id);
-export const findComment = (id) => db.comments.find(c => c.id === c.id);
+export const findReel = (id) => db.reels.find(r => r.id === id);
+export const findComment = (id) => db.comments.find(c => c.id === id);
 export const findMessage = (id) => db.messages.find(m => m.id === id);
+export const findStoryItem = (id) => {
+    for (const story of db.stories) {
+        const item = story.stories.find(item => item.id === id);
+        if (item) return item;
+    }
+    return null;
+}
+
 
 export const hydrate = (obj, fields) => {
     if (!obj) return null;
@@ -156,8 +170,9 @@ export const hydrate = (obj, fields) => {
         if (field === 'user') hydrated.user = findUser(obj.userId);
         if (field === 'likedBy') hydrated.likedBy = obj.likedBy.map(findUser);
         if (field === 'comments') hydrated.comments = obj.commentIds.map(id => hydrate(db.comments.find(c => c.id === id), ['user']));
-        if (field === 'stories') hydrated.stories = db.stories.find(s => s.userId === obj.id);
-        if (field === 'highlights') hydrated.highlights = db.highlights.filter(h => h.userId === obj.id);
+        if (field === 'stories') hydrated.stories = obj.storyIds.map(findStoryItem).filter(Boolean); // for highlights
+        if (field === 'userStories') hydrated.stories = db.stories.find(s => s.userId === obj.id); // for user object
+        if (field === 'highlights') hydrated.highlights = db.highlights.filter(h => h.userId === obj.id).map(h => hydrate(h, ['stories']));
         if (field === 'followers') hydrated.followers = obj.followers.map(findUser);
         if (field === 'following') hydrated.following = obj.following.map(findUser);
         if (field === 'post') hydrated.post = findPost(obj.postId);
