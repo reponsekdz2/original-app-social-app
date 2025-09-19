@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
-import { generateBio } from '../services/geminiService.ts';
+import * as api from '../services/apiService.ts';
 
 interface EditProfileModalProps {
   user: User;
@@ -19,7 +19,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
   const [bio, setBio] = useState(user.bio || '');
   const [website, setWebsite] = useState(user.website || '');
   const [gender, setGender] = useState(user.gender || 'Prefer not to say');
-  const [isGeneratingBio, setIsGeneratingBio] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,22 +60,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
       const file = e.target.files[0];
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleGenerateBio = async () => {
-    setIsGeneratingBio(true);
-    try {
-      const newBio = await generateBio(username, name);
-      if (newBio.length <= MAX_BIO_LENGTH) {
-        setBio(newBio);
-      } else {
-        setBio(newBio.substring(0, MAX_BIO_LENGTH));
-      }
-    } catch (error) {
-      console.error("Failed to generate bio:", error);
-    } finally {
-      setIsGeneratingBio(false);
     }
   };
 
@@ -133,13 +116,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
            <div>
             <div className="flex justify-between items-center mb-1">
               <label className="text-sm text-gray-400">Bio</label>
-              <button 
-                onClick={handleGenerateBio}
-                disabled={isGeneratingBio}
-                className="text-xs font-semibold text-red-400 hover:text-red-300 flex items-center gap-1 disabled:opacity-50"
-              >
-                 {isGeneratingBio ? "Generating..." : "✨ Generate with AI"}
-              </button>
             </div>
             <textarea 
               value={bio} 

@@ -242,7 +242,6 @@ router.delete('/:id', protect, async (req, res) => {
     const postId = req.params.id;
     const userId = req.user.id;
     try {
-        // In a real app with storage like S3, you'd also delete the files from the bucket.
         const [result] = await pool.query('DELETE FROM posts WHERE id = ? AND user_id = ?', [postId, userId]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Post not found or user not authorized.' });
@@ -288,6 +287,74 @@ router.put('/:id/unarchive', protect, async (req, res) => {
     } catch(error) {
         console.error('Unarchive Post Error:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// @desc    Send a tip to a post's creator
+// @route   POST /api/posts/:id/tip
+// @access  Private
+router.post('/:id/tip', protect, async (req, res) => {
+    const { amount } = req.body;
+    const postId = req.params.id;
+    const senderId = req.user.id;
+    const io = req.app.get('io');
+    
+    if (!amount || amount <= 0) {
+        return res.status(400).json({ message: 'Invalid tip amount.' });
+    }
+    
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [senders] = await connection.query('SELECT wallet_balance FROM users WHERE id = ?', [senderId]);
+        const sender = senders[0];
+
+        if (!sender || sender.wallet_balance < amount) {
+            await connection.rollback();
+            return res.status(400).json({ message: 'Insufficient funds.' });
+        }
+
+        const [posts] = await connection.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
+        if (posts.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: 'Post not found.' });
+        }
+        const receiverId = posts[0].user_id;
+
+        if (senderId === receiverId) {
+            await connection.rollback();
+            return res.status(400).json({ message: "You cannot tip your own post." });
+        }
+
+        // Perform transaction
+        await connection.query('UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?', [amount, senderId]);
+        await connection.query('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?', [amount, receiverId]);
+        await connection.query(
+            'INSERT INTO transactions (sender_id, receiver_id, post_id, amount, type) VALUES (?, ?, ?, ?, ?)',
+            [senderId, receiverId, postId, amount, 'tip']
+        );
+        
+        // Notification for the receiver
+        const [notifResult] = await connection.query(
+            'INSERT INTO notifications (user_id, actor_id, type, entity_id) VALUES (?, ?, ?, ?)',
+            [receiverId, senderId, 'tip_post', postId]
+        );
+        const [newNotif] = await connection.query('SELECT n.*, u.username as actor_username, u.avatar_url as actor_avatar FROM notifications n JOIN users u ON n.actor_id = u.id WHERE n.id = ?', [notifResult.insertId]);
+
+        const targetSocket = getSocketFromUserId(receiverId);
+        if (targetSocket) {
+            targetSocket.emit('new_notification', newNotif[0]);
+        }
+
+        await connection.commit();
+        res.json({ message: `Successfully tipped $${amount}` });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Tip Error:', error);
+        res.status(500).json({ message: 'Server error during transaction.' });
+    } finally {
+        connection.release();
     }
 });
 

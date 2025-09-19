@@ -12,9 +12,9 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
-      // Get user from the token's ID
+      // Get user from the token's ID, including the new is_admin flag
       const [rows] = await pool.query(
-        'SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified FROM users WHERE id = ?', 
+        'SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified, is_admin FROM users WHERE id = ?', 
         [decoded.id]
       );
       
@@ -35,4 +35,12 @@ const protect = async (req, res, next) => {
   }
 };
 
-export { protect };
+const adminProtect = (req, res, next) => {
+    if (req.user && req.user.is_admin) {
+        next();
+    } else {
+        res.status(403).json({ message: 'Not authorized as an admin' });
+    }
+};
+
+export { protect, adminProtect };

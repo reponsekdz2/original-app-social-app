@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
-import { generateCaption } from '../services/geminiService.ts';
 
 interface CreatePostModalProps {
   onClose: () => void;
@@ -14,7 +13,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
   const [location, setLocation] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,29 +28,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
     setMediaFiles(files => files.filter((_, i) => i !== index));
     setMediaPreviews(previews => previews.filter((_, i) => i !== index));
   }
-
-  const handleGenerateCaption = async () => {
-    if (mediaFiles.length === 0) return;
-    setIsGenerating(true);
-    try {
-      const file = mediaFiles[0];
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        const base64Data = (reader.result as string).split(',')[1];
-        const newCaption = await generateCaption(base64Data, file.type);
-        if (newCaption.length <= MAX_CAPTION_LENGTH) {
-            setCaption(newCaption);
-        } else {
-            setCaption(newCaption.substring(0, MAX_CAPTION_LENGTH));
-        }
-        setIsGenerating(false);
-      };
-    } catch (err) {
-      console.error("Failed to generate caption", err);
-      setIsGenerating(false);
-    }
-  };
 
   const handleSubmit = () => {
     if (mediaFiles.length === 0 || caption.length > MAX_CAPTION_LENGTH) return;
@@ -106,11 +81,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
                   maxLength={MAX_CAPTION_LENGTH}
                   className="w-full h-full bg-transparent focus:outline-none resize-none"
                 />
-                {mediaPreviews.length > 0 && (
-                    <button onClick={handleGenerateCaption} disabled={isGenerating} className="absolute bottom-2 right-2 text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50">
-                        {isGenerating ? "Generating..." : "✨ Generate with AI"}
-                    </button>
-                )}
             </div>
              <div className={`text-right text-xs p-1 ${caption.length > MAX_CAPTION_LENGTH ? 'text-red-500' : 'text-gray-400'}`}>
                 {caption.length}/{MAX_CAPTION_LENGTH}

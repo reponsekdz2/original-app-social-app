@@ -1,11 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import type { Post, User } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import EmojiPicker from './EmojiPicker.tsx';
-import MagicComposePanel from './MagicComposePanel.tsx';
-import { generateComment } from '../services/geminiService.ts';
 
 interface PostModalProps {
   post: Post;
@@ -26,8 +23,6 @@ const PostModal: React.FC<PostModalProps> = (props) => {
   const [commentText, setCommentText] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showMagicCompose, setShowMagicCompose] = useState(false);
-  const [isGeneratingComment, setIsGeneratingComment] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   const isLiked = post.likedBy.some(u => u.id === currentUser.id);
@@ -37,7 +32,6 @@ const PostModal: React.FC<PostModalProps> = (props) => {
     const handleClickOutside = (event: MouseEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
         setShowEmojiPicker(false);
-        setShowMagicCompose(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -52,19 +46,6 @@ const PostModal: React.FC<PostModalProps> = (props) => {
     if (commentText.trim()) {
       onComment(post.id, commentText);
       setCommentText('');
-    }
-  };
-
-   const handleGenerateComment = async (style: string) => {
-    setIsGeneratingComment(true);
-    try {
-      const generated = await generateComment(post.caption, style);
-      setCommentText(generated);
-    } catch (error) {
-      console.error("Failed to generate comment", error);
-    } finally {
-      setIsGeneratingComment(false);
-      setShowMagicCompose(false);
     }
   };
 
@@ -124,11 +105,9 @@ const PostModal: React.FC<PostModalProps> = (props) => {
             {post.likes > 0 && <button onClick={() => onViewLikes(post.likedBy)} className="font-semibold text-sm">{post.likes.toLocaleString()} likes</button>}
              <div className="relative" ref={pickerRef}>
                 {showEmojiPicker && <div className="absolute bottom-full mb-2"><EmojiPicker onSelectEmoji={(emoji) => setCommentText(prev => prev + emoji)} /></div>}
-                {showMagicCompose && <div className="absolute bottom-full mb-2"><MagicComposePanel onGenerate={handleGenerateComment} isLoading={isGeneratingComment} /></div>}
                 <div className="flex items-center gap-2 border-t border-gray-800 pt-2">
                     <button onClick={() => setShowEmojiPicker(p => !p)}><Icon className="w-6 h-6 text-gray-400"><path d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 9.75a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75V9.75zm6 0a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V9.75z" /></Icon></button>
                     <input type="text" placeholder="Add a comment..." value={commentText} onChange={e => setCommentText(e.target.value)} onKeyPress={e => e.key === 'Enter' && handlePostComment()} className="w-full bg-transparent text-sm focus:outline-none" />
-                    {currentUser.isPremium && !commentText && <button onClick={() => setShowMagicCompose(p => !p)}><Icon className="w-5 h-5 text-purple-400"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon></button>}
                     {commentText && <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm">Post</button>}
                 </div>
             </div>

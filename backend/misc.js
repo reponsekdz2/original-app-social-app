@@ -139,24 +139,6 @@ router.get('/support-tickets', protect, async (req, res) => {
     }
 });
 
-
-// @desc    Create a report
-// @route   POST /api/misc/reports
-// @access  Private
-router.post('/reports', protect, async (req, res) => {
-    const { entityId, entityType, reason, details } = req.body;
-    try {
-        await pool.query(
-            'INSERT INTO reports (reporter_id, reported_entity_id, entity_type, reason, details) VALUES (?, ?, ?, ?, ?)',
-            [req.user.id, entityId, entityType, reason, details]
-        );
-        res.status(201).json({ message: 'Report submitted successfully.' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
-    }
-});
-
 // @desc    Subscribe to Premium
 // @route   POST /api/misc/subscribe-premium
 // @access  Private

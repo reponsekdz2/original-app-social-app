@@ -3,7 +3,7 @@
 export type View = 
   'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 
   'create' | 'notifications' | 'saved' | 'premium' | 'search' | 'activity' |
-  'premium-welcome' | 'help' | 'support' | 'archive';
+  'premium-welcome' | 'help' | 'support' | 'archive' | 'live' | 'reset-password' | 'admin';
 
 export interface User {
   id: string;
@@ -23,6 +23,7 @@ export interface User {
   isVerified: boolean;
   isPremium: boolean;
   isPrivate: boolean;
+  isAdmin: boolean;
   notificationSettings: {
     likes: boolean;
     comments: boolean;
@@ -30,6 +31,8 @@ export interface User {
   };
   mutedUsers: string[];
   blockedUsers: string[];
+  // Fix: Add optional created_at property to align with admin API response.
+  created_at?: string;
 }
 
 export interface Comment {
@@ -153,7 +156,7 @@ export interface Call {
 export interface Notification {
     id: string;
     user: User;
-    type: 'like' | 'comment' | 'follow' | 'mention';
+    type: 'like' | 'comment' | 'follow' | 'mention' | 'tip_post';
     post?: Post;
     commentText?: string;
     timestamp: string;
@@ -169,6 +172,14 @@ export interface FeedActivity {
     targetPost?: Post;
     targetUser?: User;
     timestamp: string;
+}
+
+export interface LiveStream {
+    id: string;
+    user: User;
+    title: string;
+    status: 'live' | 'ended';
+    started_at: string;
 }
 
 export interface TrendingTopic {
@@ -203,4 +214,29 @@ export interface SupportTicket {
   subject: string;
   lastUpdated: string;
   status: 'Open' | 'Resolved' | 'Pending';
+}
+
+export interface Report {
+    id: number;
+    reporter: User;
+    reported_entity_id: string;
+    entity_type: 'user' | 'post' | 'comment' | 'reel';
+    reason: string;
+    status: 'pending' | 'resolved' | 'dismissed';
+    created_at: string;
+    reported_user?: User;
+    reported_post?: Post;
+}
+
+export interface AdminStats {
+    totalUsers: number;
+    totalPosts: number;
+    totalReels: number;
+    pendingReports: number;
+    liveStreams: number;
+}
+
+export interface AnalyticsData {
+    labels: string[];
+    values: number[];
 }

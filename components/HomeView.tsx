@@ -1,6 +1,4 @@
-
 import React from 'react';
-// Fix: Corrected import path for types
 import type { Post, Story, User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types.ts';
 import PostComponent from './Post.tsx';
 import Sidebar from './Sidebar.tsx';
@@ -32,6 +30,7 @@ interface HomeViewProps {
   onNavigate: (view: View) => void;
   onFollow: (user: User) => void;
   onUnfollow: (user: User) => void;
+  onTip: (post: Post) => void;
 }
 
 const HomeView: React.FC<HomeViewProps> = (props) => {
@@ -61,18 +60,19 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
             {props.posts.map(post => (
             <section key={post.id} className="h-full w-full snap-start flex items-center justify-center py-2 md:py-4">
                 <PostComponent 
-                post={post} 
-                currentUser={props.currentUser}
-                onToggleLike={props.onToggleLike}
-                onToggleSave={props.onToggleSave}
-                onComment={props.onComment}
-                onShare={props.onShare}
-                onViewLikes={props.onViewLikes}
-                onViewProfile={props.onViewProfile}
-                onViewPost={props.onViewPost}
-                onOptions={props.onOptions}
-                onFollow={props.onFollow}
-                onUnfollow={props.onUnfollow}
+                    post={post} 
+                    currentUser={props.currentUser}
+                    onToggleLike={props.onToggleLike}
+                    onToggleSave={props.onToggleSave}
+                    onComment={props.onComment}
+                    onShare={props.onShare}
+                    onViewLikes={props.onViewLikes}
+                    onViewProfile={props.onViewProfile}
+                    onViewPost={props.onViewPost}
+                    onOptions={props.onOptions}
+                    onFollow={props.onFollow}
+                    onUnfollow={props.onUnfollow}
+                    onTip={props.onTip}
                 />
             </section>
             ))}

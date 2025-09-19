@@ -1,6 +1,6 @@
 // This file centralizes all API calls to the backend.
 
-import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, Message, ConversationSettings } from './types.ts';
+import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, Message, ConversationSettings, LiveStream, Report } from './types.ts';
 
 const API_BASE_URL = '/api';
 
@@ -60,8 +60,12 @@ export const changePassword = async (oldPassword: string, newPassword: string): 
   });
 };
 
-export const forgotPassword = async (email: string): Promise<{ message: string }> => {
+export const forgotPassword = async (email: string): Promise<{ message: string, resetTokenForSimulation: string }> => {
   return apiRequest('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+};
+
+export const resetPassword = async (token: string, password: string): Promise<{ message: string }> => {
+    return apiRequest('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) });
 };
 
 export const enableTwoFactor = async (): Promise<{ message: string }> => {
@@ -88,26 +92,31 @@ export const getConversations = async (): Promise<Conversation[]> => apiRequest(
 export const getSavedPosts = async (): Promise<Post[]> => apiRequest('/users/posts/saved');
 export const getArchivedPosts = async (): Promise<Post[]> => apiRequest('/users/posts/archived');
 export const getNotifications = async (): Promise<Notification[]> => apiRequest('/users/notifications');
+export const getLiveStreams = async (): Promise<LiveStream[]> => apiRequest('/livestreams');
 
 
 // --- User & Post Actions ---
 
-const postWithAuth = (endpoint: string) => apiRequest(endpoint, { method: 'POST' });
+const postWithAuth = (endpoint: string, body?: object) => apiRequest(endpoint, { method: 'POST', body: JSON.stringify(body) });
 const putWithAuth = (endpoint: string, body: object) => apiRequest(endpoint, { method: 'PUT', body: JSON.stringify(body) });
+const deleteWithAuth = (endpoint: string) => apiRequest(endpoint, { method: 'DELETE' });
 
 export const toggleLike = (postId: string) => postWithAuth(`/posts/${postId}/like`);
 export const toggleSave = (postId: string) => postWithAuth(`/posts/${postId}/save`);
-export const addComment = (postId: string, text: string): Promise<Comment> => apiRequest(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+export const addComment = (postId: string, text: string): Promise<Comment> => postWithAuth(`/posts/${postId}/comments`, { text });
 export const followUser = (userId: string) => postWithAuth(`/users/${userId}/follow`);
-export const unfollowUser = (userId: string) => apiRequest(`/users/${userId}/unfollow`, { method: 'DELETE' });
+export const unfollowUser = (userId: string) => deleteWithAuth(`/users/${userId}/unfollow`);
 export const archivePost = (postId: string) => putWithAuth(`/posts/${postId}/archive`, {});
 export const unarchivePost = (postId: string) => putWithAuth(`/posts/${postId}/unarchive`, {});
-export const createHighlight = (title: string, storyIds: string[]) => apiRequest('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
+export const editPost = (postId: string, caption: string, location: string) => putWithAuth(`/posts/${postId}`, { caption, location });
+export const deletePost = (postId: string) => deleteWithAuth(`/posts/${postId}`);
+export const createHighlight = (title: string, storyIds: string[]) => postWithAuth('/users/highlights', { title, storyIds });
 export const updateSettings = (settings: Partial<User>) => putWithAuth('/users/settings', settings);
-export const applyForVerification = (applicationData: object) => apiRequest('/users/verification', { method: 'POST', body: JSON.stringify(applicationData) });
+export const applyForVerification = (applicationData: object) => postWithAuth('/users/verification', applicationData);
 export const subscribePremium = () => postWithAuth('/misc/subscribe-premium');
-export const updateUserRelationship = (userId: string, action: 'mute' | 'unmute' | 'block' | 'unblock') => apiRequest(`/users/${userId}/relationship`, { method: 'POST', body: JSON.stringify({ action }) });
+export const updateUserRelationship = (userId: string, action: 'mute' | 'unmute' | 'block' | 'unblock') => postWithAuth(`/users/${userId}/relationship`, { action });
 export const markNotificationsRead = () => postWithAuth('/users/notifications/read');
+export const sendTip = (postId: string, amount: number) => postWithAuth(`/posts/${postId}/tip`, { amount });
 
 // --- Actions with FormData ---
 
@@ -133,15 +142,7 @@ export const createPost = (formData: FormData) => postFormData('/posts', formDat
 export const createStory = (formData: FormData) => postFormData('/stories', formData);
 export const updateProfile = (formData: FormData) => putFormData('/users/profile', formData);
 
-
-// --- AI Service ---
-export const generateCaption = (base64Data: string, mimeType: string) => apiRequest('/ai/generate-caption', { method: 'POST', body: JSON.stringify({ base64Data, mimeType }) });
-export const generateStoryImage = (prompt: string) => apiRequest('/ai/generate-story-image', { method: 'POST', body: JSON.stringify({ prompt }) });
-export const generateComment = (postCaption: string, style: string) => apiRequest('/ai/generate-comment', { method: 'POST', body: JSON.stringify({ postCaption, style }) });
-export const generateBio = (username: string, name: string) => apiRequest('/ai/generate-bio', { method: 'POST', body: JSON.stringify({ username, name }) });
-
 // --- Messaging ---
-// Fix: Update sendMessage to accept parameters and build FormData internally. This simplifies calls from components and resolves argument mismatch errors.
 export const sendMessage = (
   recipientId: string,
   content: string | File,
@@ -176,24 +177,35 @@ export const sendMessage = (
 };
 
 export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => {
-    return apiRequest('/messages/group', {
-        method: 'POST',
-        body: JSON.stringify({ name, userIds })
-    });
+    return postWithAuth('/messages/group', { name, userIds });
 };
 
 export const updateConversationSettings = (conversationId: string, settings: Partial<ConversationSettings>): Promise<{ message: string }> => {
-    return apiRequest(`/messages/${conversationId}/settings`, {
-        method: 'PUT',
-        body: JSON.stringify(settings)
-    });
+    return putWithAuth(`/messages/${conversationId}/settings`, settings);
 }
+
+// --- Live Streaming ---
+export const startLiveStream = (title: string): Promise<LiveStream> => postWithAuth('/livestreams/start', { title });
+export const endLiveStream = (streamId: string): Promise<{ message: string }> => postWithAuth(`/livestreams/${streamId}/end`);
 
 // --- Reels & Comments ---
 export const likeReel = (reelId: string) => postWithAuth(`/reels/${reelId}/like`);
-export const postReelComment = (reelId: string, text: string) => apiRequest(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+export const postReelComment = (reelId: string, text: string) => postWithAuth(`/reels/${reelId}/comments`, { text });
 export const likeComment = (commentId: string) => postWithAuth(`/comments/${commentId}/like`);
 
 // --- Support & Reports ---
-export const createSupportTicket = (subject: string, description: string) => apiRequest('/misc/support-tickets', { method: 'POST', body: JSON.stringify({ subject, description }) });
-export const submitReport = (entityId: string, entityType: string, reason: string, details: string) => apiRequest('/misc/reports', { method: 'POST', body: JSON.stringify({ entityId, entityType, reason, details }) });
+export const createSupportTicket = (subject: string, description: string) => postWithAuth('/misc/support-tickets', { subject, description });
+export const submitReport = (entityId: string, entityType: string, reason: string, details: string) => postWithAuth('/reports', { entityId, entityType, reason, details });
+
+// --- ADMIN ---
+export const getAdminStats = () => apiRequest('/admin/stats');
+export const getAdminUsers = (query: string) => apiRequest(`/admin/users?q=${query}`);
+export const getAdminContent = (type: 'posts' | 'reels') => apiRequest(`/admin/content?type=${type}`);
+export const getAdminReports = () => apiRequest('/admin/reports');
+export const getAdminUserGrowthData = () => apiRequest('/admin/analytics/user-growth');
+export const getAdminContentTrendsData = () => apiRequest('/admin/analytics/content-trends');
+
+export const updateAdminUser = (userId: string, updates: { is_admin?: boolean, is_verified?: boolean }) => putWithAuth(`/admin/users/${userId}`, updates);
+export const deleteAdminUser = (userId: string) => deleteWithAuth(`/admin/users/${userId}`);
+export const deleteAdminContent = (type: 'post' | 'reel', id: string) => deleteWithAuth(`/admin/content/${type}/${id}`);
+export const updateAdminReportStatus = (reportId: number, status: Report['status']) => putWithAuth(`/admin/reports/${reportId}`, { status });

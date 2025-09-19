@@ -42,10 +42,13 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     if (existingConvo) {
       setSelectedConversation(existingConvo);
     } else {
+      // Fix: Add missing isGroup and settings properties to conform to the Conversation type.
       const tempConvo: Conversation = {
         id: `temp-convo-${Date.now()}`,
         participants: [currentUser, user],
         messages: [],
+        isGroup: false,
+        settings: { theme: 'default', vanish_mode_enabled: false },
       };
       setConversations(prev => [tempConvo, ...prev]);
       setSelectedConversation(tempConvo);

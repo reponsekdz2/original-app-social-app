@@ -13,7 +13,6 @@ dotenv.config();
 
 // Import Routers
 import authRoutes from './auth.js';
-import aiRoutes from './ai.js';
 import postRoutes from './posts.js';
 import userRoutes from './users.js';
 import reelRoutes from './reels.js';
@@ -21,6 +20,8 @@ import commentRoutes from './comments.js';
 import messageRoutes from './messages.js';
 import miscRoutes from './misc.js';
 import storyRoutes from './stories.js';
+import liveStreamRoutes from './livestreams.js';
+import adminRoutes from './admin.js';
 
 // ES Module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -64,7 +65,6 @@ app.use((req, res, next) => {
 
 // --- API Routes ---
 app.use('/api/auth', authRoutes);
-app.use('/api/ai', aiRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reels', reelRoutes);
@@ -72,6 +72,8 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/misc', miscRoutes);
 app.use('/api/stories', storyRoutes);
+app.use('/api/livestreams', liveStreamRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 // Root endpoint for health check

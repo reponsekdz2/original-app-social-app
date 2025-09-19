@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from './db.js';
 import { protect } from './middleware/authMiddleware.js';
+import crypto from 'crypto';
 
 const router = Router();
 const SALT_ROUNDS = 10;
@@ -38,7 +39,7 @@ router.post('/register', async (req, res) => {
         );
         const userId = result.insertId;
 
-        const [newUserRows] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified FROM users WHERE id = ?', [userId]);
+        const [newUserRows] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified, is_admin FROM users WHERE id = ?', [userId]);
 
         if (newUserRows.length > 0) {
             const user = newUserRows[0];
@@ -64,9 +65,32 @@ router.post('/login', async (req, res) => {
         return res.status(400).json({ message: 'Please provide username/email and password.' });
     }
 
+    // Hardcoded admin check
+    if (identifier === 'reponsekdz0@gmail.com' && password === '2025') {
+        try {
+            const [adminUsers] = await pool.query('SELECT * FROM users WHERE email = ?', [identifier]);
+            if (adminUsers.length > 0) {
+                const adminUser = adminUsers[0];
+                if (!adminUser.is_admin) {
+                    // Promote to admin if not already
+                    await pool.query('UPDATE users SET is_admin = 1 WHERE id = ?', [adminUser.id]);
+                    adminUser.is_admin = 1;
+                }
+                const token = generateToken(adminUser.id);
+                const { password, ...userWithoutPassword } = adminUser;
+                return res.json({ user: { ...userWithoutPassword, isAdmin: true }, token });
+            } else {
+                return res.status(401).json({ message: 'Admin account not found in database. Please register first.' });
+            }
+        } catch (error) {
+            console.error('Admin Login Error:', error);
+            return res.status(500).json({ message: 'Server error during admin login.' });
+        }
+    }
+
     try {
         const [users] = await pool.query(
-            'SELECT id, username, name, email, password, avatar_url as avatar, is_premium, is_verified, (SELECT COUNT(*) FROM followers f WHERE f.following_id = users.id) as followers, (SELECT COUNT(*) FROM followers f WHERE f.follower_id = users.id) as following FROM users WHERE username = ? OR email = ?',
+            'SELECT id, username, name, email, password, avatar_url as avatar, is_premium, is_verified, is_admin, (SELECT COUNT(*) FROM followers f WHERE f.following_id = users.id) as followers, (SELECT COUNT(*) FROM followers f WHERE f.follower_id = users.id) as following FROM users WHERE username = ? OR email = ?',
             [identifier, identifier]
         );
 
@@ -96,11 +120,9 @@ router.post('/login', async (req, res) => {
 // @route   GET /api/auth/me
 // @access  Private
 router.get('/me', protect, async (req, res) => {
-    // The user object is already attached to req by the 'protect' middleware
-    // We just need to fetch the full user object with follower/following counts etc.
     try {
         const [rows] = await pool.query(
-            'SELECT id, username, name, email, avatar_url as avatar, bio, website, gender, is_premium, is_verified, is_private, (SELECT JSON_ARRAYAGG(f.following_id) FROM followers f WHERE f.follower_id = users.id) as following, (SELECT JSON_ARRAYAGG(f.follower_id) FROM followers f WHERE f.following_id = users.id) as followers, (SELECT JSON_OBJECT("likes", us.likes_notifications, "comments", us.comments_notifications, "follows", us.follows_notifications) FROM user_settings us WHERE us.user_id = users.id) as notificationSettings, (SELECT JSON_ARRAYAGG(mu.muted_user_id) FROM muted_users mu WHERE mu.user_id = users.id) as mutedUsers, (SELECT JSON_ARRAYAGG(bu.blocked_user_id) FROM blocked_users bu WHERE bu.user_id = users.id) as blockedUsers FROM users WHERE id = ?', [req.user.id]
+            'SELECT id, username, name, email, avatar_url as avatar, bio, website, gender, is_premium, is_verified, is_private, is_admin, (SELECT JSON_ARRAYAGG(f.following_id) FROM followers f WHERE f.follower_id = users.id) as following, (SELECT JSON_ARRAYAGG(f.follower_id) FROM followers f WHERE f.following_id = users.id) as followers, (SELECT JSON_OBJECT("likes", us.likes_notifications, "comments", us.comments_notifications, "follows", us.follows_notifications) FROM user_settings us WHERE us.user_id = users.id) as notificationSettings, (SELECT JSON_ARRAYAGG(mu.muted_user_id) FROM muted_users mu WHERE mu.user_id = users.id) as mutedUsers, (SELECT JSON_ARRAYAGG(bu.blocked_user_id) FROM blocked_users bu WHERE bu.user_id = users.id) as blockedUsers FROM users WHERE id = ?', [req.user.id]
         );
         if (rows.length > 0) {
             const user = {
@@ -156,11 +178,73 @@ router.put('/change-password', protect, async (req, res) => {
     }
 });
 
-// @desc    Forgot password (mock)
+// @desc    Forgot password - Step 1: Generate & send token
 // @route   POST /api/auth/forgot-password
 // @access  Public
-router.post('/forgot-password', (req, res) => {
-    res.json({ message: "If an account with that email exists, a password reset link has been sent." });
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+        const [users] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+        if (users.length === 0) {
+            // Still send a success message to prevent user enumeration
+            return res.json({ message: "If an account with that email exists, a password reset link has been sent." });
+        }
+        const user = users[0];
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+        // Set token to expire in 1 hour
+        const tokenExpiry = new Date(Date.now() + 3600000); 
+
+        await pool.query(
+            'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE id = ?',
+            [hashedToken, tokenExpiry, user.id]
+        );
+
+        // Here you would email the `resetToken` to the user.
+        // For this app, we'll return it for simulation purposes.
+        console.log(`Password reset link for ${email}: /?resetToken=${resetToken}`);
+        res.json({ message: "If an account with that email exists, a password reset link has been sent.", resetTokenForSimulation: resetToken });
+    } catch(error) {
+        console.error("Forgot Password Error:", error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+// @desc    Reset password - Step 2: Verify token & update password
+// @route   POST /api/auth/reset-password
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+    if (!token || !password) {
+        return res.status(400).json({ message: "Token and new password are required." });
+    }
+
+    try {
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const [users] = await pool.query(
+            'SELECT id FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()',
+            [hashedToken]
+        );
+        if (users.length === 0) {
+            return res.status(400).json({ message: "Password reset token is invalid or has expired." });
+        }
+        const user = users[0];
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+        await pool.query(
+            'UPDATE users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?',
+            [hashedPassword, user.id]
+        );
+        
+        res.json({ message: "Password has been reset successfully. You can now log in." });
+    } catch (error) {
+        console.error("Reset Password Error:", error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 // @desc    Enable 2FA (mock)

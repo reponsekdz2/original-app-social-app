@@ -15,6 +15,10 @@ CREATE TABLE `users` (
   `is_premium` tinyint(1) NOT NULL DEFAULT '0',
   `is_private` tinyint(1) NOT NULL DEFAULT '0',
   `is_2fa_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `is_admin` tinyint(1) NOT NULL DEFAULT '0',
+  `password_reset_token` varchar(255) DEFAULT NULL,
+  `password_reset_expires` timestamp NULL DEFAULT NULL,
+  `wallet_balance` decimal(10,2) NOT NULL DEFAULT '0.00',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 );
@@ -234,13 +238,39 @@ CREATE TABLE `call_history` (
     FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
+-- Live Streams
+CREATE TABLE `live_streams` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `user_id` varchar(36) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `status` enum('live','ended') NOT NULL DEFAULT 'live',
+  `started_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ended_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Transactions (for Tipping)
+CREATE TABLE `transactions` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `sender_id` varchar(36) NOT NULL,
+  `receiver_id` varchar(36) NOT NULL,
+  `post_id` varchar(36) DEFAULT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `type` enum('tip','subscription') NOT NULL DEFAULT 'tip',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE SET NULL
+);
 
 -- Notifications Table
 CREATE TABLE `notifications` (
   `id` varchar(36) NOT NULL DEFAULT (uuid()),
   `user_id` varchar(36) NOT NULL, -- The user who receives the notification
   `actor_id` varchar(36) NOT NULL, -- The user who performed the action
-  `type` enum('like_post','comment_post','follow','like_reel','comment_reel', 'like_comment') NOT NULL,
+  `type` enum('like_post','comment_post','follow','like_reel','comment_reel', 'like_comment', 'tip_post') NOT NULL,
   `entity_id` varchar(36) DEFAULT NULL, -- ID of the post, reel, comment, or user being followed
   `read_status` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -275,6 +305,7 @@ CREATE TABLE `reports` (
   `entity_type` enum('user','post','comment','reel') NOT NULL,
   `reason` varchar(255) NOT NULL,
   `details` text,
+  `status` enum('pending','resolved','dismissed') NOT NULL DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`reporter_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
