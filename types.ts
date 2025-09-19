@@ -104,7 +104,8 @@ export interface Message {
   senderId: string;
   content: string;
   timestamp: string;
-  type: 'text' | 'image' | 'sticker' | 'voicenote';
+  // Fix: Added 'share_post' and 'share_reel' to the message type to allow sharing content via messages.
+  type: 'text' | 'image' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel';
   read: boolean;
 }
 
