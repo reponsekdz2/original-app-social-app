@@ -1,142 +1,128 @@
-
 import { Router } from 'express';
-import db, { hydrate } from './data.js';
+import pool from './db.js';
+import { protect } from './middleware/authMiddleware.js';
+import multer from 'multer';
+import path from 'path';
 
 const router = Router();
 
-const findUser = (id, res) => {
-    const user = db.users.find(u => u.id === id);
-    if (!user) {
-        if(res) res.status(404).json({ message: 'User not found' });
-        return null;
+// --- Multer Setup for File Uploads ---
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'backend/uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, `avatar-${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
     }
+});
+const upload = multer({ storage: storage });
+
+// --- Helper Functions ---
+const getUserProfile = async (username) => {
+    const [userRows] = await pool.query(`
+        SELECT id, username, name, avatar_url as avatar, bio, website, is_verified, is_premium, is_private
+        FROM users WHERE username = ?`, [username]);
+
+    if (userRows.length === 0) return null;
+    const user = userRows[0];
+    
+    const [stats] = await pool.query(`
+        SELECT 
+            (SELECT COUNT(*) FROM posts WHERE user_id = ?) as post_count,
+            (SELECT COUNT(*) FROM followers WHERE following_id = ?) as follower_count,
+            (SELECT COUNT(*) FROM followers WHERE follower_id = ?) as following_count
+    `, [user.id, user.id, user.id]);
+
+    user.posts = stats[0].post_count;
+    user.followers = stats[0].follower_count;
+    user.following = stats[0].following_count;
+    
     return user;
 };
 
-const fullHydrateUser = (user) => {
-    if (!user) return null;
-    return hydrate(user, ['followers', 'following', 'stories', 'highlights']);
-};
+// --- Routes ---
 
-// Get all users
-router.get('/', (req, res) => {
-    res.json(db.users.map(u => fullHydrateUser(u)));
+// @desc    Get user profile
+// @route   GET /api/users/:username
+// @access  Public
+router.get('/:username', async (req, res) => {
+    try {
+        const user = await getUserProfile(req.params.username);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        
+        const [posts] = await pool.query(`
+            SELECT p.id, (SELECT pm.media_url FROM post_media pm WHERE pm.post_id = p.id ORDER BY pm.position LIMIT 1) as media_url
+            FROM posts p WHERE p.user_id = ? AND p.is_archived = FALSE
+            ORDER BY p.created_at DESC`, [user.id]);
+        
+        // In a real app, you'd fetch reels too
+        const reels = [];
+        
+        res.json({ user, posts, reels });
+    } catch (error) {
+        console.error('Get User Profile Error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
-// Get a specific user by username
-router.get('/:username', (req, res) => {
-    const user = db.users.find(u => u.username === req.params.username);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    const posts = db.posts.filter(p => p.user === user.id).map(p => hydrate(p, ['user']));
-    const reels = db.reels.filter(r => r.user === user.id).map(r => hydrate(r, ['user']));
-    
-    res.json({
-        user: fullHydrateUser(user),
-        posts,
-        reels
-    });
+// @desc    Toggle follow a user
+// @route   POST /api/users/:id/toggle-follow
+// @access  Private
+router.post('/:id/toggle-follow', protect, async (req, res) => {
+    const currentUserId = req.user.id;
+    const targetUserId = req.params.id;
+
+    if (currentUserId == targetUserId) {
+        return res.status(400).json({ message: "You cannot follow yourself." });
+    }
+
+    try {
+        const [existingFollow] = await pool.query('SELECT * FROM followers WHERE follower_id = ? AND following_id = ?', [currentUserId, targetUserId]);
+        
+        if (existingFollow.length > 0) {
+            await pool.query('DELETE FROM followers WHERE follower_id = ? AND following_id = ?', [currentUserId, targetUserId]);
+        } else {
+            await pool.query('INSERT INTO followers (follower_id, following_id) VALUES (?, ?)', [currentUserId, targetUserId]);
+            // You would also create a notification here
+        }
+        
+        res.json({ message: 'Follow status updated' });
+    } catch (error) {
+        console.error('Toggle Follow Error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
-// Toggle Follow on a User
-router.post('/:id/toggle-follow', (req, res) => {
-    const { currentUserId } = req.body;
-    if (!currentUserId) return res.status(400).json({ message: "Current user ID is required" });
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
+    const { name, username, bio, website, gender } = req.body;
+    const userId = req.user.id;
 
-    const currentUser = findUser(currentUserId, res);
-    const targetUser = findUser(req.params.id, res);
-
-    if (!currentUser || !targetUser) return;
-
-    const isFollowing = currentUser.following.includes(targetUser.id);
-
-    if (isFollowing) {
-        currentUser.following = currentUser.following.filter(id => id !== targetUser.id);
-        targetUser.followers = targetUser.followers.filter(id => id !== currentUser.id);
-    } else {
-        currentUser.following.push(targetUser.id);
-        targetUser.followers.push(currentUser.id);
+    let avatarUrl = req.user.avatar;
+    if (req.file) {
+        avatarUrl = `/uploads/${req.file.filename}`;
     }
-    
-    const updatedCurrentUser = fullHydrateUser(currentUser);
-    const updatedTargetUser = fullHydrateUser(targetUser);
 
-    const io = req.app.get('io');
-    io.emit('user_updated', updatedCurrentUser);
-    io.emit('user_updated', updatedTargetUser);
+    try {
+        await pool.query(`
+            UPDATE users 
+            SET name = ?, username = ?, bio = ?, website = ?, gender = ?, avatar_url = ?
+            WHERE id = ?`, 
+            [name, username, bio, website, gender, avatarUrl, userId]
+        );
 
-    res.json({ currentUser: updatedCurrentUser, targetUser: updatedTargetUser });
-});
-
-// Update User Profile
-router.put('/:id', (req, res) => {
-    const user = findUser(req.params.id, res);
-    if (!user) return;
-    
-    const { name, username, bio, website, gender, avatar } = req.body;
-    user.name = name ?? user.name;
-    user.username = username ?? user.username;
-    user.bio = bio ?? user.bio;
-    user.website = website ?? user.website;
-    user.gender = gender ?? user.gender;
-    user.avatar = avatar ?? user.avatar;
-    
-    const finalUser = fullHydrateUser(user);
-    req.app.get('io').emit('user_updated', finalUser);
-    res.json(finalUser);
-});
-
-// Update User Settings
-router.put('/:id/settings', (req, res) => {
-    const user = findUser(req.params.id, res);
-    if (!user) return;
-    
-    const { notificationSettings, isPrivate } = req.body;
-    if (notificationSettings) {
-        user.notificationSettings = { ...user.notificationSettings, ...notificationSettings };
+        const [updatedUserRows] = await pool.query('SELECT id, username, name, avatar_url as avatar, bio, website FROM users WHERE id = ?', [userId]);
+        
+        res.json(updatedUserRows[0]);
+    } catch (error) {
+        console.error('Update Profile Error:', error);
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ message: 'Username is already taken.' });
+        }
+        res.status(500).json({ message: 'Server error' });
     }
-    if (typeof isPrivate === 'boolean') {
-        user.isPrivate = isPrivate;
-    }
-    
-    const finalUser = fullHydrateUser(user);
-    req.app.get('io').emit('user_updated', finalUser);
-    res.json(finalUser);
-});
-
-
-// Create a Highlight
-router.post('/:id/highlights', (req, res) => {
-    const user = findUser(req.params.id, res);
-    if (!user) return;
-
-    const { title, storyIds } = req.body;
-    if (!title || !storyIds || !Array.isArray(storyIds)) {
-        return res.status(400).json({ message: 'Title and storyIds array are required.' });
-    }
-    
-    const allUserStories = db.stories.find(s => s.user === user.id)?.stories || [];
-    const storiesForHighlight = allUserStories.filter(s => storyIds.includes(s.id));
-
-    if (storiesForHighlight.length === 0) {
-        return res.status(400).json({ message: 'Cannot create an empty highlight.' });
-    }
-    
-    const newHighlight = {
-        id: generateId('highlight'),
-        title,
-        cover: storiesForHighlight[0].media,
-        stories: storiesForHighlight,
-    };
-
-    if (!user.highlights) {
-        user.highlights = [];
-    }
-    user.highlights.push(newHighlight);
-    
-    const finalUser = fullHydrateUser(user);
-    req.app.get('io').emit('user_updated', finalUser);
-    res.status(201).json(finalUser);
 });
 
 

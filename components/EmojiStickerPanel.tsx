@@ -1,4 +1,3 @@
-
 // Fix: Create the EmojiStickerPanel component.
 import React, { useState, useEffect } from 'react';
 // Fix: Corrected import path for apiService and added extension
@@ -17,6 +16,7 @@ const EmojiStickerPanel: React.FC<EmojiStickerPanelProps> = ({ onSelectEmoji, on
   useEffect(() => {
     const fetchStickers = async () => {
         try {
+            // This now correctly resolves because getStickers is added to apiService.ts
             const stickerUrls = await api.getStickers();
             setStickers(stickerUrls);
         } catch (error) {

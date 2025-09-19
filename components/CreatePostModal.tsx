@@ -1,17 +1,15 @@
-
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
-import type { PostMedia } from '../types.ts';
 import { generateCaption } from '../services/geminiService.ts';
 
 interface CreatePostModalProps {
   onClose: () => void;
-  onCreatePost: (media: Omit<PostMedia, 'id'>[], caption: string, location: string) => void;
+  onCreatePost: (formData: FormData) => void;
 }
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost }) => {
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
+  const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
   const [location, setLocation] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -21,14 +19,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
     if (e.target.files) {
       const files = Array.from(e.target.files);
       setMediaFiles(files);
-      // Fix: Explicitly type the `previews` array to ensure type compatibility with `mediaPreviews` state.
-      const previews: { url: string; type: 'image' | 'video' }[] = files.map(file => ({
-        url: URL.createObjectURL(file),
-        type: file.type.startsWith('video') ? 'video' : 'image',
-      }));
+      const previews = files.map(file => URL.createObjectURL(file));
       setMediaPreviews(previews);
     }
   };
+  
+  const handleRemoveMedia = (index: number) => {
+    setMediaFiles(files => files.filter((_, i) => i !== index));
+    setMediaPreviews(previews => previews.filter((_, i) => i !== index));
+  }
 
   const handleGenerateCaption = async () => {
     if (mediaFiles.length === 0) return;
@@ -49,12 +48,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
     }
   };
 
-  const handleSubmit = async () => {
-    // In a real app, you would upload files to a server first.
-    // For this mock, we'll pass the blob URLs.
-    const mediaToPost = mediaPreviews.map(p => ({ url: p.url, type: p.type }));
-    await onCreatePost(mediaToPost, caption, location);
-    onClose();
+  const handleSubmit = () => {
+    if (mediaFiles.length === 0) return;
+    
+    const formData = new FormData();
+    formData.append('caption', caption);
+    formData.append('location', location);
+    mediaFiles.forEach(file => {
+        formData.append('media', file);
+    });
+    
+    onCreatePost(formData);
   };
 
   return (
@@ -67,17 +71,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
         </div>
         
         <div className="flex flex-col md:flex-row flex-1 min-h-0">
-          <div className="w-full md:w-1/2 aspect-square flex items-center justify-center bg-black/50">
+          <div className="w-full md:w-1/2 aspect-square flex items-center justify-center bg-black/50 relative">
             {mediaPreviews.length > 0 ? (
-              mediaPreviews[0].type === 'image' ? (
-                <img src={mediaPreviews[0].url} alt="Preview" className="max-h-full max-w-full object-contain" />
-              ) : (
-                <video src={mediaPreviews[0].url} controls className="max-h-full max-w-full object-contain" />
-              )
+                <>
+                    <img src={mediaPreviews[0]} alt="Preview" className="max-h-full max-w-full object-contain" />
+                    <button onClick={() => handleRemoveMedia(0)} className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80">
+                        <Icon className="w-4 h-4"><path d="M6 18L18 6M6 6l12 12" /></Icon>
+                    </button>
+                </>
             ) : (
               <div className="text-center">
                 <Icon className="mx-auto w-16 h-16 text-gray-500"><path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></Icon>
-                <p className="mt-2 text-lg">Select photos and videos here</p>
+                <p className="mt-2 text-lg">Select photos and videos</p>
                 <button onClick={() => fileInputRef.current?.click()} className="mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded text-sm">
                   Select From Computer
                 </button>

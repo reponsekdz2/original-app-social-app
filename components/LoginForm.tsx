@@ -6,7 +6,7 @@ import * as api from '../services/apiService.ts';
 import Icon from './Icon.tsx';
 
 interface LoginFormProps {
-  onLoginSuccess: (user: User) => void;
+  onLoginSuccess: (data: { user: User, token: string }) => void;
   onForgotPassword: () => void;
 }
 
@@ -23,8 +23,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onForgotPassword 
     setIsLoading(true);
 
     try {
-      const user = await api.login(identifier, password);
-      onLoginSuccess(user);
+      const data = await api.login(identifier, password);
+      onLoginSuccess(data);
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

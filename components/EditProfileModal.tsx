@@ -6,11 +6,12 @@ import { generateBio } from '../services/geminiService.ts';
 interface EditProfileModalProps {
   user: User;
   onClose: () => void;
-  onSave: (updatedUser: User) => void;
+  onSave: (formData: FormData) => void;
 }
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSave }) => {
   const [avatarPreview, setAvatarPreview] = useState(user.avatar);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [username, setUsername] = useState(user.username);
   const [name, setName] = useState(user.name);
   const [bio, setBio] = useState(user.bio || '');
@@ -21,25 +22,23 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
 
 
   const handleSave = () => {
-    onSave({ 
-      ...user, 
-      avatar: avatarPreview,
-      username, 
-      name,
-      bio,
-      website,
-      gender
-    });
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('name', name);
+    formData.append('bio', bio);
+    formData.append('website', website);
+    formData.append('gender', gender);
+    if (avatarFile) {
+        formData.append('avatar', avatarFile);
+    }
+    onSave(formData);
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
@@ -50,7 +49,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
       setBio(newBio);
     } catch (error) {
       console.error("Failed to generate bio:", error);
-      // Optionally show an error to the user
     } finally {
       setIsGeneratingBio(false);
     }
@@ -111,14 +109,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
                 disabled={isGeneratingBio}
                 className="text-xs font-semibold text-red-400 hover:text-red-300 flex items-center gap-1 disabled:opacity-50"
               >
-                 {isGeneratingBio ? (
-                    <>
-                        <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        Generating...
-                    </>
-                 ) : (
-                    "✨ Generate with AI"
-                 )}
+                 {isGeneratingBio ? "Generating..." : "✨ Generate with AI"}
               </button>
             </div>
             <textarea 

@@ -1,123 +1,118 @@
 import { Router } from 'express';
-import db, { generateId, hydrate } from './data.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import pool from './db.js';
+import { protect } from './middleware/authMiddleware.js';
 
 const router = Router();
+const SALT_ROUNDS = 10;
 
-const sanitizeUser = (user) => {
-    if (!user) return null;
-    const { password, ...sanitized } = user;
-    return sanitized;
-}
+// Function to generate JWT
+const generateToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+    });
+};
 
-// Register a new user
-router.post('/register', (req, res) => {
-    const { email, name, username, password, phone, dob } = req.body;
-    
-    if (!email || !name || !username || !password || !phone || !dob) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    if (password.length < 8) {
-        return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
-    }
-
-    const usernameExists = db.users.some(u => u.username.toLowerCase() === username.toLowerCase());
-    if (usernameExists) {
-        return res.status(409).json({ message: 'Username is already taken' });
-    }
-    
-    const emailExists = db.users.some(u => u.email.toLowerCase() === email.toLowerCase());
-    if (emailExists) {
-        return res.status(409).json({ message: 'Email is already in use' });
-    }
-
-    const newUser = {
-        id: generateId('user'),
-        username,
-        name,
-        email,
-        password, // In a real app, this should be hashed using bcrypt
-        phone,
-        dob,
-        avatar: `https://i.pravatar.cc/150?u=${username}`,
-        isVerified: false,
-        isPremium: false,
-        isPrivate: false,
-        bio: '',
-        followers: [],
-        following: [],
-        notificationSettings: { likes: true, comments: true, follows: true },
-    };
-
-    db.users.push(newUser);
-    res.status(201).json(sanitizeUser(newUser));
-});
-
-// Login a user
-router.post('/login', (req, res) => {
-    const { identifier, password } = req.body;
-    
-    const user = db.users.find(
-        u => (u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase())
+// --- Helper Functions ---
+const findUserByUsernameOrEmail = async (identifier) => {
+    const [rows] = await pool.query(
+        'SELECT * FROM users WHERE username = ? OR email = ?',
+        [identifier, identifier]
     );
+    return rows[0];
+};
 
-    if (user && user.password === password) {
-        res.json(sanitizeUser(hydrate(user, ['followers', 'following'])));
-    } else {
-        res.status(401).json({ message: 'Invalid credentials' });
+const buildUserResponse = (user) => {
+    if (!user) return null;
+    const { password_hash, ...userResponse } = user;
+    return userResponse;
+};
+
+
+// --- ROUTES ---
+
+// @desc    Register a new user
+// @route   POST /api/auth/register
+// @access  Public
+router.post('/register', async (req, res) => {
+    const { email, name, username, password, phone, dob } = req.body;
+
+    if (!email || !name || !username || !password) {
+        return res.status(400).json({ message: 'Please provide all required fields' });
+    }
+
+    try {
+        const userExists = await findUserByUsernameOrEmail(username) || await findUserByUsernameOrEmail(email);
+        if (userExists) {
+            return res.status(409).json({ message: 'User with this email or username already exists' });
+        }
+
+        const salt = await bcrypt.genSalt(SALT_ROUNDS);
+        const password_hash = await bcrypt.hash(password, salt);
+
+        const [result] = await pool.query(
+            'INSERT INTO users (username, name, email, password_hash, phone, dob) VALUES (?, ?, ?, ?, ?, ?)',
+            [username, name, email, password_hash, phone, dob]
+        );
+
+        const newUser = {
+            id: result.insertId,
+            username,
+            name,
+            email,
+        };
+
+        res.status(201).json({
+            ...buildUserResponse(newUser),
+            token: generateToken(newUser.id),
+        });
+
+    } catch (error) {
+        console.error('Registration Error:', error);
+        res.status(500).json({ message: 'Server error during registration' });
     }
 });
 
-// Forgot password
-router.post('/forgot-password', (req, res) => {
-    const { identifier } = req.body;
-    const user = db.users.find(u => u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase());
-
-    // In a real app, you'd generate a token, save it with an expiry, and email a link.
-    // For this app, we'll always return success to prevent user enumeration.
-    if (user) {
-        console.log(`Password reset requested for ${user.username}. In a real app, an email would be sent.`);
-    } else {
-        console.log(`Password reset requested for non-existent user: ${identifier}.`);
-    }
-    res.status(200).json({ message: 'If your account exists, a password reset link has been sent.' });
-});
-
-// Reset password
-router.post('/reset-password', (req, res) => {
+// @desc    Authenticate a user
+// @route   POST /api/auth/login
+// @access  Public
+router.post('/login', async (req, res) => {
     const { identifier, password } = req.body;
-    
-    if (!password || password.length < 8) {
-        return res.status(400).json({ message: "Password must be at least 8 characters long." });
-    }
-    
-    const user = db.users.find(u => u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase());
-    
-    if (user) {
-        user.password = password;
-        console.log(`Password for ${user.username} has been reset.`);
-        res.status(200).json({ message: 'Password has been successfully reset.' });
-    } else {
-        // Should technically not happen if the identifier is passed correctly from the previous step,
-        // but good to have a safeguard.
-        res.status(404).json({ message: 'User not found.' });
-    }
-});
+    try {
+        const user = await findUserByUsernameOrEmail(identifier);
 
-
-// Get current user based on ID (simulating a session)
-router.get('/me/:id', (req, res) => {
-    const user = db.users.find(u => u.id === req.params.id);
-    if (user) {
-        res.json(sanitizeUser(hydrate(user, ['followers', 'following', 'stories', 'highlights'])));
-    } else {
-        res.status(404).json({ message: 'User not found' });
+        if (user && (await bcrypt.compare(password, user.password_hash))) {
+            res.json({
+                ...buildUserResponse(user),
+                token: generateToken(user.id),
+            });
+        } else {
+            res.status(401).json({ message: 'Invalid username or password' });
+        }
+    } catch (error) {
+        console.error('Login Error:', error);
+        res.status(500).json({ message: 'Server error during login' });
     }
 });
 
-// Mock logout
-router.post('/logout', (req, res) => {
-    res.json({ message: 'Logged out successfully' });
+// @desc    Get current user profile
+// @route   GET /api/auth/me
+// @access  Private
+router.get('/me', protect, async (req, res) => {
+    // The user object is attached to req by the 'protect' middleware
+    // Fetch full, fresh data from DB
+    try {
+        const [rows] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, bio, website, is_verified, is_premium, is_private FROM users WHERE id = ?', [req.user.id]);
+        if (rows.length > 0) {
+            res.json(rows[0]);
+        } else {
+            res.status(404).json({ message: "User not found" });
+        }
+    } catch(error) {
+        console.error("Failed to fetch user profile", error);
+        res.status(500).json({ message: "Server error" });
+    }
 });
 
 export default router;

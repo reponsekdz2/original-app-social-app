@@ -1,70 +1,62 @@
-
 import { Router } from 'express';
-import db, { hydrate } from './data.js';
+import pool from './db.js';
+import { protect } from './middleware/authMiddleware.js';
 
 const router = Router();
 
-// --- General Data Endpoints ---
-
-// Get main feed (posts from followed users + stories)
-router.get('/feed', (req, res) => {
-    // For simplicity, returning all posts. A real feed would be personalized.
-    const hydratedPosts = db.posts
-        .map(p => hydrate(p, ['user', 'comments']))
-        .map(p => {
-            p.comments = p.comments.map(c => hydrate(c, ['user']));
-            return p;
-        });
+// @desc    Get main feed for logged-in user (posts from users they follow)
+// @route   GET /api/feed
+// @access  Private
+router.get('/feed', protect, async (req, res) => {
+    try {
+        const [posts] = await pool.query(`
+            SELECT 
+                p.id, p.caption, p.location, p.created_at as timestamp,
+                u.id as user_id, u.username, u.name, u.avatar_url as avatar, u.is_verified
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.user_id IN (SELECT following_id FROM followers WHERE follower_id = ?)
+            ORDER BY p.created_at DESC
+            LIMIT 50
+        `, [req.user.id]);
         
-    const hydratedStories = db.stories.map(s => hydrate(s, ['user']));
+        // This is a simplified hydration. In a real app, this would be a more complex query or multiple queries.
+        for (let post of posts) {
+            post.user = { id: post.user_id, username: post.username, name: post.name, avatar: post.avatar, is_verified: post.is_verified };
+            const [media] = await pool.query('SELECT media_url as url, media_type as type FROM post_media WHERE post_id = ?', [post.id]);
+            post.media = media;
+            const [likes] = await pool.query('SELECT user_id FROM post_likes WHERE post_id = ?', [post.id]);
+            post.likes = likes.length;
+        }
 
-    res.json({ posts: hydratedPosts, stories: hydratedStories });
+        res.json({ posts, stories: [] }); // Stories would be fetched similarly
+    } catch(error) {
+        console.error("Feed error:", error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
-// Get explore feed (all posts, for now)
-router.get('/explore', (req, res) => {
-    const hydratedPosts = db.posts.map(p => hydrate(p, ['user']));
-    res.json(hydratedPosts);
+
+// @desc    Get explore feed (random posts)
+// @route   GET /api/explore
+// @access  Public
+router.get('/explore', async (req, res) => {
+    try {
+        const [posts] = await pool.query(`
+            SELECT 
+                p.id, 
+                (SELECT media_url FROM post_media WHERE post_id = p.id ORDER BY position LIMIT 1) as media_url,
+                (SELECT media_type FROM post_media WHERE post_id = p.id ORDER BY position LIMIT 1) as media_type
+            FROM posts p 
+            WHERE is_archived = FALSE
+            ORDER BY RAND() 
+            LIMIT 30
+        `);
+        res.json(posts);
+    } catch(error) {
+        console.error("Explore error:", error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
-
-// Get all reels
-router.get('/reels', (req, res) => {
-    const hydratedReels = db.reels
-        .map(r => hydrate(r, ['user', 'comments']))
-        .map(r => {
-            r.comments = r.comments.map(c => hydrate(c, ['user']));
-            return r;
-        });
-    res.json(hydratedReels);
-});
-
-// Get data for the sidebar
-router.get('/sidebar', (req, res) => {
-    res.json({
-        trendingTopics: db.trendingTopics,
-        suggestedUsers: db.users.slice(1, 5).map(u => hydrate(u, ['followers', 'following'])),
-        feedActivities: db.feedActivities.map(a => hydrate(a, ['user', 'targetUser', 'targetPost'])),
-        sponsoredContent: db.sponsoredContent,
-        conversations: db.conversations.map(c => hydrate(c, ['participants', 'messages']))
-    });
-});
-
-router.get('/conversations', (req, res) => {
-    const hydrated = db.conversations.map(c => {
-        const convo = hydrate(c, ['participants', 'messages']);
-        convo.messages = convo.messages.map(m => hydrate(m, [])); // messages have senderId, not sender object
-        return convo;
-    });
-    res.json(hydrated);
-});
-
-// Get static content
-router.get('/testimonials', (req, res) => res.json(db.testimonials.map(t => hydrate(t, ['user']))));
-router.get('/help', (req, res) => res.json(db.helpArticles));
-router.get('/support', (req, res) => res.json(db.supportTickets));
-router.get('/notifications', (req, res) => res.json(db.notifications.map(n => hydrate(n, ['user', 'post']))));
-router.get('/saved', (req, res) => res.json(db.posts.filter(p => p.savedBy.includes('user_0')).map(p => hydrate(p, ['user']))));
-router.get('/archive', (req, res) => res.json(db.posts.filter(p => p.user === 'user_0' && p.isArchived).map(p => hydrate(p, ['user']))));
-
 
 export default router;

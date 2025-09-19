@@ -1,67 +1,81 @@
 import { Router } from 'express';
-import db, { generateId, hydrate } from './data.js';
+import pool from './db.js';
+import { protect } from './middleware/authMiddleware.js';
 
 const router = Router();
 
-const findReel = (id, res) => {
-    const reel = db.reels.find(r => r.id === id);
-    if (!reel) {
-        res.status(404).json({ message: 'Reel not found' });
-        return null;
-    }
+const getReelById = async (reelId) => {
+    const [reelRows] = await pool.query(`
+        SELECT 
+            r.id, r.caption, r.video_url as video, r.created_at as timestamp,
+            u.id as user_id, u.username, u.name, u.avatar_url as avatar
+        FROM reels r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.id = ?`, [reelId]);
+    
+    if (reelRows.length === 0) return null;
+    let reel = reelRows[0];
+    reel.user = { id: reel.user_id, username: reel.username, name: reel.name, avatar: reel.avatar };
+    
+    const [likes] = await pool.query('SELECT user_id FROM reel_likes WHERE reel_id = ?', [reelId]);
+    reel.likedBy = likes.map(l => l.user_id);
+    reel.likes = likes.length;
+
+    // Simplified comments fetching
+    const [comments] = await pool.query('SELECT id FROM comments WHERE reel_id = ?', [reelId]);
+    reel.comments = comments;
+
     return reel;
 };
 
-const fullHydrateReel = (reel) => {
-    if (!reel) return null;
-    const hydratedReel = hydrate(reel, ['user', 'comments', 'likedBy']);
-    hydratedReel.comments = hydratedReel.comments.map(c => hydrate(c, ['user', 'likedBy']));
-    return hydratedReel;
-};
+// @desc    Toggle like on a reel
+// @route   POST /api/reels/:id/toggle-like
+// @access  Private
+router.post('/:id/toggle-like', protect, async (req, res) => {
+    const reelId = req.params.id;
+    const userId = req.user.id;
+    try {
+        const [existingLike] = await pool.query('SELECT * FROM reel_likes WHERE user_id = ? AND reel_id = ?', [userId, reelId]);
+        
+        if (existingLike.length > 0) {
+            await pool.query('DELETE FROM reel_likes WHERE user_id = ? AND reel_id = ?', [userId, reelId]);
+        } else {
+            await pool.query('INSERT INTO reel_likes (user_id, reel_id) VALUES (?, ?)', [userId, reelId]);
+        }
+        
+        const updatedReel = await getReelById(reelId);
+        req.app.get('io').emit('reel_updated', updatedReel);
+        res.json(updatedReel);
 
-// Toggle Like on a Reel
-router.post('/:id/toggle-like', (req, res) => {
-    const reel = findReel(req.params.id, res);
-    if (!reel) return;
-
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ message: 'User ID is required' });
-
-    const likeIndex = reel.likedBy.indexOf(userId);
-    if (likeIndex > -1) {
-        reel.likedBy.splice(likeIndex, 1);
-    } else {
-        reel.likedBy.push(userId);
+    } catch (error) {
+        console.error('Toggle Reel Like Error:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-    reel.likes = reel.likedBy.length;
-    
-    const finalReel = fullHydrateReel(reel);
-    req.app.get('io').emit('reel_updated', finalReel);
-    res.json(finalReel);
 });
 
-// Add a comment to a Reel
-router.post('/:id/comments', (req, res) => {
-    const reel = findReel(req.params.id, res);
-    if (!reel) return;
+// @desc    Add a comment to a reel
+// @route   POST /api/reels/:id/comments
+// @access  Private
+router.post('/:id/comments', protect, async (req, res) => {
+    const reelId = req.params.id;
+    const userId = req.user.id;
+    const { text } = req.body;
     
-    const { userId, text } = req.body;
-    if (!userId || !text) return res.status(400).json({ message: 'User ID and text are required' });
-    
-    const newComment = {
-        id: generateId('comment'),
-        user: userId,
-        text,
-        timestamp: 'now',
-        likes: 0,
-        likedBy: [],
-    };
-    db.comments.push(newComment);
-    reel.comments.push(newComment.id);
-    
-    const finalReel = fullHydrateReel(reel);
-    req.app.get('io').emit('reel_updated', finalReel);
-    res.status(201).json(finalReel);
+    if(!text) return res.status(400).json({ message: 'Comment text is required.' });
+
+    try {
+        await pool.query(
+            'INSERT INTO comments (user_id, reel_id, text) VALUES (?, ?, ?)',
+            [userId, reelId, text]
+        );
+        
+        const updatedReel = await getReelById(reelId);
+        req.app.get('io').emit('reel_updated', updatedReel);
+        res.status(201).json(updatedReel);
+    } catch (error) {
+        console.error('Add Reel Comment Error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 export default router;
