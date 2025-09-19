@@ -49,7 +49,7 @@ export const initSocket = (io) => {
 
 // Helper to get a socket by user ID
 export const getSocketByUserId = (io, userId) => {
-    const socketId = userSocketMap.get(userId);
+    const socketId = userSocketMap.get(String(userId)); // Ensure userId is a string for map lookup
     return socketId ? io.sockets.sockets.get(socketId) : null;
 }
 

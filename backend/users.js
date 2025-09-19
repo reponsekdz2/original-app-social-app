@@ -19,43 +19,49 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// A reusable function to get a full user profile
+// A reusable function to get a full user profile (Optimized)
 const getUserProfile = async (username, currentUserId) => {
-    const [users] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+    const [users] = await pool.query(`
+        SELECT 
+            u.id, u.username, u.name, u.avatar_url as avatar, u.bio, u.website, u.is_verified, u.is_premium, u.is_private,
+            (SELECT COUNT(*) FROM followers WHERE following_id = u.id) as followerCount,
+            (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) as followingCount,
+            (SELECT COUNT(*) FROM posts WHERE user_id = u.id AND is_archived = FALSE) as postCount,
+            EXISTS(SELECT 1 FROM followers WHERE follower_id = ? AND following_id = u.id) as isFollowing,
+            (SELECT JSON_ARRAYAGG(
+                JSON_OBJECT('id', h.id, 'title', h.title, 'cover', h.cover_image_url)
+            ) FROM story_highlights h WHERE h.user_id = u.id) as highlights,
+            (SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'id', p.id, 
+                    'media', (SELECT JSON_ARRAYAGG(JSON_OBJECT('url', pm.media_url, 'type', pm.media_type)) FROM post_media pm WHERE pm.post_id = p.id),
+                    'likes', (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id),
+                    'comments_count', (SELECT COUNT(*) FROM comments WHERE post_id = p.id)
+                )
+            ) FROM posts p WHERE p.user_id = u.id AND p.is_archived = FALSE) as posts,
+             (SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'id', r.id, 
+                    'video', r.video_url,
+                    'likes', (SELECT COUNT(*) FROM reel_likes WHERE reel_id = r.id),
+                    'comments_count', (SELECT COUNT(*) FROM comments WHERE reel_id = r.id)
+                )
+            ) FROM reels r WHERE r.user_id = u.id) as reels
+        FROM users u
+        WHERE u.username = ?
+    `, [currentUserId, username]);
+
     if (users.length === 0) return null;
     
+    // Convert NULL JSON arrays to empty arrays
     const user = users[0];
-    const userId = user.id;
+    user.highlights = user.highlights || [];
+    user.posts = user.posts || [];
+    user.reels = user.reels || [];
 
-    const [posts] = await pool.query(`
-        SELECT p.*, 
-        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pm.id, 'url', pm.media_url, 'type', pm.media_type)) FROM post_media pm WHERE pm.post_id = p.id) as media,
-        (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes,
-        (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count
-        FROM posts p WHERE p.user_id = ? AND p.is_archived = FALSE ORDER BY p.created_at DESC`, [userId]);
-
-    const [reels] = await pool.query('SELECT * FROM reels WHERE user_id = ? ORDER BY created_at DESC', [userId]);
-    const [followers] = await pool.query('SELECT COUNT(*) as count FROM followers WHERE following_id = ?', [userId]);
-    const [following] = await pool.query('SELECT COUNT(*) as count FROM followers WHERE follower_id = ?', [userId]);
-    const [highlights] = await pool.query('SELECT * FROM story_highlights WHERE user_id = ?', [userId]);
-    
-    // Check if current user is following this profile
-    const [isFollowing] = await pool.query('SELECT 1 FROM followers WHERE follower_id = ? AND following_id = ?', [currentUserId, userId]);
-
-    // Omit sensitive data
-    delete user.password;
-    delete user.email;
-
-    return {
-        ...user,
-        posts,
-        reels,
-        highlights,
-        followerCount: followers[0].count,
-        followingCount: following[0].count,
-        isFollowing: isFollowing.length > 0,
-    };
+    return user;
 };
+
 
 // @desc    Get user profile
 // @route   GET /api/users/profile/:username
@@ -106,7 +112,7 @@ router.post('/:id/follow', protect, async (req, res) => {
     const followingId = req.params.id;
     const io = req.app.get('io');
     
-    if (followerId === followingId) return res.status(400).json({ message: "You cannot follow yourself." });
+    if (followerId == followingId) return res.status(400).json({ message: "You cannot follow yourself." });
 
     try {
         await pool.query('INSERT INTO followers (follower_id, following_id) VALUES (?, ?)', [followerId, followingId]);
@@ -116,7 +122,7 @@ router.post('/:id/follow', protect, async (req, res) => {
             'INSERT INTO notifications (user_id, actor_id, type, entity_id) VALUES (?, ?, ?, ?)',
             [followingId, followerId, 'follow', followerId]
         );
-        const [newNotif] = await pool.query('SELECT * FROM notifications WHERE id = ?', [notifResult.insertId]);
+        const [newNotif] = await pool.query('SELECT n.*, u.username as actor_username, u.avatar_url as actor_avatar FROM notifications n JOIN users u ON n.actor_id = u.id WHERE n.id = ?', [notifResult.insertId]);
 
         const targetSocket = getSocketByUserId(io, followingId);
         if (targetSocket) {

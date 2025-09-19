@@ -88,7 +88,7 @@ router.post('/:id/like', protect, async (req, res) => {
                     'INSERT INTO notifications (user_id, actor_id, type, entity_id) VALUES (?, ?, ?, ?)',
                     [postOwner[0].user_id, userId, 'like_post', postId]
                 );
-                 const [newNotif] = await pool.query('SELECT * FROM notifications WHERE id = ?', [notifResult.insertId]);
+                 const [newNotif] = await pool.query('SELECT n.*, u.username as actor_username, u.avatar_url as actor_avatar FROM notifications n JOIN users u ON n.actor_id = u.id WHERE n.id = ?', [notifResult.insertId]);
                 
                 const targetSocket = getSocketByUserId(io, postOwner[0].user_id);
                 if (targetSocket) {
@@ -147,7 +147,7 @@ router.post('/:id/comments', protect, async (req, res) => {
                 'INSERT INTO notifications (user_id, actor_id, type, entity_id) VALUES (?, ?, ?, ?)',
                 [postOwner[0].user_id, userId, 'comment_post', postId]
             );
-             const [newNotif] = await pool.query('SELECT * FROM notifications WHERE id = ?', [notifResult.insertId]);
+             const [newNotif] = await pool.query('SELECT n.*, u.username as actor_username, u.avatar_url as actor_avatar FROM notifications n JOIN users u ON n.actor_id = u.id WHERE n.id = ?', [notifResult.insertId]);
 
             const targetSocket = getSocketByUserId(io, postOwner[0].user_id);
             if (targetSocket) {

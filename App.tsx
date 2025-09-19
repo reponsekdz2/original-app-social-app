@@ -179,6 +179,7 @@ const App: React.FC = () => {
 
     const showToast = (message: string) => {
         setToastMessage(message);
+        setTimeout(() => setToastMessage(null), 3000);
     };
 
     const handleNavigate = (view: View, data?: any) => {
@@ -220,7 +221,6 @@ const App: React.FC = () => {
         setCurrentView('home'); // or a dedicated login screen
     };
     
-    // ... other action handlers ...
     const handleToggleLike = async (postId: string) => { /* ... API call ... */ };
     const handleToggleSave = async (postId: string) => { /* ... API call ... */ };
     const handleComment = async (postId: string, text: string) => { /* ... API call ... */ };
