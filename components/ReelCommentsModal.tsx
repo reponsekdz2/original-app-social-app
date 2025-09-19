@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Reel, User, Comment as CommentType } from '../types.ts';
+import type { Reel, User, Comment } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 
@@ -8,11 +8,10 @@ interface ReelCommentsModalProps {
   currentUser: User;
   onClose: () => void;
   onPostComment: (reelId: string, text: string) => void;
-  onLikeComment: (commentId: string) => void;
   onViewProfile: (user: User) => void;
 }
 
-const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser, onClose, onPostComment, onLikeComment, onViewProfile }) => {
+const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser, onClose, onPostComment, onViewProfile }) => {
   const [commentText, setCommentText] = useState('');
 
   const handlePostComment = () => {
@@ -23,52 +22,57 @@ const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-end justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center" onClick={onClose}>
       <div 
-        className="bg-gray-800 rounded-t-2xl shadow-xl w-full max-w-lg border-t border-gray-700 h-[70vh] flex flex-col"
+        className="bg-gray-800 w-full max-w-lg rounded-t-2xl h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-3 border-b border-gray-700 text-center relative flex-shrink-0">
+        <div className="p-3 border-b border-gray-700 text-center relative">
           <h2 className="text-lg font-semibold">Comments</h2>
           <button className="absolute top-2 right-3" onClick={onClose}>
             <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></Icon>
           </button>
         </div>
+
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {reel.comments.map(comment => (
-            <div key={comment.id} className="flex items-start gap-3">
-              <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(comment.user)} />
-              <div className="flex-1">
-                <p className="text-sm">
-                  <span className="font-semibold cursor-pointer" onClick={() => onViewProfile(comment.user)}>{comment.user.username}</span> {comment.text}
-                </p>
-                <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                  <span>{comment.timestamp}</span>
-                  {comment.likes > 0 && <span className="font-semibold">{comment.likes} likes</span>}
-                  <button className="font-semibold">Reply</button>
+            {/* Reel Caption */}
+            <div className="flex items-start gap-3">
+                <img src={reel.user.avatar} alt={reel.user.username} className="w-9 h-9 rounded-full" />
+                <p className="text-sm"><span className="font-semibold">{reel.user.username}</span> {reel.caption}</p>
+             </div>
+
+            <hr className="border-gray-700" />
+
+            {/* Comments */}
+            {reel.comments.map(comment => (
+                <div key={comment.id} className="flex items-start gap-3">
+                    <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(comment.user)} />
+                    <div>
+                        <p className="text-sm">
+                            <span className="font-semibold cursor-pointer" onClick={() => onViewProfile(comment.user)}>{comment.user.username}</span> {comment.text}
+                        </p>
+                        <span className="text-xs text-gray-500">{comment.timestamp}</span>
+                    </div>
                 </div>
-              </div>
-              <button className="mt-2" onClick={() => onLikeComment(comment.id)}>
-                <Icon className={`w-4 h-4 ${comment.likedBy.some(u => u.id === currentUser.id) ? 'text-red-500' : 'text-gray-400'}`} fill={comment.likedBy.some(u => u.id === currentUser.id) ? 'currentColor' : 'none'} stroke="currentColor">
-                  <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                </Icon>
-              </button>
-            </div>
-          ))}
+             ))}
+             {reel.comments.length === 0 && (
+                <p className="text-center text-gray-500 pt-16">No comments yet. Be the first!</p>
+             )}
         </div>
-        <div className="p-3 border-t border-gray-700 flex-shrink-0">
-          <div className="flex items-center">
-            <img src={currentUser.avatar} alt="current user" className="w-9 h-9 rounded-full mr-3" />
-            <input 
-              type="text" 
-              placeholder="Add a comment..." 
-              value={commentText}
-              onChange={e => setCommentText(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && handlePostComment()}
-              className="w-full bg-transparent text-sm focus:outline-none" 
-            />
-            {commentText && <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm">Post</button>}
-          </div>
+
+        <div className="p-3 border-t border-gray-700">
+            <div className="flex items-center gap-2">
+                <img src={currentUser.avatar} alt="current user" className="w-9 h-9 rounded-full" />
+                <input 
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
+                    className="w-full bg-transparent text-sm focus:outline-none"
+                />
+                {commentText && <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm">Post</button>}
+            </div>
         </div>
       </div>
     </div>

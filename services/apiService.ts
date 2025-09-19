@@ -1,78 +1,193 @@
-import type { User, Post, Reel, Story, Conversation, FeedActivity, SponsoredContent, Testimonial, TrendingTopic, HelpArticle, SupportTicket, StoryItem, Notification, PostMedia, Comment } from '../types.ts';
+// A simple API wrapper for making requests to the backend.
+import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket } from '../types.ts';
 
-const API_BASE_URL = '/api'; // Use relative path for proxying
+const API_BASE_URL = 'http://localhost:3000/api';
 
-const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        return { 'Authorization': `Bearer ${token}` };
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+    authToken = token;
+};
+
+const getHeaders = (isFormData = false) => {
+    const headers: Record<string, string> = {};
+    if (!isFormData) {
+        headers['Content-Type'] = 'application/json';
     }
-    return {};
-};
-
-const handleResponse = async (res: Response) => {
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || `HTTP error! status: ${res.status}`);
+    if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
     }
-    if (res.status === 204) return null; // Handle No Content response
-    return res.json();
+    return headers;
 };
 
-const apiService = {
-  // Auth
-  login: (identifier: string, password: string): Promise<{user: User, token: string}> => fetch(`${API_BASE_URL}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier, password }) }).then(handleResponse),
-  register: (data: any): Promise<{user: User, token: string}> => fetch(`${API_BASE_URL}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(handleResponse),
-  getCurrentUser: (): Promise<User> => fetch(`${API_BASE_URL}/auth/me`, { headers: getAuthHeaders() }).then(handleResponse),
 
-  // Data fetching
-  getFeed: (): Promise<{ posts: Post[], stories: Story[] }> => fetch(`${API_BASE_URL}/feed`, { headers: getAuthHeaders() }).then(handleResponse),
-  getExplore: (): Promise<Post[]> => fetch(`${API_BASE_URL}/explore`).then(handleResponse),
-  // Other GET requests would follow a similar pattern...
-
-  // Posts
-  createPost: (formData: FormData): Promise<Post> => fetch(`${API_BASE_URL}/posts`, { method: 'POST', headers: getAuthHeaders(), body: formData }).then(handleResponse),
-  togglePostLike: (postId: string): Promise<Post> => fetch(`${API_BASE_URL}/posts/${postId}/toggle-like`, { method: 'POST', headers: getAuthHeaders() }).then(handleResponse),
-  addComment: (postId: string, text: string): Promise<Post> => fetch(`${API_BASE_URL}/posts/${postId}/comments`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ text }) }).then(handleResponse),
-  deletePost: (postId: string): Promise<void> => fetch(`${API_BASE_URL}/posts/${postId}`, { method: 'DELETE', headers: getAuthHeaders() }).then(handleResponse),
-  
-  // Reels
-  toggleReelLike: (reelId: string): Promise<Reel> => fetch(`${API_BASE_URL}/reels/${reelId}/toggle-like`, { method: 'POST', headers: getAuthHeaders() }).then(handleResponse),
-  postReelComment: (reelId: string, text: string): Promise<Reel> => fetch(`${API_BASE_URL}/reels/${reelId}/comments`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ text }) }).then(handleResponse),
-  
-  // Users
-  toggleFollow: (targetUserId: string): Promise<any> => fetch(`${API_BASE_URL}/users/${targetUserId}/toggle-follow`, { method: 'POST', headers: getAuthHeaders() }).then(handleResponse),
-  updateUser: (formData: FormData): Promise<User> => fetch(`${API_BASE_URL}/users/profile`, { method: 'PUT', headers: getAuthHeaders(), body: formData }).then(handleResponse),
-  
-  // Stories
-  createStory: (formData: FormData): Promise<Story> => fetch(`${API_BASE_URL}/stories`, { method: 'POST', headers: getAuthHeaders(), body: formData }).then(handleResponse),
-
-  // Fix: Add missing API functions
-  // Misc
-  getStickers: (): Promise<string[]> => fetch(`${API_BASE_URL}/misc/stickers`).then(handleResponse),
-  getTrending: (): Promise<TrendingTopic[]> => fetch(`${API_BASE_URL}/misc/trending`).then(handleResponse),
-  getSuggestions: (): Promise<User[]> => fetch(`${API_BASE_URL}/misc/suggestions`).then(handleResponse),
-  getFeedActivity: (): Promise<FeedActivity[]> => fetch(`${API_BASE_URL}/misc/feed-activity`).then(handleResponse),
-  getSponsoredContent: (): Promise<SponsoredContent[]> => fetch(`${API_BASE_URL}/misc/sponsored`).then(handleResponse),
-  getConversations: (): Promise<Conversation[]> => fetch(`${API_BASE_URL}/misc/conversations`).then(handleResponse),
-
-  // AI endpoints (all need protection)
-  generateCaption: (base64Data: string, mimeType: string): Promise<{caption: string}> => fetch(`${API_BASE_URL}/ai/generate-caption`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ base64Data, mimeType }) }).then(handleResponse),
-  generateStoryImage: (prompt: string): Promise<{imageB64: string}> => fetch(`${API_BASE_URL}/ai/generate-story-image`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ prompt }) }).then(handleResponse),
-  generateComment: (postCaption: string, style: string): Promise<{comment: string}> => fetch(`${API_BASE_URL}/ai/generate-comment`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ postCaption, style }) }).then(handleResponse),
-  generateBio: (username: string, name: string): Promise<{bio: string}> => fetch(`${API_BASE_URL}/ai/generate-bio`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ username, name }) }).then(handleResponse),
-
+const handleResponse = async (response: Response) => {
+    if (response.status === 204) { // No Content
+        return;
+    }
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+    return data;
 };
 
-// Simplified export for brevity in this example
-export const { 
-    login, register, getCurrentUser,
-    getFeed, getExplore, 
-    createPost, togglePostLike, addComment, deletePost,
-    toggleReelLike, postReelComment,
-    toggleFollow, updateUser,
-    createStory,
-    // Fix: Add new functions to export
-    getStickers, getTrending, getSuggestions, getFeedActivity, getSponsoredContent, getConversations,
-    generateCaption, generateStoryImage, generateComment, generateBio
-} = apiService;
+const apiRequest = async (method: string, endpoint: string, body?: any) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method,
+        headers: getHeaders(),
+        body: body ? JSON.stringify(body) : null,
+    });
+    return handleResponse(response);
+};
+
+// --- Auth ---
+export const login = (identifier: string, password: string): Promise<{ user: User, token: string }> => {
+    return apiRequest('POST', '/auth/login', { identifier, password });
+};
+
+// Fix: Changed type of userData from Partial<User> to `any` to allow for the 'password' field during registration.
+export const register = (userData: any): Promise<{ user: User, token: string }> => {
+    return apiRequest('POST', '/auth/register', userData);
+};
+
+export const getCurrentUser = (): Promise<{ user: User }> => {
+    return apiRequest('GET', '/auth/me');
+};
+
+// --- AI ---
+export const generateCaption = (base64Data: string, mimeType: string): Promise<{ caption: string }> => {
+    return apiRequest('POST', '/ai/generate-caption', { base64Data, mimeType });
+};
+
+export const generateStoryImage = (prompt: string): Promise<{ imageB64: string }> => {
+    return apiRequest('POST', '/ai/generate-story-image', { prompt });
+};
+
+export const generateComment = (postCaption: string, style: string): Promise<{ comment: string }> => {
+    return apiRequest('POST', '/ai/generate-comment', { postCaption, style });
+};
+
+export const generateBio = (username: string, name: string): Promise<{ bio: string }> => {
+    return apiRequest('POST', '/ai/generate-bio', { username, name });
+};
+
+// --- Data Fetching ---
+export const getFeed = (): Promise<{ posts: Post[], stories: Story[] }> => {
+    return apiRequest('GET', '/feed');
+};
+
+export const getExplorePosts = (): Promise<Post[]> => {
+    return apiRequest('GET', '/explore');
+};
+
+export const getReels = (): Promise<Reel[]> => {
+    return apiRequest('GET', '/reels');
+};
+
+export const getConversations = (): Promise<Conversation[]> => {
+    return apiRequest('GET', '/messages');
+};
+
+export const getSidebarData = (): Promise<{
+    trendingTopics: TrendingTopic[];
+    suggestedUsers: User[];
+    feedActivities: FeedActivity[];
+    sponsoredContent: SponsoredContent[];
+}> => {
+    return apiRequest('GET', '/misc/sidebar-data');
+};
+
+export const getAllUsers = (): Promise<User[]> => {
+    return apiRequest('GET', '/users');
+};
+
+export const getUserProfile = (username: string): Promise<{ user: User, posts: Post[], reels: Reel[] }> => {
+    return apiRequest('GET', `/users/profile/${username}`);
+};
+
+export const getPremiumPageData = (): Promise<{ testimonials: Testimonial[] }> => {
+    return apiRequest('GET', '/misc/premium-data');
+}
+
+export const getHelpArticles = (): Promise<HelpArticle[]> => {
+    return apiRequest('GET', '/misc/help');
+}
+
+export const getSupportTickets = (): Promise<SupportTicket[]> => {
+    return apiRequest('GET', '/misc/support');
+}
+
+// Fix: Added missing API service functions used in App.tsx.
+export const getSavedPosts = (): Promise<Post[]> => {
+    return apiRequest('GET', '/posts/saved');
+};
+
+export const getArchivedPosts = (): Promise<Post[]> => {
+    return apiRequest('GET', '/posts/archived');
+};
+
+export const getNotifications = (): Promise<Notification[]> => {
+    return apiRequest('GET', '/notifications');
+};
+
+
+// --- Posts ---
+export const createPost = (formData: FormData): Promise<Post> => {
+    return fetch(`${API_BASE_URL}/posts`, {
+        method: 'POST',
+        headers: getHeaders(true),
+        body: formData,
+    }).then(handleResponse);
+};
+
+export const createStory = (formData: FormData): Promise<{message: string}> => {
+     return fetch(`${API_BASE_URL}/stories`, {
+        method: 'POST',
+        headers: getHeaders(true),
+        body: formData,
+    }).then(handleResponse);
+};
+
+export const toggleLikePost = (postId: string): Promise<{ liked: boolean, likesCount: number }> => {
+    return apiRequest('POST', `/posts/${postId}/like`);
+};
+
+export const toggleLikeReel = (reelId: string): Promise<{ liked: boolean, likesCount: number }> => {
+    return apiRequest('POST', `/reels/${reelId}/like`);
+};
+
+export const toggleSave = (postId: string): Promise<{ saved: boolean }> => {
+    return apiRequest('POST', `/posts/${postId}/save`);
+};
+
+export const addComment = (postId: string, text: string): Promise<Comment> => {
+    return apiRequest('POST', `/posts/${postId}/comment`, { text });
+};
+
+export const updateUser = (formData: FormData): Promise<User> => {
+    return fetch(`${API_BASE_URL}/users/me`, {
+        method: 'PUT',
+        headers: getHeaders(true),
+        body: formData,
+    }).then(handleResponse);
+};
+
+export const followUser = (userId: string): Promise<{ success: boolean }> => {
+    return apiRequest('POST', `/users/${userId}/follow`);
+};
+
+export const unfollowUser = (userId: string): Promise<{ success: boolean }> => {
+    return apiRequest('POST', `/users/${userId}/unfollow`);
+};
+
+// This is a placeholder. Stickers would likely be a static asset or from a CDN.
+export const getStickers = async (): Promise<string[]> => {
+    // In a real app, this would fetch from an API endpoint.
+    // For now, returning mock data.
+    return Promise.resolve([
+        '/stickers/sticker1.png',
+        '/stickers/sticker2.png',
+        '/stickers/sticker3.png',
+    ]);
+};

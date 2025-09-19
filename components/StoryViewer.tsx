@@ -1,196 +1,123 @@
-import React, { useState, useEffect } from 'react';
-// Fix: Corrected import path for types
-import type { Story, User } from '../types.ts';
+import React, { useState, useEffect, useRef } from 'react';
+import type { Story, StoryItem, User } from '../types.ts';
 import Icon from './Icon.tsx';
 
-// Fix: Update props to match usage in App.tsx, enabling future enhancements for multi-story navigation.
 interface StoryViewerProps {
   stories: Story[];
-  startIndex: number;
+  initialStoryIndex: number;
   onClose: () => void;
-  onViewProfile: (user: User) => void;
-  onReply: (storyUser: User, content: string) => void;
-  onShare: (story: Story) => void;
+  onNextUser: () => void;
+  onPrevUser: () => void;
 }
 
-const StoryViewer: React.FC<StoryViewerProps> = ({ stories, startIndex, onClose, onViewProfile, onReply, onShare }) => {
-  const [storyIndex, setStoryIndex] = useState(startIndex);
-  const [currentIndex, setCurrentIndex] = useState(0);
+const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialStoryIndex, onClose, onNextUser, onPrevUser }) => {
+  const [currentUserIndex, setCurrentUserIndex] = useState(initialStoryIndex);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [replyText, setReplyText] = useState('');
-  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const progressRef = useRef<number>(0);
 
-  const story = stories[storyIndex];
-  const currentStoryItem = story.stories[currentIndex];
+  const currentUserStory = stories[currentUserIndex];
+  const currentStoryItem = currentUserStory?.stories[currentStoryIndex];
 
-  useEffect(() => {
-    setProgress(0);
-    // Reset item index when story user changes
-    if (currentIndex !== 0 && stories[storyIndex].id !== story.id) {
-        setCurrentIndex(0);
-    }
-  }, [storyIndex, currentIndex, story.id, stories]);
-  
-  useEffect(() => {
-    setProgress(0);
-    if (currentStoryItem.mediaType === 'image') {
-      const timer = setInterval(() => {
-        setProgress(p => {
-          if (p >= 100) {
-            clearInterval(timer);
-            return 100;
-          }
-          return p + (100 / (currentStoryItem.duration / 100));
-        });
-      }, 100);
-
-      const timeout = setTimeout(() => {
-        handleNext();
-      }, currentStoryItem.duration);
-
-      return () => {
-        clearInterval(timer);
-        clearTimeout(timeout);
-      };
-    }
-  }, [currentIndex, storyIndex, currentStoryItem]);
-
-  const handleNext = () => {
-    if (currentIndex < story.stories.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else if (storyIndex < stories.length - 1) {
-      setStoryIndex(storyIndex + 1);
-      setCurrentIndex(0);
+  const goToNextStory = () => {
+    if (currentStoryIndex < currentUserStory.stories.length - 1) {
+      setCurrentStoryIndex(prev => prev + 1);
     } else {
-      onClose();
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    } else if (storyIndex > 0) {
-      const prevStory = stories[storyIndex - 1];
-      setStoryIndex(storyIndex - 1);
-      setCurrentIndex(prevStory.stories.length - 1);
-    }
-  };
-  
-  const handleNextStory = () => {
-    if (storyIndex < stories.length - 1) {
-        setStoryIndex(storyIndex + 1);
-        setCurrentIndex(0);
-    }
-  };
-
-  const handlePrevStory = () => {
-      if (storyIndex > 0) {
-          setStoryIndex(storyIndex - 1);
-          setCurrentIndex(0);
+      if (currentUserIndex < stories.length - 1) {
+        onNextUser();
+        setCurrentUserIndex(prev => prev + 1);
+        setCurrentStoryIndex(0);
+      } else {
+        onClose();
       }
-  };
-  
-  const handleViewProfileAndClose = (user: User) => {
-    onViewProfile(user);
-    onClose();
-  };
-
-  const handleSendReply = () => {
-    if (replyText.trim()) {
-        onReply(story.user, replyText);
-        setReplyText('');
     }
   };
 
-  const handleLike = () => {
-      onReply(story.user, '❤️');
-      setShowLikeAnimation(true);
-      setTimeout(() => setShowLikeAnimation(false), 700); // Match animation duration
+  const goToPrevStory = () => {
+    if (currentStoryIndex > 0) {
+      setCurrentStoryIndex(prev => prev - 1);
+    } else {
+      if (currentUserIndex > 0) {
+        onPrevUser();
+        setCurrentUserIndex(prev => prev - 1);
+        // Go to the last story of the previous user
+        setCurrentStoryIndex(stories[currentUserIndex - 1].stories.length - 1);
+      }
+    }
   };
+  
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    progressRef.current = 0;
+    setProgress(0);
+
+    if (currentStoryItem) {
+        const duration = currentStoryItem.duration || 7000; // 7s default
+        const interval = duration / 100;
+        
+        timerRef.current = setInterval(() => {
+            progressRef.current += 1;
+            setProgress(progressRef.current);
+            if (progressRef.current >= 100) {
+                goToNextStory();
+            }
+        }, interval);
+    }
+
+    return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [currentStoryIndex, currentUserIndex, currentStoryItem]);
+
+
+  if (!currentStoryItem) {
+    onClose();
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-       {storyIndex > 0 && (
-        <button onClick={handlePrevStory} className="absolute left-2 md:-left-12 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 rounded-full p-2">
-            <Icon className="w-6 h-6 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></Icon>
-        </button>
-       )}
-      <div className="relative w-full max-w-sm h-full max-h-screen aspect-[9/16]">
-        <div className="absolute top-4 left-2 right-2 flex gap-1 z-10">
-          {story.stories.map((_, index) => (
-            <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
-                <div 
-                    className="h-full bg-white" 
-                    style={{ width: `${index < currentIndex ? 100 : index === currentIndex ? progress : 0}%` }}
-                />
-            </div>
-          ))}
-        </div>
-        
-        <div className="absolute top-8 left-4 z-10 flex items-center gap-2">
-            <img src={story.user.avatar} alt={story.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => handleViewProfileAndClose(story.user)} />
-            <p className="text-white font-semibold text-sm cursor-pointer" onClick={() => handleViewProfileAndClose(story.user)}>{story.user.username}</p>
-        </div>
-
-        <button onClick={onClose} className="absolute top-2 right-2 z-10 text-white p-2">
-          <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></Icon>
-        </button>
-        
-        <button onClick={handlePrev} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-full w-1/3" />
-        <button onClick={handleNext} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-full w-1/3" />
-
-        {currentStoryItem.mediaType === 'image' ? (
-          <img src={currentStoryItem.media} className="w-full h-full object-contain" />
+      <div className="relative w-full max-w-sm h-full max-h-screen aspect-[9/16] bg-gray-900 overflow-hidden">
+        {/* Story Content */}
+        {currentStoryItem.mediaType === 'video' ? (
+          <video src={currentStoryItem.media} autoPlay onEnded={goToNextStory} className="w-full h-full object-cover" />
         ) : (
-          <video 
-            key={`${storyIndex}-${currentIndex}`}
-            src={currentStoryItem.media} 
-            className="w-full h-full object-contain" 
-            autoPlay 
-            onEnded={handleNext} 
-            onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime / e.currentTarget.duration * 100)}
-          />
-        )}
-        
-        {showLikeAnimation && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="animate-like-burst">
-                    <Icon className="w-32 h-32 text-red-500" fill="currentColor">
-                         <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                    </Icon>
-                </div>
-            </div>
+          <img src={currentStoryItem.media} alt="Story" className="w-full h-full object-cover" />
         )}
 
-        <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center gap-2">
-            <input 
-                type="text"
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendReply()}
-                placeholder={`Reply to ${story.user.username}...`}
-                className="w-full bg-black/50 border border-white/30 rounded-full py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-white"
-            />
-            {replyText ? (
-                 <button onClick={handleSendReply} className="text-white font-semibold px-2">Send</button>
-            ) : (
-                <>
-                    <button onClick={handleLike} className="p-2">
-                        <Icon className="w-7 h-7 text-white"><path stroke="currentColor" strokeWidth="1.5" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon>
-                    </button>
-                    <button onClick={() => onShare(story)} className="p-2">
-                        <Icon className="w-7 h-7 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.875L6 12z" /></Icon>
-                    </button>
-                </>
-            )}
+        {/* Overlay UI */}
+        <div className="absolute inset-0">
+          {/* Progress Bars */}
+          <div className="absolute top-2 left-2 right-2 flex gap-1">
+            {currentUserStory.stories.map((_, index) => (
+              <div key={index} className="flex-1 h-1 bg-white/30 rounded-full">
+                <div 
+                    className="h-1 bg-white rounded-full" 
+                    style={{ width: `${index < currentStoryIndex ? 100 : (index === currentStoryIndex ? progress : 0)}%` }} 
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Header */}
+          <div className="absolute top-5 left-4 flex items-center gap-3">
+            <img src={currentUserStory.user.avatar} alt={currentUserStory.user.username} className="w-9 h-9 rounded-full" />
+            <p className="font-semibold text-white text-shadow">{currentUserStory.user.username}</p>
+          </div>
+          
+           {/* Close Button */}
+          <button onClick={onClose} className="absolute top-4 right-4 text-white p-2">
+            <Icon className="w-7 h-7"><path d="M6 18L18 6M6 6l12 12" /></Icon>
+          </button>
+
+          {/* Navigation */}
+          <div className="absolute inset-0 flex justify-between">
+             <button onClick={goToPrevStory} className="w-1/3 h-full"></button>
+             <button onClick={goToNextStory} className="w-1/3 h-full"></button>
+          </div>
         </div>
-
       </div>
-       {storyIndex < stories.length - 1 && (
-         <button onClick={handleNextStory} className="absolute right-2 md:-right-12 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 rounded-full p-2">
-            <Icon className="w-6 h-6 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></Icon>
-        </button>
-       )}
     </div>
   );
 };
