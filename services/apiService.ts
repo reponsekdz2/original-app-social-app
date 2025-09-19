@@ -1,9 +1,8 @@
 // This file centralizes all API calls to the backend.
 
-// Fix: Add Message to the type import.
 import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, Message } from './types.ts';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = '/api';
 
 // --- Helper Functions ---
 
@@ -13,6 +12,7 @@ const getAuthHeaders = (): HeadersInit => {
 };
 
 const handleResponse = async (response: Response) => {
+  if (response.status === 204) return; // No content
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.message || 'An error occurred');
@@ -46,7 +46,7 @@ export const login = async (identifier: string, password: string): Promise<{ use
   });
 };
 
-export const register = async (userData: Omit<User, 'id' | 'followers' | 'following' | 'isVerified' | 'isPremium' | 'isPrivate' | 'notificationSettings' | 'mutedUsers' | 'blockedUsers' | 'avatar'> & { password?: string }): Promise<{ user: User, token: string }> => {
+export const register = async (userData: any): Promise<{ user: User, token: string }> => {
   return apiRequest('/auth/register', {
     method: 'POST',
     body: JSON.stringify(userData),
@@ -73,7 +73,7 @@ export const enableTwoFactor = async (): Promise<{ message: string }> => {
 export const getFeed = async (): Promise<{ posts: Post[] }> => apiRequest('/posts/feed');
 export const getExplore = async (): Promise<{ posts: Post[] }> => apiRequest('/posts/explore');
 export const getStories = async (): Promise<{ stories: Story[] }> => apiRequest('/stories/feed');
-export const getReels = async (): Promise<{ reels: Reel[] }> => apiRequest('/reels');
+export const getReels = async (): Promise<Reel[]> => apiRequest('/reels');
 export const getUserProfile = async (username: string): Promise<User> => apiRequest(`/users/profile/${username}`);
 export const getAllUsers = async (): Promise<User[]> => apiRequest('/users');
 export const getTrending = async (): Promise<TrendingTopic[]> => apiRequest('/misc/trending');
@@ -83,7 +83,7 @@ export const getSponsoredContent = async (): Promise<SponsoredContent[]> => apiR
 export const getTestimonials = async (): Promise<Testimonial[]> => apiRequest('/misc/testimonials');
 export const getHelpArticles = async (): Promise<HelpArticle[]> => apiRequest('/misc/help-articles');
 export const getSupportTickets = async (): Promise<SupportTicket[]> => apiRequest('/misc/support-tickets');
-export const getStickers = async (): Promise<string[]> => apiRequest('/misc/stickers'); // Assuming this endpoint exists now
+export const getStickers = async (): Promise<string[]> => apiRequest('/misc/stickers');
 export const getConversations = async (): Promise<Conversation[]> => apiRequest('/messages');
 export const getSavedPosts = async (): Promise<Post[]> => apiRequest('/users/posts/saved');
 export const getArchivedPosts = async (): Promise<Post[]> => apiRequest('/users/posts/archived');
@@ -97,7 +97,7 @@ const putWithAuth = (endpoint: string, body: object) => apiRequest(endpoint, { m
 
 export const toggleLike = (postId: string) => postWithAuth(`/posts/${postId}/like`);
 export const toggleSave = (postId: string) => postWithAuth(`/posts/${postId}/save`);
-export const addComment = (postId: string, text: string) => apiRequest(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+export const addComment = (postId: string, text: string): Promise<Comment> => apiRequest(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
 export const followUser = (userId: string) => postWithAuth(`/users/${userId}/follow`);
 export const unfollowUser = (userId: string) => apiRequest(`/users/${userId}/unfollow`, { method: 'DELETE' });
 export const archivePost = (postId: string) => putWithAuth(`/posts/${postId}/archive`, {});
@@ -141,7 +141,7 @@ export const generateComment = (postCaption: string, style: string) => apiReques
 export const generateBio = (username: string, name: string) => apiRequest('/ai/generate-bio', { method: 'POST', body: JSON.stringify({ username, name }) });
 
 // --- Messaging ---
-export const sendMessage = (recipientId: string, content: string, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel') => {
+export const sendMessage = (recipientId: string, content: string, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel'): Promise<Message> => {
     return apiRequest('/messages', {
         method: 'POST',
         body: JSON.stringify({ recipientId, content, type, sharedContentId, contentType })

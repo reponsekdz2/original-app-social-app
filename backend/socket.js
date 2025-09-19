@@ -7,7 +7,7 @@ const userSocketMap = new Map();
  * @returns {import('socket.io').Socket | undefined} The socket object or undefined if not found.
  */
 export const getSocketFromUserId = (userId) => {
-    return userSocketMap.get(userId);
+    return userSocketMap.get(String(userId));
 }
 
 export const initSocket = (io) => {
@@ -17,7 +17,7 @@ export const initSocket = (io) => {
         socket.on('register', (userId) => {
             if (userId) {
                 console.log(`User registered: ${userId} with socket ${socket.id}`);
-                userSocketMap.set(userId, socket);
+                userSocketMap.set(String(userId), socket);
             }
         });
         

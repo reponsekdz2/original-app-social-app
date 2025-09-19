@@ -7,12 +7,11 @@ interface RegisterFormProps {
   onRegisterSuccess: (data: { user: User, token: string }) => void;
 }
 
-// Fix: Implement the PasswordStrengthIndicator component to return a ReactNode.
 const PasswordStrengthIndicator: React.FC<{ password?: string, error?: string }> = ({ password, error }) => {
     const getStrength = () => {
         if (!password) return 0;
         let score = 0;
-        if (password.length > 8) score++;
+        if (password.length >= 8) score++;
         if (/[a-z]/.test(password)) score++;
         if (/[A-Z]/.test(password)) score++;
         if (/[0-9]/.test(password)) score++;

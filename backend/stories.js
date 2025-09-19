@@ -17,6 +17,35 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+
+// @desc    Get stories for the user's feed
+// @route   GET /api/stories/feed
+// @access  Private
+router.get('/feed', protect, async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const [stories] = await pool.query(`
+            SELECT 
+                s.id,
+                JSON_OBJECT('id', u.id, 'username', u.username, 'avatar', u.avatar_url) as user,
+                (SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT('id', si.id, 'media', si.media_url, 'mediaType', si.media_type, 'duration', si.duration_ms)
+                ) FROM story_items si WHERE si.story_id = s.id) as stories
+            FROM stories s
+            JOIN users u ON s.user_id = u.id
+            WHERE (s.user_id IN (SELECT following_id FROM followers WHERE follower_id = ?) OR s.user_id = ?)
+            AND s.created_at >= NOW() - INTERVAL 1 DAY
+            GROUP BY s.id, u.id
+            ORDER BY u.id = ? DESC, s.created_at DESC;
+        `, [userId, userId, userId]);
+        res.json({ stories: stories.map(s => ({...s, stories: s.stories || []})) });
+    } catch (error) {
+        console.error('Get Stories Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+
 // @desc    Create a new story
 // @route   POST /api/stories
 // @access  Private
@@ -35,7 +64,6 @@ router.post('/', protect, upload.single('media'), async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // Find or create a "story" container for today. A real app might have more complex logic.
         const [existingStory] = await connection.query(
             'SELECT id FROM stories WHERE user_id = ? AND created_at >= CURDATE()',
             [userId]
@@ -49,7 +77,6 @@ router.post('/', protect, upload.single('media'), async (req, res) => {
             storyId = storyResult.insertId;
         }
         
-        // Add the new story item
         await connection.query(
             'INSERT INTO story_items (story_id, media_url, media_type, duration_ms) VALUES (?, ?, ?, ?)',
             [storyId, mediaUrl, mediaType, duration]
@@ -57,7 +84,6 @@ router.post('/', protect, upload.single('media'), async (req, res) => {
         
         await connection.commit();
         
-        // For simplicity, just send a success message. The frontend will refetch stories.
         res.status(201).json({ message: "Story created successfully" });
 
     } catch (error) {

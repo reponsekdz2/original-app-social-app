@@ -112,5 +112,4 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversat
   );
 };
 
-// Fix: Add default export to make the component available for import.
 export default ShareModal;

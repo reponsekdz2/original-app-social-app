@@ -1,15 +1,12 @@
-
-// Fix: Create the ActivityView component.
 import React from 'react';
-// Fix: Corrected import path for types
-import type { Activity } from '../types.ts';
+import type { Notification, User } from '../types.ts';
 
 interface ActivityViewProps {
-  activities: Activity[];
+  activities: Notification[];
 }
 
 const ActivityView: React.FC<ActivityViewProps> = ({ activities }) => {
-  const renderActivityText = (activity: Activity) => {
+  const renderActivityText = (activity: Notification) => {
     switch (activity.type) {
       case 'like':
         return <>liked your post.</>;
@@ -25,7 +22,7 @@ const ActivityView: React.FC<ActivityViewProps> = ({ activities }) => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Activity</h1>
       <div className="space-y-2">
         {activities.map(activity => (
@@ -33,12 +30,12 @@ const ActivityView: React.FC<ActivityViewProps> = ({ activities }) => {
             <img src={activity.user.avatar} alt={activity.user.username} className="w-11 h-11 rounded-full object-cover" />
             <p className="text-sm flex-1">
                 <span className="font-bold">{activity.user.username}</span> {renderActivityText(activity)}
-                <span className="text-gray-500"> · {activity.timestamp}</span>
+                <span className="text-gray-500"> · {new Date(activity.timestamp).toLocaleDateString()}</span>
             </p>
-            {/* Fix: Use the correct 'media' property, which is an array, and access the URL of the first item. */}
-            {activity.post && <img src={activity.post.media[0].url} alt="post" className="w-11 h-11 object-cover rounded-md" />}
+            {activity.post && activity.post.media[0] && <img src={activity.post.media[0].url} alt="post" className="w-11 h-11 object-cover rounded-md" />}
           </div>
         ))}
+        {activities.length === 0 && <p className="text-center text-gray-500 pt-8">No activity yet.</p>}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import pool from './db.js';
 import { protect } from './middleware/authMiddleware.js';
 import multer from 'multer';
 import path from 'path';
-import { getSocketByUserId } from './socket.js';
+import { getSocketFromUserId } from './socket.js';
 
 const router = Router();
 
@@ -17,6 +17,61 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+
+const POST_QUERY = `
+    SELECT
+        p.id, p.caption, p.location, p.is_archived, p.created_at as timestamp,
+        JSON_OBJECT('id', u.id, 'username', u.username, 'avatar', u.avatar_url, 'is_verified', u.is_verified) AS user,
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pm.id, 'url', pm.media_url, 'type', pm.media_type)) FROM post_media pm WHERE pm.post_id = p.id) AS media,
+        (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) AS likes,
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', lu.id, 'username', lu.username)) FROM post_likes pl JOIN users lu ON pl.user_id = lu.id WHERE pl.post_id = p.id) as likedBy,
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', su.id, 'username', su.username)) FROM post_saves ps JOIN users su ON ps.user_id = su.id WHERE ps.post_id = p.id) as savedBy,
+        (SELECT JSON_ARRAYAGG(
+             JSON_OBJECT('id', c.id, 'text', c.text, 'timestamp', c.created_at, 'user', 
+                JSON_OBJECT('id', cu.id, 'username', cu.username, 'avatar', cu.avatar_url)
+             )
+        ) FROM (SELECT * FROM comments WHERE post_id = p.id ORDER BY created_at DESC) c JOIN users cu ON c.user_id = cu.id) AS comments
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+`;
+
+// @desc    Get main feed for the current user
+// @route   GET /api/posts/feed
+// @access  Private
+router.get('/feed', protect, async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const [posts] = await pool.query(
+            `${POST_QUERY} 
+             WHERE (p.user_id IN (SELECT following_id FROM followers WHERE follower_id = ?) OR p.user_id = ?)
+             AND p.is_archived = FALSE
+             ORDER BY p.created_at DESC LIMIT 20`,
+            [userId, userId]
+        );
+        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], savedBy: p.savedBy || []})) });
+    } catch (error) {
+        console.error('Get Feed Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get posts for the explore page
+// @route   GET /api/posts/explore
+// @access  Private
+router.get('/explore', protect, async (req, res) => {
+    try {
+        const [posts] = await pool.query(
+            `${POST_QUERY}
+             WHERE p.is_archived = FALSE
+             ORDER BY RAND() LIMIT 30`
+        );
+        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], savedBy: p.savedBy || []})) });
+    } catch (error) {
+        console.error('Get Explore Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 
 // @desc    Create a new post
 // @route   POST /api/posts
@@ -50,7 +105,6 @@ router.post('/', protect, upload.array('media', 10), async (req, res) => {
         await Promise.all(mediaPromises);
 
         await connection.commit();
-        // Fetch the new post to return to the client
         const [newPost] = await connection.query('SELECT * FROM posts WHERE id = ?', [postId]);
         res.status(201).json(newPost[0]);
     } catch (error) {
@@ -74,23 +128,20 @@ router.post('/:id/like', protect, async (req, res) => {
         const [existingLike] = await pool.query('SELECT * FROM post_likes WHERE post_id = ? AND user_id = ?', [postId, userId]);
         
         if (existingLike.length > 0) {
-            // Unlike
             await pool.query('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?', [postId, userId]);
             res.json({ message: 'Post unliked successfully' });
         } else {
-            // Like
             await pool.query('INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)', [postId, userId]);
             
-            // --- Create and Emit Notification ---
             const [postOwner] = await pool.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
             if (postOwner.length > 0 && postOwner[0].user_id !== userId) {
                  const [notifResult] = await pool.query(
                     'INSERT INTO notifications (user_id, actor_id, type, entity_id) VALUES (?, ?, ?, ?)',
                     [postOwner[0].user_id, userId, 'like_post', postId]
                 );
-                 const [newNotif] = await pool.query('SELECT n.*, u.username as actor_username, u.avatar_url as actor_avatar FROM notifications n JOIN users u ON n.actor_id = u.id WHERE n.id = ?', [notifResult.insertId]);
+                 const [newNotif] = await pool.query('SELECT n.*, u.username as actor_username, u.avatar_url as actor_avatar, p.id as post_id FROM notifications n JOIN users u ON n.actor_id = u.id LEFT JOIN posts p ON n.entity_id = p.id WHERE n.id = ?', [notifResult.insertId]);
                 
-                const targetSocket = getSocketByUserId(io, postOwner[0].user_id);
+                const targetSocket = getSocketFromUserId(postOwner[0].user_id);
                 if (targetSocket) {
                     targetSocket.emit('new_notification', newNotif[0]);
                 }
@@ -140,22 +191,21 @@ router.post('/:id/comments', protect, async (req, res) => {
     try {
         const [result] = await pool.query('INSERT INTO comments (post_id, user_id, text) VALUES (?, ?, ?)', [postId, userId, text]);
         
-        // --- Create and Emit Notification ---
         const [postOwner] = await pool.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
         if (postOwner.length > 0 && postOwner[0].user_id !== userId) {
             const [notifResult] = await pool.query(
                 'INSERT INTO notifications (user_id, actor_id, type, entity_id) VALUES (?, ?, ?, ?)',
                 [postOwner[0].user_id, userId, 'comment_post', postId]
             );
-             const [newNotif] = await pool.query('SELECT n.*, u.username as actor_username, u.avatar_url as actor_avatar FROM notifications n JOIN users u ON n.actor_id = u.id WHERE n.id = ?', [notifResult.insertId]);
+             const [newNotif] = await pool.query('SELECT n.*, u.username as actor_username, u.avatar_url as actor_avatar, p.id as post_id FROM notifications n JOIN users u ON n.actor_id = u.id LEFT JOIN posts p ON n.entity_id = p.id WHERE n.id = ?', [notifResult.insertId]);
 
-            const targetSocket = getSocketByUserId(io, postOwner[0].user_id);
+            const targetSocket = getSocketFromUserId(postOwner[0].user_id);
             if (targetSocket) {
                 targetSocket.emit('new_notification', newNotif[0]);
             }
         }
 
-        const [newComment] = await pool.query('SELECT * FROM comments WHERE id = ?', [result.insertId]);
+        const [newComment] = await pool.query('SELECT c.*, u.username, u.avatar_url as avatar FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id = ?', [result.insertId]);
         res.status(201).json(newComment[0]);
     } catch (error) {
         console.error('Add Comment Error:', error);
@@ -167,14 +217,41 @@ router.post('/:id/comments', protect, async (req, res) => {
 // @route   PUT /api/posts/:id
 // @access  Private
 router.put('/:id', protect, async (req, res) => {
-    // Implementation for editing a post caption/location
+    const { caption, location } = req.body;
+    const postId = req.params.id;
+    const userId = req.user.id;
+    try {
+        const [result] = await pool.query(
+            'UPDATE posts SET caption = ?, location = ? WHERE id = ? AND user_id = ?',
+            [caption, location, postId, userId]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Post not found or user not authorized.' });
+        }
+        res.json({ message: 'Post updated successfully.' });
+    } catch (error) {
+        console.error('Update Post Error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 // @desc    Delete a post
 // @route   DELETE /api/posts/:id
 // @access  Private
 router.delete('/:id', protect, async (req, res) => {
-    // Implementation for deleting a post, ensure user is owner
+    const postId = req.params.id;
+    const userId = req.user.id;
+    try {
+        // In a real app with storage like S3, you'd also delete the files from the bucket.
+        const [result] = await pool.query('DELETE FROM posts WHERE id = ? AND user_id = ?', [postId, userId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Post not found or user not authorized.' });
+        }
+        res.status(204).send();
+    } catch (error) {
+        console.error('Delete Post Error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 

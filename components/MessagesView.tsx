@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// Fix: Corrected import path for types.
 import type { Conversation, User, Message } from '../types.ts';
 import Icon from './Icon.tsx';
 import ChatWindow from './ChatWindow.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import NewMessageModal from './NewMessageModal.tsx';
-// Fix: Corrected import path for socketService.
 import { socketService } from '../services/socketService.ts';
-// Fix: Corrected import path for apiService and add import.
 import * as api from '../services/apiService.ts';
 
 interface MessagesViewProps {
@@ -15,7 +12,6 @@ interface MessagesViewProps {
   currentUser: User;
   allUsers: User[];
   onNavigate: (view: 'profile', user: User) => void;
-  // Fix: Add missing onInitiateCall prop.
   onInitiateCall: (user: User) => void;
 }
 
@@ -28,44 +24,15 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     setConversations(initialConversations);
     if (!selectedConversation && initialConversations.length > 0) {
         setSelectedConversation(initialConversations[0]);
-    }
-  }, [initialConversations, selectedConversation]);
-  
-  const updateConversationWithMessage = useCallback((conversationId: string, message: Message, isFinal: boolean = false) => {
-    const updateFn = (convo: Conversation) => {
-        if (convo.id === conversationId) {
-            const messages = isFinal 
-                ? convo.messages.map(m => m.id === message.id || m.id === `temp-${message.id}` ? message : m)
-                : [...convo.messages.filter(m => m.id !== message.id), message];
-            return { ...convo, messages };
+    } else if (selectedConversation) {
+        // If the selected conversation is in the updated list, use the updated version
+        const updatedSelected = initialConversations.find(c => c.id === selectedConversation.id);
+        if (updatedSelected) {
+            setSelectedConversation(updatedSelected);
         }
-        return convo;
-    };
-    setConversations(prev => prev.map(updateFn));
-    if (selectedConversation?.id === conversationId) {
-        setSelectedConversation(prev => (prev ? updateFn(prev) : null));
     }
-  }, [selectedConversation?.id]);
+  }, [initialConversations]);
   
-  useEffect(() => {
-    const handleNewMessage = ({ conversationId, message }: { conversationId: string; message: Message }) => {
-        updateConversationWithMessage(conversationId, message, true);
-    };
-
-    const handleMessageConfirmation = ({ conversationId, message }: { conversationId: string; message: Message }) => {
-        updateConversationWithMessage(conversationId, message, true);
-    }
-
-    socketService.on('receive_message', handleNewMessage);
-    socketService.on('message_sent_confirmation', handleMessageConfirmation);
-
-    return () => {
-        socketService.off('receive_message', handleNewMessage);
-        socketService.off('message_sent_confirmation', handleMessageConfirmation);
-    };
-  }, [updateConversationWithMessage]);
-
-
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);
   };
@@ -86,12 +53,12 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     setNewMessageModalOpen(false);
   };
   
-  const handleSendMessage = async (content: string, type: Message['type']) => {
+  const handleSendMessage = async (content: string, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel') => {
     if (!selectedConversation) return;
     const otherUser = selectedConversation.participants.find(p => p.id !== currentUser.id);
     if (!otherUser) return;
 
-    const tempId = `temp-msg-${Date.now()}`;
+    const tempId = `temp-${Date.now()}`;
     const newMessage: Message = {
       id: tempId,
       senderId: currentUser.id,
@@ -102,29 +69,34 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     };
     
     // Optimistic update
-    updateConversationWithMessage(selectedConversation.id, newMessage);
+    const updateFn = (convo: Conversation) => convo.id === selectedConversation.id ? { ...convo, messages: [...convo.messages, newMessage] } : convo;
+    setConversations(prev => prev.map(updateFn));
+    setSelectedConversation(prev => prev ? updateFn(prev) : null);
     
     try {
-        const sentMessage = await api.sendMessage(otherUser.id, content, type);
+        const sentMessage = await api.sendMessage(otherUser.id, content, type, sharedContentId, contentType);
         
-        // If it was a new conversation, we need to refresh the list to get the real ID
         if (selectedConversation.id.startsWith('temp-convo')) {
             const newConversations = await api.getConversations();
             setConversations(newConversations); 
             const newSelected = newConversations.find(c => c.participants.some(p => p.id === otherUser.id));
             setSelectedConversation(newSelected || null);
         } else {
-             // We rely on the socket confirmation to update the final message state
+             // We rely on the socket confirmation to update the final message state, but we can update our local state too
+             const confirmUpdateFn = (convo: Conversation) => {
+                if (convo.id === selectedConversation.id) {
+                    return { ...convo, messages: convo.messages.map(m => m.id === tempId ? sentMessage : m) };
+                }
+                return convo;
+             }
+             setConversations(prev => prev.map(confirmUpdateFn));
+             setSelectedConversation(prev => prev ? confirmUpdateFn(prev) : null);
         }
     } catch(error) {
         console.error("Failed to send message:", error);
-        // Revert optimistic update on failure
-        setConversations(prev => prev.map(c => 
-            c.id === selectedConversation.id 
-                ? { ...c, messages: c.messages.filter(m => m.id !== tempId) } 
-                : c
-        ));
-         setSelectedConversation(prev => prev ? { ...prev, messages: prev.messages.filter(m => m.id !== tempId) } : null);
+        const revertUpdate = (convo: Conversation) => convo.id === selectedConversation.id ? { ...convo, messages: convo.messages.filter(m => m.id !== tempId) } : convo;
+        setConversations(prev => prev.map(revertUpdate));
+        setSelectedConversation(prev => prev ? revertUpdate(prev) : null);
     }
   };
 

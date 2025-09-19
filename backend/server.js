@@ -12,7 +12,6 @@ import { initSocket } from './socket.js';
 dotenv.config();
 
 // Import Routers
-import apiRoutes from './api.js';
 import authRoutes from './auth.js';
 import aiRoutes from './ai.js';
 import postRoutes from './posts.js';
@@ -64,7 +63,6 @@ app.use((req, res, next) => {
 });
 
 // --- API Routes ---
-app.use('/api', apiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/posts', postRoutes);

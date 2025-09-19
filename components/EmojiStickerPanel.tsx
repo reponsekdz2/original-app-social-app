@@ -1,6 +1,4 @@
-// Fix: Create the EmojiStickerPanel component.
 import React, { useState, useEffect } from 'react';
-// Fix: Corrected import path for apiService and added extension
 import * as api from '../services/apiService.ts';
 
 interface EmojiStickerPanelProps {
@@ -12,11 +10,11 @@ const EMOJIS = ['😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️'
 
 const EmojiStickerPanel: React.FC<EmojiStickerPanelProps> = ({ onSelectEmoji, onSelectSticker }) => {
   const [stickers, setStickers] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'emoji' | 'sticker'>('emoji');
 
   useEffect(() => {
     const fetchStickers = async () => {
         try {
-            // This now correctly resolves because getStickers is added to apiService.ts
             const stickerUrls = await api.getStickers();
             setStickers(stickerUrls);
         } catch (error) {
@@ -27,22 +25,30 @@ const EmojiStickerPanel: React.FC<EmojiStickerPanelProps> = ({ onSelectEmoji, on
   }, []);
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-3 w-64">
-      <h4 className="font-semibold text-sm mb-2">Emojis</h4>
-      <div className="grid grid-cols-5 gap-2 mb-4">
-        {EMOJIS.map(emoji => (
-          <button key={emoji} onClick={() => onSelectEmoji(emoji)} className="text-2xl p-1 rounded-full hover:bg-gray-700">
-            {emoji}
-          </button>
-        ))}
+    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-72 h-80 flex flex-col">
+      <div className="flex-1 overflow-y-auto p-3">
+        {activeTab === 'emoji' && (
+             <div className="grid grid-cols-6 gap-2">
+                {EMOJIS.map(emoji => (
+                <button key={emoji} onClick={() => onSelectEmoji(emoji)} className="text-3xl p-1 rounded-full hover:bg-gray-700">
+                    {emoji}
+                </button>
+                ))}
+            </div>
+        )}
+        {activeTab === 'sticker' && (
+            <div className="grid grid-cols-3 gap-2">
+                {stickers.map(sticker => (
+                <button key={sticker} onClick={() => onSelectSticker(sticker)}>
+                    <img src={sticker} alt="sticker" className="w-full h-full object-contain rounded-md hover:scale-110 transition-transform" />
+                </button>
+                ))}
+            </div>
+        )}
       </div>
-      <h4 className="font-semibold text-sm mb-2">Stickers</h4>
-       <div className="flex gap-2">
-        {stickers.map(sticker => (
-          <button key={sticker} onClick={() => onSelectSticker(sticker)}>
-            <img src={sticker} alt="sticker" className="w-16 h-16 rounded-md hover:scale-110 transition-transform" />
-          </button>
-        ))}
+      <div className="flex border-t border-gray-700">
+        <button onClick={() => setActiveTab('emoji')} className={`flex-1 p-2 text-sm font-semibold ${activeTab === 'emoji' ? 'bg-gray-700' : 'hover:bg-gray-700/50'}`}>Emojis</button>
+        <button onClick={() => setActiveTab('sticker')} className={`flex-1 p-2 text-sm font-semibold ${activeTab === 'sticker' ? 'bg-gray-700' : 'hover:bg-gray-700/50'}`}>Stickers</button>
       </div>
     </div>
   );

@@ -1,10 +1,7 @@
-// Fix: Create the MessageInput component.
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon.tsx';
-// Fix: Corrected import path for types and added extension
 import type { Message, User } from '../types.ts';
 import EmojiStickerPanel from './EmojiStickerPanel.tsx';
-// Fix: Corrected import path for socketService
 import { socketService } from '../services/socketService.ts';
 
 interface MessageInputProps {

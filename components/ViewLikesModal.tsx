@@ -9,7 +9,6 @@ interface ViewLikesModalProps {
   currentUser: User;
   onClose: () => void;
   onViewProfile: (user: User) => void;
-  // Fix: Add onFollow and onUnfollow to props to handle follow actions within the modal.
   onFollow: (user: User) => void;
   onUnfollow: (user: User) => void;
 }
@@ -49,7 +48,6 @@ const ViewLikesModal: React.FC<ViewLikesModalProps> = ({ users, currentUser, onC
                     <FollowButton 
                       user={user} 
                       currentUser={currentUser} 
-                      // Fix: Pass down the onFollow and onUnfollow handlers to the FollowButton.
                       onFollow={onFollow} 
                       onUnfollow={onUnfollow} 
                     />
