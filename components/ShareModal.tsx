@@ -1,32 +1,55 @@
 import React, { useState } from 'react';
-import type { Post, User } from '../types.ts';
+import type { Post, Reel, User, Conversation } from '../types.ts';
 import Icon from './Icon.tsx';
+import * as api from '../services/apiService.ts';
 
 interface ShareModalProps {
-  post: Post;
+  content: Post | Reel;
   currentUser: User;
+  conversations: Conversation[];
   onClose: () => void;
-  onShareToUser: (user: User) => void;
+  onShareSuccess: (user: User) => void;
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ post, currentUser, onClose, onShareToUser }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversations, onClose, onShareSuccess }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+  const [sentTo, setSentTo] = useState<string[]>([]);
 
-  // In a real app, this would be a list of recent conversations or followers
-  const suggestedUsers = currentUser.following.slice(0, 5);
+  // Suggest recent conversations
+  const suggestedConversations = conversations.slice(0, 5);
   
-  const filteredUsers = searchTerm
-    ? currentUser.following.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()))
-    : suggestedUsers;
+  const filteredConversations = searchTerm
+    ? conversations.filter(c => {
+        const otherUser = c.participants.find(p => p.id !== currentUser.id);
+        return otherUser?.username.toLowerCase().includes(searchTerm.toLowerCase());
+    })
+    : suggestedConversations;
 
   const handleCopyLink = () => {
-    // This would be the actual URL of the post
-    const postUrl = `${window.location.origin}/p/${post.id}`;
+    const isReel = 'video' in content;
+    const postUrl = `${window.location.origin}/${isReel ? 'r' : 'p'}/${content.id}`;
     navigator.clipboard.writeText(postUrl);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
   };
+
+  const handleShare = async (user: User) => {
+    const contentType = 'video' in content ? 'reel' : 'post';
+    const messageType = 'video' in content ? 'share_reel' : 'share_post';
+    const contentId = content.id;
+    
+    setSentTo(prev => [...prev, user.id]);
+
+    try {
+        await api.sendMessage(user.id, `Shared a ${contentType}`, messageType, contentId, contentType);
+        onShareSuccess(user);
+    } catch (error) {
+        console.error("Failed to share", error);
+        setSentTo(prev => prev.filter(id => id !== user.id)); // Revert on error
+    }
+  };
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
@@ -54,17 +77,27 @@ const ShareModal: React.FC<ShareModalProps> = ({ post, currentUser, onClose, onS
         <div className="overflow-y-auto flex-1 p-2">
           <p className="text-sm font-semibold p-2">Suggested</p>
           <ul className="divide-y divide-gray-700/50">
-            {filteredUsers.map(user => (
-              <li key={user.id}>
-                <button onClick={() => onShareToUser(user)} className="w-full flex items-center justify-between p-2 hover:bg-gray-700 rounded-md text-left">
+            {filteredConversations.map(convo => {
+              const otherUser = convo.participants.find(p => p.id !== currentUser.id);
+              if (!otherUser) return null;
+              return (
+              <li key={convo.id}>
+                <div className="w-full flex items-center justify-between p-2 rounded-md text-left">
                    <div className="flex items-center gap-3">
-                      <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
-                      <p className="font-semibold text-sm">{user.username}</p>
+                      <img src={otherUser.avatar} alt={otherUser.username} className="w-11 h-11 rounded-full object-cover" />
+                      <p className="font-semibold text-sm">{otherUser.username}</p>
                   </div>
-                  <span className="text-sm font-semibold bg-red-600 text-white py-1 px-4 rounded-md">Send</span>
-                </button>
+                  <button 
+                    onClick={() => handleShare(otherUser)} 
+                    disabled={sentTo.includes(otherUser.id)}
+                    className="text-sm font-semibold bg-red-600 text-white py-1 px-4 rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  >
+                    {sentTo.includes(otherUser.id) ? 'Sent' : 'Send'}
+                  </button>
+                </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </div>
         
@@ -73,11 +106,4 @@ const ShareModal: React.FC<ShareModalProps> = ({ post, currentUser, onClose, onS
                 <Icon className="w-5 h-5"><path d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></Icon>
                 <span>{linkCopied ? 'Link Copied!' : 'Copy Link'}</span>
             </button>
-        </div>
-
-      </div>
-    </div>
-  );
-};
-
-export default ShareModal;
+        

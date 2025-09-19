@@ -99,14 +99,29 @@ export interface Conversation {
   messages: Message[];
 }
 
+export interface MessageReaction {
+  emoji: string;
+  user: User;
+}
+
+export interface SharedContent {
+  id: string;
+  type: 'post' | 'reel';
+  media_url: string;
+  caption: string;
+  username: string;
+  avatar_url: string;
+}
+
 export interface Message {
   id: string;
   senderId: string;
   content: string;
   timestamp: string;
-  // Fix: Added 'share_post' and 'share_reel' to the message type to allow sharing content via messages.
   type: 'text' | 'image' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel';
   read: boolean;
+  reactions?: MessageReaction[];
+  sharedContent?: SharedContent;
 }
 
 export interface Notification {

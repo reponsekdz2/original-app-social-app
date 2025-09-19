@@ -33,6 +33,11 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
 
 // --- Authentication ---
 
+export const checkAuth = async (): Promise<{ user: User }> => {
+    return apiRequest('/auth/me');
+};
+
+
 export const login = async (identifier: string, password: string): Promise<{ user: User, token: string }> => {
   return apiRequest('/auth/login', {
     method: 'POST',
@@ -67,9 +72,9 @@ export const enableTwoFactor = async (): Promise<{ message: string }> => {
 export const getFeed = async (): Promise<{ posts: Post[] }> => apiRequest('/posts/feed');
 export const getExplore = async (): Promise<{ posts: Post[] }> => apiRequest('/posts/explore');
 export const getStories = async (): Promise<{ stories: Story[] }> => apiRequest('/stories/feed');
-// Fix: Add missing getReels function.
-export const getReels = async (): Promise<Reel[]> => apiRequest('/reels');
+export const getReels = async (): Promise<{ reels: Reel[] }> => apiRequest('/reels');
 export const getUserProfile = async (username: string): Promise<User> => apiRequest(`/users/profile/${username}`);
+export const getAllUsers = async (): Promise<User[]> => apiRequest('/users');
 export const getTrending = async (): Promise<TrendingTopic[]> => apiRequest('/misc/trending');
 export const getSuggestions = async (): Promise<User[]> => apiRequest('/misc/suggestions');
 export const getFeedActivities = async (): Promise<FeedActivity[]> => apiRequest('/misc/feed-activity');
@@ -96,13 +101,10 @@ export const followUser = (userId: string) => postWithAuth(`/users/${userId}/fol
 export const unfollowUser = (userId: string) => apiRequest(`/users/${userId}/unfollow`, { method: 'DELETE' });
 export const archivePost = (postId: string) => putWithAuth(`/posts/${postId}/archive`, {});
 export const unarchivePost = (postId: string) => putWithAuth(`/posts/${postId}/unarchive`, {});
-// Fix: Corrected function call to use apiRequest to allow a body to be sent.
 export const createHighlight = (title: string, storyIds: string[]) => apiRequest('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
 export const updateSettings = (settings: Partial<User>) => putWithAuth('/users/settings', settings);
-// Fix: Corrected function call to use apiRequest to allow a body to be sent.
 export const applyForVerification = (applicationData: object) => apiRequest('/users/verification', { method: 'POST', body: JSON.stringify(applicationData) });
 export const subscribePremium = () => postWithAuth('/misc/subscribe-premium');
-// Fix: Corrected function call to use apiRequest to allow a body to be sent.
 export const updateUserRelationship = (userId: string, action: 'mute' | 'unmute' | 'block' | 'unblock') => apiRequest(`/users/${userId}/relationship`, { method: 'POST', body: JSON.stringify({ action }) });
 export const markNotificationsRead = () => postWithAuth('/users/notifications/read');
 
@@ -138,10 +140,10 @@ export const generateComment = (postCaption: string, style: string) => apiReques
 export const generateBio = (username: string, name: string) => apiRequest('/ai/generate-bio', { method: 'POST', body: JSON.stringify({ username, name }) });
 
 // --- Messaging ---
-export const sendMessage = (recipientId: string, content: string, type: string, sharedContentId?: string) => {
+export const sendMessage = (recipientId: string, content: string, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel') => {
     return apiRequest('/messages', {
         method: 'POST',
-        body: JSON.stringify({ recipientId, content, type, sharedContentId })
+        body: JSON.stringify({ recipientId, content, type, sharedContentId, contentType })
     });
 };
 
