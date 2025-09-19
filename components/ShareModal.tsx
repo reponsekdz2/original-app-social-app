@@ -106,4 +106,11 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversat
                 <Icon className="w-5 h-5"><path d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></Icon>
                 <span>{linkCopied ? 'Link Copied!' : 'Copy Link'}</span>
             </button>
-        
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Fix: Add default export to make the component available for import.
+export default ShareModal;

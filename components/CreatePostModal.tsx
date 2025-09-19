@@ -7,6 +7,8 @@ interface CreatePostModalProps {
   onCreatePost: (formData: FormData) => void;
 }
 
+const MAX_CAPTION_LENGTH = 2200;
+
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost }) => {
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
@@ -39,7 +41,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
       reader.onload = async () => {
         const base64Data = (reader.result as string).split(',')[1];
         const newCaption = await generateCaption(base64Data, file.type);
-        setCaption(newCaption);
+        if (newCaption.length <= MAX_CAPTION_LENGTH) {
+            setCaption(newCaption);
+        } else {
+            setCaption(newCaption.substring(0, MAX_CAPTION_LENGTH));
+        }
         setIsGenerating(false);
       };
     } catch (err) {
@@ -49,7 +55,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
   };
 
   const handleSubmit = () => {
-    if (mediaFiles.length === 0) return;
+    if (mediaFiles.length === 0 || caption.length > MAX_CAPTION_LENGTH) return;
     
     const formData = new FormData();
     formData.append('caption', caption);
@@ -67,7 +73,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <button onClick={onClose}><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
           <h2 className="text-lg font-semibold">Create new post</h2>
-          <button onClick={handleSubmit} className="font-semibold text-red-500 hover:text-red-400" disabled={mediaFiles.length === 0}>Share</button>
+          <button onClick={handleSubmit} className="font-semibold text-red-500 hover:text-red-400 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={mediaFiles.length === 0 || caption.length > MAX_CAPTION_LENGTH}>Share</button>
         </div>
         
         <div className="flex flex-col md:flex-row flex-1 min-h-0">
@@ -92,18 +98,22 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
           </div>
           
           <div className="w-full md:w-1/2 p-4 flex flex-col">
-            <div className="relative">
+            <div className="relative flex-grow">
                 <textarea
-                placeholder="Write a caption..."
-                value={caption}
-                onChange={e => setCaption(e.target.value)}
-                className="w-full h-32 bg-transparent focus:outline-none resize-none"
+                  placeholder="Write a caption..."
+                  value={caption}
+                  onChange={e => setCaption(e.target.value)}
+                  maxLength={MAX_CAPTION_LENGTH}
+                  className="w-full h-full bg-transparent focus:outline-none resize-none"
                 />
                 {mediaPreviews.length > 0 && (
                     <button onClick={handleGenerateCaption} disabled={isGenerating} className="absolute bottom-2 right-2 text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50">
                         {isGenerating ? "Generating..." : "✨ Generate with AI"}
                     </button>
                 )}
+            </div>
+             <div className={`text-right text-xs p-1 ${caption.length > MAX_CAPTION_LENGTH ? 'text-red-500' : 'text-gray-400'}`}>
+                {caption.length}/{MAX_CAPTION_LENGTH}
             </div>
             <input
               type="text"

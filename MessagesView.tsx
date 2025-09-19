@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Conversation, User, Message } from './types.ts';
 import Icon from './components/Icon.tsx';
+// Fix: Correct import path for ChatWindow
 import ChatWindow from './components/ChatWindow.tsx';
 import VerifiedBadge from './components/VerifiedBadge.tsx';
 import NewMessageModal from './components/NewMessageModal.tsx';
@@ -170,4 +171,22 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 p-4">
-             <Icon className="w-24 h-24 mb-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.
+             <Icon className="w-24 h-24 mb-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 01-2.53-.388m-5.18-3.468a9.75 9.75 0 01-1.12-3.468c0-4.556 4.03-8.25 9-8.25a9.75 9.75 0 018.825 5.567" /></Icon>
+            <h2 className="text-2xl font-bold text-white">Select a message</h2>
+            <p>Choose one of your existing conversations or start a new one.</p>
+          </div>
+        )}
+      </main>
+      
+      {isNewMessageModalOpen && (
+        <NewMessageModal 
+            users={allUsers.filter(u => u.id !== currentUser.id)}
+            onClose={() => setNewMessageModalOpen(false)}
+            onSelectUser={handleStartNewConversation}
+        />
+      )}
+    </div>
+  );
+};
+
+export default MessagesView;

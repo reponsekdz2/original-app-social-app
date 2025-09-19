@@ -12,7 +12,8 @@ import AuthView from './components/AuthView.tsx';
 import HomeView from './components/HomeView.tsx';
 import ExploreView from './components/ExploreView.tsx';
 import ReelsView from './components/ReelsView.tsx';
-import MessagesView from './MessagesView.tsx';
+// Fix: Correct import path for MessagesView to point to the components directory.
+import MessagesView from './components/MessagesView.tsx';
 import ProfileView from './components/ProfileView.tsx';
 import SettingsView from './components/SettingsView.tsx';
 import SavedView from './components/SavedView.tsx';

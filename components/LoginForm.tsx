@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import type { User } from '../types.ts';
 import * as api from '../services/apiService.ts';
@@ -73,7 +71,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onForgotPassword 
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || !identifier.trim() || !password.trim()}
         className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-700 disabled:cursor-not-allowed flex items-center justify-center"
       >
         {isLoading && (

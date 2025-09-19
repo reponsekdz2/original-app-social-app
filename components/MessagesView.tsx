@@ -1,44 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+// Fix: Corrected import path for types.
 import type { Conversation, User, Message } from '../types.ts';
 import Icon from './Icon.tsx';
 import ChatWindow from './ChatWindow.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import NewMessageModal from './NewMessageModal.tsx';
+// Fix: Corrected import path for socketService.
 import { socketService } from '../services/socketService.ts';
+// Fix: Corrected import path for apiService and add import.
+import * as api from '../services/apiService.ts';
 
 interface MessagesViewProps {
   conversations: Conversation[];
   currentUser: User;
   allUsers: User[];
   onNavigate: (view: 'profile', user: User) => void;
+  // Fix: Add missing onInitiateCall prop.
+  onInitiateCall: (user: User) => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate }) => {
+const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall }) => {
   const [conversations, setConversations] = useState(initialConversations);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(conversations[0] || null);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(initialConversations[0] || null);
   const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
   
   useEffect(() => {
-    const handleNewMessage = (newMessage: { conversationId: string; message: Message }) => {
-        setConversations(prev =>
-            prev.map(convo =>
-                convo.id === newMessage.conversationId
-                    ? { ...convo, messages: [...convo.messages, newMessage.message] }
-                    : convo
-            )
-        );
-        // Also update the selected conversation if it's the one receiving the message
-        if (selectedConversation?.id === newMessage.conversationId) {
-            setSelectedConversation(prev => prev ? { ...prev, messages: [...prev.messages, newMessage.message] } : null);
+    setConversations(initialConversations);
+    if (!selectedConversation && initialConversations.length > 0) {
+        setSelectedConversation(initialConversations[0]);
+    }
+  }, [initialConversations, selectedConversation]);
+  
+  const updateConversationWithMessage = useCallback((conversationId: string, message: Message, isFinal: boolean = false) => {
+    const updateFn = (convo: Conversation) => {
+        if (convo.id === conversationId) {
+            const messages = isFinal 
+                ? convo.messages.map(m => m.id === message.id || m.id === `temp-${message.id}` ? message : m)
+                : [...convo.messages.filter(m => m.id !== message.id), message];
+            return { ...convo, messages };
         }
+        return convo;
     };
-    
+    setConversations(prev => prev.map(updateFn));
+    if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(prev => (prev ? updateFn(prev) : null));
+    }
+  }, [selectedConversation?.id]);
+  
+  useEffect(() => {
+    const handleNewMessage = ({ conversationId, message }: { conversationId: string; message: Message }) => {
+        updateConversationWithMessage(conversationId, message, true);
+    };
+
+    const handleMessageConfirmation = ({ conversationId, message }: { conversationId: string; message: Message }) => {
+        updateConversationWithMessage(conversationId, message, true);
+    }
+
     socketService.on('receive_message', handleNewMessage);
+    socketService.on('message_sent_confirmation', handleMessageConfirmation);
 
     return () => {
         socketService.off('receive_message', handleNewMessage);
+        socketService.off('message_sent_confirmation', handleMessageConfirmation);
     };
-  }, [selectedConversation]);
+  }, [updateConversationWithMessage]);
 
 
   const handleSelectConversation = (conversation: Conversation) => {
@@ -46,51 +71,65 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
   };
   
   const handleStartNewConversation = (user: User) => {
-    const existingConvo = conversations.find(c => c.participants.some(p => p.id === user.id));
+    const existingConvo = conversations.find(c => c.participants.length === 2 && c.participants.some(p => p.id === user.id));
     if (existingConvo) {
       setSelectedConversation(existingConvo);
     } else {
-      const newConvo: Conversation = {
-        id: `convo-${Date.now()}`,
+      const tempConvo: Conversation = {
+        id: `temp-convo-${Date.now()}`,
         participants: [currentUser, user],
         messages: [],
       };
-      setConversations([newConvo, ...conversations]);
-      setSelectedConversation(newConvo);
+      setConversations(prev => [tempConvo, ...prev]);
+      setSelectedConversation(tempConvo);
     }
     setNewMessageModalOpen(false);
   };
   
-  const handleSendMessage = (content: string, type: Message['type']) => {
+  const handleSendMessage = async (content: string, type: Message['type']) => {
     if (!selectedConversation) return;
+    const otherUser = selectedConversation.participants.find(p => p.id !== currentUser.id);
+    if (!otherUser) return;
 
+    const tempId = `temp-msg-${Date.now()}`;
     const newMessage: Message = {
-      id: `msg-${Date.now()}`,
+      id: tempId,
       senderId: currentUser.id,
       content,
       type,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      read: true,
-    };
-
-    const updatedConvo = {
-        ...selectedConversation,
-        messages: [...selectedConversation.messages, newMessage],
+      timestamp: new Date().toISOString(),
+      read: false,
     };
     
-    setConversations(conversations.map(c => c.id === updatedConvo.id ? updatedConvo : c));
-    setSelectedConversation(updatedConvo);
+    // Optimistic update
+    updateConversationWithMessage(selectedConversation.id, newMessage);
     
-    // Emit via socket
-    socketService.emit('send_message', {
-      conversationId: selectedConversation.id,
-      message: newMessage,
-    });
+    try {
+        const sentMessage = await api.sendMessage(otherUser.id, content, type);
+        
+        // If it was a new conversation, we need to refresh the list to get the real ID
+        if (selectedConversation.id.startsWith('temp-convo')) {
+            const newConversations = await api.getConversations();
+            setConversations(newConversations); 
+            const newSelected = newConversations.find(c => c.participants.some(p => p.id === otherUser.id));
+            setSelectedConversation(newSelected || null);
+        } else {
+             // We rely on the socket confirmation to update the final message state
+        }
+    } catch(error) {
+        console.error("Failed to send message:", error);
+        // Revert optimistic update on failure
+        setConversations(prev => prev.map(c => 
+            c.id === selectedConversation.id 
+                ? { ...c, messages: c.messages.filter(m => m.id !== tempId) } 
+                : c
+        ));
+         setSelectedConversation(prev => prev ? { ...prev, messages: prev.messages.filter(m => m.id !== tempId) } : null);
+    }
   };
 
   return (
     <div className="flex h-[calc(100vh-4rem)] border-t border-gray-800">
-      {/* Conversation List */}
       <aside className={`w-full md:w-96 border-r border-gray-800 flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-800 flex justify-between items-center">
           <h1 className="text-xl font-bold">Messages</h1>
@@ -109,13 +148,13 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
                 onClick={() => handleSelectConversation(convo)}
                 className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-800 ${selectedConversation?.id === convo.id ? 'bg-gray-800' : ''}`}
               >
-                <img src={otherUser.avatar} alt={otherUser.username} className="w-14 h-14 rounded-full" />
+                <img src={otherUser.avatar} alt={otherUser.username} className="w-14 h-14 rounded-full object-cover" />
                 <div className="flex-1 overflow-hidden">
                   <div className="flex justify-between">
-                    <p className="font-semibold flex items-center">{otherUser.username} {otherUser.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
-                    {lastMessage && <p className="text-xs text-gray-500">{lastMessage.timestamp}</p>}
+                    <p className="font-semibold flex items-center">{otherUser.name} {otherUser.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
+                    {lastMessage && <p className="text-xs text-gray-500">{new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
                   </div>
-                  {lastMessage && <p className="text-sm text-gray-400 truncate">{lastMessage.content}</p>}
+                  {lastMessage && <p className="text-sm text-gray-400 truncate">{lastMessage.content || 'Shared content'}</p>}
                 </div>
               </div>
             );
@@ -123,7 +162,6 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
         </div>
       </aside>
 
-      {/* Chat Window */}
       <main className={`flex-1 flex-col ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
         {selectedConversation ? (
           <ChatWindow
@@ -132,9 +170,10 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             onSendMessage={handleSendMessage}
             onBack={() => setSelectedConversation(null)}
             onViewProfile={(user) => onNavigate('profile', user)}
+            onInitiateCall={onInitiateCall}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 p-4">
              <Icon className="w-24 h-24 mb-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 01-2.53-.388m-5.18-3.468a9.75 9.75 0 01-1.12-3.468c0-4.556 4.03-8.25 9-8.25a9.75 9.75 0 018.825 5.567" /></Icon>
             <h2 className="text-2xl font-bold text-white">Select a message</h2>
             <p>Choose one of your existing conversations or start a new one.</p>
@@ -144,7 +183,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
       
       {isNewMessageModalOpen && (
         <NewMessageModal 
-            users={allUsers}
+            users={allUsers.filter(u => u.id !== currentUser.id)}
             onClose={() => setNewMessageModalOpen(false)}
             onSelectUser={handleStartNewConversation}
         />

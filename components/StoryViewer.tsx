@@ -14,7 +14,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialStoryIndex, o
   const [currentUserIndex, setCurrentUserIndex] = useState(initialStoryIndex);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressRef = useRef<number>(0);
 
   const currentUserStory = stories[currentUserIndex];

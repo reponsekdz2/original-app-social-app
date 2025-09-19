@@ -1,6 +1,7 @@
 // This file centralizes all API calls to the backend.
 
-import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket } from './types.ts';
+// Fix: Add Message to the type import.
+import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, Message } from './types.ts';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
