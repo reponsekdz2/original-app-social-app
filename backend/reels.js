@@ -1,6 +1,5 @@
-
 import { Router } from 'express';
-import db, { hydrate } from './data.js';
+import db, { generateId, hydrate } from './data.js';
 
 const router = Router();
 
@@ -39,6 +38,30 @@ router.post('/:id/toggle-like', (req, res) => {
     const finalReel = fullHydrateReel(reel);
     req.app.get('io').emit('reel_updated', finalReel);
     res.json(finalReel);
+});
+
+// Add a comment to a Reel
+router.post('/:id/comments', (req, res) => {
+    const reel = findReel(req.params.id, res);
+    if (!reel) return;
+    
+    const { userId, text } = req.body;
+    if (!userId || !text) return res.status(400).json({ message: 'User ID and text are required' });
+    
+    const newComment = {
+        id: generateId('comment'),
+        user: userId,
+        text,
+        timestamp: 'now',
+        likes: 0,
+        likedBy: [],
+    };
+    db.comments.push(newComment);
+    reel.comments.push(newComment.id);
+    
+    const finalReel = fullHydrateReel(reel);
+    req.app.get('io').emit('reel_updated', finalReel);
+    res.status(201).json(finalReel);
 });
 
 export default router;

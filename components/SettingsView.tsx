@@ -23,7 +23,7 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
       title: 'Account',
       items: [
         { label: 'Edit Profile', action: props.onManageAccount, icon: <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /> },
-        { label: 'Change Password', action: props.onChangePassword, icon: <path d="M15.75 5.25a3 3 0 013 3m3 0a9 9 0 11-18 0 9 9 0 0118 0zM8.25 9.75A2.25 2.25 0 0110.5 7.5h3a2.25 2.25 0 012.25 2.25v3a2.25 2.25 0 01-2.25 2.25h-3a2.25 2.25 0 01-2.25-2.25v-3z" /> },
+        { label: 'Change Password', action: props.onChangePassword, icon: <path d="M15.75 5.25a3 3 0 013 3m3 0a9 9 0 11-18 0 9 9 0 0118 0zM8.25 9.75A2.25 2.25 0 0110.5 7.5h3a2.25 2.25 0 012.25 2.25v3a2.25 2.25 0 01-2.25-2.25h-3a2.25 2.25 0 01-2.25-2.25v-3z" /> },
       ]
     },
     {

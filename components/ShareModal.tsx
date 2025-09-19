@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 // Fix: Corrected import path for types
 import type { Post, User, Reel, Story } from '../types.ts';
@@ -8,18 +7,18 @@ interface ShareModalProps {
   content: Post | Reel | Story | null;
   users: User[];
   onClose: () => void;
-  onSendShare: (recipient: User) => void;
+  onShareAsMessage: (recipient: User, content: Post | Reel | Story) => void;
   onCopyLink: () => void;
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ content, users, onClose, onSendShare, onCopyLink }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ content, users, onClose, onShareAsMessage, onCopyLink }) => {
   const [sentToUsers, setSentToUsers] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   if (!content) return null;
 
   const handleSend = (user: User) => {
-    onSendShare(user);
+    onShareAsMessage(user, content);
     setSentToUsers(prev => [...prev, user.id]);
   };
 

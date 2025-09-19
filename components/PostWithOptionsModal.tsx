@@ -12,7 +12,7 @@ interface PostWithOptionsModalProps {
   onDelete: (post: Post) => void;
   onArchive: (post: Post) => void;
   onUnarchive?: (post: Post) => void;
-  onReport: (post: Post) => void;
+  onReport: (content: Post | User) => void;
   onShare: (post: Post) => void;
   onCopyLink: () => void;
   onViewProfile: (user: User) => void;

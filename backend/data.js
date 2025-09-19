@@ -36,7 +36,8 @@ const db = {
     sponsoredContent: [],
     testimonials: [],
     helpArticles: [],
-    supportTickets: []
+    supportTickets: [],
+    reports: [],
 };
 
 // --- DATA GENERATION ---
@@ -104,8 +105,8 @@ const createUsers = () => {
 
 const createComments = () => {
     db.comments = [
-        { id: 'comment_1', user: 'user_2', text: 'This looks amazing!', timestamp: '2h ago', likes: 5, likedBy: [] },
-        { id: 'comment_2', user: 'user_3', text: 'Where was this taken?', timestamp: '1h ago', likes: 2, likedBy: [] },
+        { id: 'comment_1', user: 'user_2', text: 'This looks amazing!', timestamp: '2h ago', likes: 5, likedBy: ['user_0', 'user_1', 'user_3', 'user_4', 'user_5'] },
+        { id: 'comment_2', user: 'user_3', text: 'Where was this taken?', timestamp: '1h ago', likes: 2, likedBy: ['user_0', 'user_1'] },
         { id: 'comment_3', user: 'user_4', text: 'Incredible shot!', timestamp: '3h ago', likes: 10, likedBy: [] },
         { id: 'comment_4', user: 'user_5', text: 'Love this vibe.', timestamp: '4h ago', likes: 1, likedBy: [] },
     ];

@@ -1,0 +1,210 @@
+-- This schema is designed for a relational database like PostgreSQL.
+-- It represents the data structures needed for the talka application.
+
+-- Users Table: Stores core user information and settings.
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL, -- Passwords should ALWAYS be hashed
+    avatar_url TEXT,
+    bio TEXT,
+    website VARCHAR(255),
+    phone VARCHAR(20),
+    dob DATE,
+    gender VARCHAR(20) DEFAULT 'Prefer not to say',
+    is_verified BOOLEAN DEFAULT FALSE,
+    is_premium BOOLEAN DEFAULT FALSE,
+    is_private BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User Settings (as a separate table or JSONB in users)
+CREATE TABLE user_settings (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    likes_notifications BOOLEAN DEFAULT TRUE,
+    comments_notifications BOOLEAN DEFAULT TRUE,
+    follows_notifications BOOLEAN DEFAULT TRUE,
+    muted_users INTEGER[], -- Array of user IDs
+    blocked_users INTEGER[] -- Array of user IDs
+);
+
+-- Followers Table: Manages the many-to-many relationship of users following each other.
+CREATE TABLE followers (
+    follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (follower_id, following_id)
+);
+
+-- Posts Table: Stores information about each post.
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    caption TEXT,
+    location VARCHAR(255),
+    is_archived BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Post Media Table: Allows multiple images or videos per post.
+CREATE TABLE post_media (
+    id SERIAL PRIMARY KEY,
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    media_url TEXT NOT NULL,
+    media_type VARCHAR(10) NOT NULL, -- 'image' or 'video'
+    position SMALLINT NOT NULL DEFAULT 0 -- Order of media in the carousel
+);
+
+-- Reels Table: Stores short-form video content.
+CREATE TABLE reels (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    video_url TEXT NOT NULL,
+    caption TEXT,
+    shares_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Comments Table: Stores comments for both posts and reels.
+CREATE TABLE comments (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    reel_id INTEGER REFERENCES reels(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    -- Add a constraint to ensure a comment belongs to either a post or a reel, but not both.
+    CONSTRAINT chk_comment_parent CHECK ( (post_id IS NOT NULL AND reel_id IS NULL) OR (post_id IS NULL AND reel_id IS NOT NULL) )
+);
+
+-- Stories Table: Groups story items for a user.
+CREATE TABLE stories (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Story Items Table: Individual story items (image or video).
+CREATE TABLE story_items (
+    id SERIAL PRIMARY KEY,
+    story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    media_url TEXT NOT NULL,
+    media_type VARCHAR(10) NOT NULL,
+    duration_ms INTEGER, -- For images
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Highlights Table: Stores collections of stories on a user's profile.
+CREATE TABLE highlights (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(100) NOT NULL,
+    cover_url TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Join Table for Highlights and Story Items.
+CREATE TABLE highlight_stories (
+    highlight_id INTEGER NOT NULL REFERENCES highlights(id) ON DELETE CASCADE,
+    story_item_id INTEGER NOT NULL REFERENCES story_items(id) ON DELETE CASCADE,
+    PRIMARY KEY (highlight_id, story_item_id)
+);
+
+-- Many-to-Many Relationship Tables for Likes, Saves, etc.
+CREATE TABLE post_likes (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id)
+);
+
+CREATE TABLE post_saves (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id)
+);
+
+CREATE TABLE reel_likes (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reel_id INTEGER NOT NULL REFERENCES reels(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, reel_id)
+);
+
+CREATE TABLE comment_likes (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, comment_id)
+);
+
+-- Messaging System
+CREATE TABLE conversations (
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE conversation_participants (
+    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (conversation_id, user_id)
+);
+
+CREATE TABLE messages (
+    id SERIAL PRIMARY KEY,
+    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    message_type VARCHAR(20) NOT NULL, -- 'text', 'image', 'sticker', 'voicenote', 'share'
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Notifications Table
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    recipient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- The user receiving the notification
+    actor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,     -- The user who performed the action
+    notification_type VARCHAR(20) NOT NULL, -- 'like', 'comment', 'follow', 'mention'
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Support and Moderation Tables
+CREATE TABLE support_tickets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    subject VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'Open', -- 'Open', 'Pending', 'Resolved'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE reports (
+    id SERIAL PRIMARY KEY,
+    reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reported_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    reported_post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    reported_reel_id INTEGER REFERENCES reels(id) ON DELETE CASCADE,
+    reported_comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'Pending', -- 'Pending', 'Reviewed', 'ActionTaken'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for performance
+CREATE INDEX idx_posts_user_id ON posts(user_id);
+CREATE INDEX idx_reels_user_id ON reels(user_id);
+CREATE INDEX idx_comments_post_id ON comments(post_id);
+CREATE INDEX idx_comments_reel_id ON comments(reel_id);
+CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
+CREATE INDEX idx_notifications_recipient_id ON notifications(recipient_id);
+```

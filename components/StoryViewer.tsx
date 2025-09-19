@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 // Fix: Corrected import path for types
 import type { Story, User } from '../types.ts';

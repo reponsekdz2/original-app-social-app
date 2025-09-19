@@ -1,5 +1,4 @@
-
-import type { User, Post, Reel, Story, Conversation, FeedActivity, SponsoredContent, Testimonial, TrendingTopic, HelpArticle, SupportTicket, StoryItem, Notification, PostMedia } from '../types.ts';
+import type { User, Post, Reel, Story, Conversation, FeedActivity, SponsoredContent, Testimonial, TrendingTopic, HelpArticle, SupportTicket, StoryItem, Notification, PostMedia, Comment } from '../types.ts';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -19,6 +18,7 @@ const apiService = {
   forgotPassword: (identifier: string): Promise<void> => fetch(`${API_BASE_URL}/auth/forgot-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier }) }).then(handleResponse),
   resetPassword: (identifier: string, password: string): Promise<void> => fetch(`${API_BASE_URL}/auth/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier, password }) }).then(handleResponse),
   getCurrentUser: (id: string): Promise<User> => fetch(`${API_BASE_URL}/auth/me/${id}`).then(handleResponse),
+  updatePassword: (userId: string, passwords: { current: string, new: string }): Promise<void> => fetch(`${API_BASE_URL}/users/${userId}/update-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(passwords) }).then(handleResponse),
 
   // Data fetching
   getFeed: (): Promise<{ posts: Post[], stories: Story[] }> => fetch(`${API_BASE_URL}/feed`).then(handleResponse),
@@ -36,8 +36,6 @@ const apiService = {
   getSavedPosts: (): Promise<Post[]> => fetch(`${API_BASE_URL}/saved`).then(handleResponse),
   getArchivedPosts: (): Promise<Post[]> => fetch(`${API_BASE_URL}/archive`).then(handleResponse),
 
-  // --- NEW MUTATION APIs ---
-
   // Posts
   createPost: (postData: { userId: string, media: Omit<PostMedia, 'id'>[], caption: string, location: string }): Promise<Post> => fetch(`${API_BASE_URL}/posts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(postData) }).then(handleResponse),
   togglePostLike: (postId: string, userId: string): Promise<Post> => fetch(`${API_BASE_URL}/posts/${postId}/toggle-like`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) }).then(handleResponse),
@@ -49,7 +47,11 @@ const apiService = {
 
   // Reels
   toggleReelLike: (reelId: string, userId: string): Promise<Reel> => fetch(`${API_BASE_URL}/reels/${reelId}/toggle-like`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) }).then(handleResponse),
+  postReelComment: (reelId: string, userId: string, text: string): Promise<Reel> => fetch(`${API_BASE_URL}/reels/${reelId}/comments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, text }) }).then(handleResponse),
   
+  // Comments
+  toggleCommentLike: (commentId: string, userId: string): Promise<Comment> => fetch(`${API_BASE_URL}/comments/${commentId}/toggle-like`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) }).then(handleResponse),
+
   // Users
   toggleFollow: (targetUserId: string, currentUserId: string): Promise<{ currentUser: User, targetUser: User }> => fetch(`${API_BASE_URL}/users/${targetUserId}/toggle-follow`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentUserId }) }).then(handleResponse),
   updateUser: (userId: string, updates: Partial<User>): Promise<User> => fetch(`${API_BASE_URL}/users/${userId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) }).then(handleResponse),
@@ -58,6 +60,13 @@ const apiService = {
 
   // Stories
   createStory: (storyItem: Omit<StoryItem, 'id'>): Promise<Story> => fetch(`${API_BASE_URL}/stories`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(storyItem) }).then(handleResponse),
+
+  // Messages
+  shareAsMessage: (senderId: string, recipientId: string, content: Post | Reel | Story): Promise<void> => fetch(`${API_BASE_URL}/messages/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senderId, recipientId, content }) }).then(handleResponse),
+
+  // Misc
+  createSupportTicket: (userId: string, subject: string, description: string): Promise<SupportTicket> => fetch(`${API_BASE_URL}/misc/support-tickets`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, subject, description }) }).then(handleResponse),
+  submitReport: (reporterId: string, reportedContentId: string, reason: string): Promise<{ message: string }> => fetch(`${API_BASE_URL}/misc/reports`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reporterId, reportedContentId, reason }) }).then(handleResponse),
 
   // AI endpoints
   generateCaption: (base64Data: string, mimeType: string): Promise<{caption: string}> => fetch(`${API_BASE_URL}/ai/generate-caption`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64Data, mimeType }) }).then(handleResponse),
@@ -68,13 +77,16 @@ const apiService = {
 };
 
 export const { 
-    login, register, forgotPassword, resetPassword, getCurrentUser,
+    login, register, forgotPassword, resetPassword, getCurrentUser, updatePassword,
     getFeed, getExplore, getReels, getUserData, getAllUsers, getSidebarData,
     getConversations, getStickers, getTestimonials, getHelpArticles, getSupportTickets,
     getNotifications, getSavedPosts, getArchivedPosts,
     createPost, togglePostLike, togglePostSave, addComment, editPost, deletePost, toggleArchivePost,
-    toggleReelLike,
+    toggleReelLike, postReelComment,
+    toggleCommentLike,
     toggleFollow, updateUser, updateUserSettings, createHighlight,
     createStory,
+    shareAsMessage,
+    createSupportTicket, submitReport,
     generateCaption, generateStoryImage, generateComment, generateBio
 } = apiService;

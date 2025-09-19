@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Icon from './Icon.tsx';
+import type { Post, Reel, User } from '../types.ts';
 
 interface ReportModalProps {
+  content: Post | Reel | User;
   onClose: () => void;
-  onSubmitReport: (reason: string) => void;
+  onSubmitReport: (reason: string, content: Post | Reel | User) => void;
 }
 
 const reportReasons = [
@@ -20,12 +22,12 @@ const reportReasons = [
   "I just don't like it",
 ];
 
-const ReportModal: React.FC<ReportModalProps> = ({ onClose, onSubmitReport }) => {
+const ReportModal: React.FC<ReportModalProps> = ({ content, onClose, onSubmitReport }) => {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
   const handleSubmit = () => {
     if (selectedReason) {
-      onSubmitReport(selectedReason);
+      onSubmitReport(selectedReason, content);
     }
   };
 

@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
@@ -13,6 +12,9 @@ import aiRoutes from './ai.js';
 import postRoutes from './posts.js';
 import userRoutes from './users.js';
 import reelRoutes from './reels.js';
+import commentRoutes from './comments.js';
+import messageRoutes from './messages.js';
+import miscRoutes from './misc.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -53,6 +55,10 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reels', reelRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/misc', miscRoutes);
+
 
 // Root endpoint for health check
 app.get('/', (req, res) => {

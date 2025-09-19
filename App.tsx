@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import type { View, User, Post, Story, Reel, Notification, Conversation, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, StoryItem, PostMedia } from './types.ts';
+import type { View, User, Post, Story, Reel, Notification, Conversation, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, StoryItem, PostMedia, Comment } from './types.ts';
 import { socketService } from './services/socketService.ts';
 import * as api from './services/apiService.ts';
 
@@ -237,13 +236,30 @@ const App: React.FC = () => {
     const handleComment = async (postId: string, text: string) => {
         try {
             await api.addComment(postId, currentUser!.id, text);
-            // State will be updated via socket event
         } catch (error) {
             console.error("Failed to add comment", error);
             showToast("Could not post comment.");
         }
     };
+
+    const handlePostReelComment = async (reelId: string, text: string) => {
+        try {
+            await api.postReelComment(reelId, currentUser!.id, text);
+        } catch (error) {
+            console.error("Failed to comment on reel", error);
+            showToast("Could not post comment.");
+        }
+    };
     
+    const handleLikeComment = async (commentId: string) => {
+        try {
+            await api.toggleCommentLike(commentId, currentUser!.id);
+        } catch (error) {
+            console.error("Failed to like comment", error);
+            showToast("Action failed.");
+        }
+    };
+
     const handleFollow = async (userToFollow: User) => {
         if (!currentUser) return;
         try {
@@ -307,6 +323,19 @@ const App: React.FC = () => {
         }
     };
 
+    const handleChangePassword = async (passwords: { current: string, new: string }) => {
+        if (!currentUser) return;
+        try {
+            await api.updatePassword(currentUser.id, passwords);
+            closeModal('changePassword');
+            showToast("Password changed successfully!");
+        } catch (error: any) {
+            console.error("Failed to change password", error);
+            showToast(error.message || "Could not change password.");
+            throw error; // Re-throw to keep modal open on failure
+        }
+    };
+
     const handleUpdateSettings = async (settings: Partial<User['notificationSettings'] & { isPrivate: boolean }>) => {
         if (!currentUser) return;
         try {
@@ -361,6 +390,72 @@ const App: React.FC = () => {
         }
     };
 
+    const handleSubmitSupportTicket = async (subject: string, description: string) => {
+        if (!currentUser) return;
+        try {
+            await api.createSupportTicket(currentUser.id, subject, description);
+            closeModal('newSupportRequest');
+            showToast('Support ticket submitted!');
+        } catch (error) {
+            console.error("Failed to submit ticket", error);
+            showToast("Could not submit ticket.");
+        }
+    };
+
+    const handleReport = async (reason: string, content: Post | Reel | User) => {
+        if (!currentUser) return;
+        try {
+            const response = await api.submitReport(currentUser.id, content.id, reason);
+            closeModal('report');
+            showToast(response.message);
+        } catch (error) {
+            console.error("Failed to submit report", error);
+            showToast("Could not submit report.");
+        }
+    };
+
+    const handleShareAsMessage = async (recipient: User, content: Post | Reel | Story) => {
+        if (!currentUser) return;
+        try {
+            await api.shareAsMessage(currentUser.id, recipient.id, content);
+            showToast(`Shared with ${recipient.username}`);
+        } catch(error) {
+            console.error("Failed to share content", error);
+            showToast(`Could not share with ${recipient.username}`);
+        }
+    };
+
+    const handleStoryReply = (storyUser: User, replyText: string) => {
+        if (!currentUser) return;
+        
+        const existingConvo = conversations.find(c => c.participants.some(p => p.id === storyUser.id));
+        const conversationId = existingConvo ? existingConvo.id : `convo-${Date.now()}`;
+        
+// Fix: Explicitly type newMessage as Message to ensure type compatibility.
+        const newMessage: Message = {
+            id: `msg-${Date.now()}`,
+            senderId: currentUser.id,
+            content: replyText,
+            type: 'text',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            read: true,
+        };
+
+        // Emit via socket for real-time delivery
+        socketService.emit('send_message', { conversationId, message: newMessage, recipientId: storyUser.id, sender: currentUser });
+        
+        if (!existingConvo) {
+             // Optimistically create the conversation on the client side
+             const newConvo: Conversation = {
+                id: conversationId,
+                participants: [currentUser, storyUser],
+                messages: [newMessage],
+            };
+            setConversations([newConvo, ...conversations]);
+        }
+       
+        showToast(`Replied to ${storyUser.username}`);
+    };
 
     const renderView = () => {
         if (!currentUser) return <AuthView onLoginSuccess={handleLoginSuccess} onForgotPassword={() => openModal('forgotPassword')} />;
@@ -405,29 +500,29 @@ const App: React.FC = () => {
             {/* Modals */}
             {activeModals.createPost && <CreatePostModal onClose={() => closeModal('createPost')} onCreatePost={handleCreatePost} />}
             {activeModals.post && <PostModal post={activeModals.post} currentUser={currentUser} onClose={() => closeModal('post')} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => openModal('share', post)} onViewLikes={(users) => openModal('viewLikes', users)} onViewProfile={(user) => {closeModal('post'); handleNavigate('profile', user);}} onOptions={(post) => openModal('postOptions', post)} />}
-            {activeModals.story && <StoryViewer stories={activeModals.story.stories} startIndex={activeModals.story.startIndex} onClose={() => closeModal('story')} onViewProfile={(user) => {closeModal('story'); handleNavigate('profile', user);}} onReply={(user, content) => showToast(`Replied to ${user.username}: ${content}`)} onShare={(story) => {closeModal('story'); openModal('share', story)}} />}
+            {activeModals.story && <StoryViewer stories={activeModals.story.stories} startIndex={activeModals.story.startIndex} onClose={() => closeModal('story')} onViewProfile={(user) => {closeModal('story'); handleNavigate('profile', user);}} onReply={handleStoryReply} onShare={(story) => {closeModal('story'); openModal('share', story)}} />}
             {activeModals.accountSwitcher && <AccountSwitcherModal accounts={[currentUser, ...accounts]} currentUser={currentUser} onClose={() => closeModal('accountSwitcher')} onSwitchAccount={(id) => showToast(`Switched to account ${id}`)} onAddAccount={() => showToast('Add account clicked')} />}
             {activeModals.notifications && <NotificationsPanel notifications={notifications} onClose={() => closeModal('notifications')} />}
             {activeModals.search && <SearchView users={allUsers} onClose={() => closeModal('search')} onViewProfile={(user) => {closeModal('search'); handleNavigate('profile', user);}} />}
-            {activeModals.share && <ShareModal content={activeModals.share} users={allUsers.filter(u => u.id !== currentUser.id)} onClose={() => closeModal('share')} onSendShare={(user) => showToast(`Shared with ${user.username}`)} onCopyLink={() => {showToast('Link copied!');}} />}
+            {activeModals.share && <ShareModal content={activeModals.share} users={allUsers.filter(u => u.id !== currentUser.id)} onClose={() => closeModal('share')} onShareAsMessage={handleShareAsMessage} onCopyLink={() => {showToast('Link copied!');}} />}
             {activeModals.viewLikes && <ViewLikesModal users={activeModals.viewLikes} currentUser={currentUser} onClose={() => closeModal('viewLikes')} onViewProfile={(user) => {closeModal('viewLikes'); handleNavigate('profile', user);}} onFollow={handleFollow} onUnfollow={(user) => openModal('unfollow', user)} />}
             {activeModals.followList && <FollowListModal {...activeModals.followList} currentUser={currentUser} onClose={() => closeModal('followList')} onViewProfile={(user) => {closeModal('followList'); handleNavigate('profile', user);}} onFollow={handleFollow} onUnfollow={(user) => openModal('unfollow', user)} />}
             {activeModals.editProfile && <EditProfileModal user={currentUser} onClose={() => closeModal('editProfile')} onSave={handleUpdateProfile} />}
             {activeModals.unfollow && <UnfollowModal user={activeModals.unfollow} onCancel={() => closeModal('unfollow')} onConfirm={() => handleFollow(activeModals.unfollow)} />}
-            {activeModals.postOptions && <PostWithOptionsModal post={activeModals.postOptions} currentUser={currentUser} onClose={() => closeModal('postOptions')} onUnfollow={handleFollow} onFollow={handleFollow} onEdit={(post) => openModal('editPost', post)} onDelete={handleDeletePost} onArchive={handleToggleArchive} onReport={(post) => openModal('report', post)} onShare={(post) => openModal('share', post)} onCopyLink={() => showToast('Link copied')} onViewProfile={(user) => handleNavigate('profile', user)} onGoToPost={(post) => openModal('post', post)} />}
-            {activeModals.reelComments && <ReelCommentsModal reel={activeModals.reelComments} currentUser={currentUser} onClose={() => closeModal('reelComments')} onPostComment={(id, text) => showToast(`Commented on reel ${id}`)} onLikeComment={(id) => showToast(`Liked comment ${id}`)} onViewProfile={(user) => handleNavigate('profile', user)} />}
+            {activeModals.postOptions && <PostWithOptionsModal post={activeModals.postOptions} currentUser={currentUser} onClose={() => closeModal('postOptions')} onUnfollow={handleFollow} onFollow={handleFollow} onEdit={(post) => openModal('editPost', post)} onDelete={handleDeletePost} onArchive={handleToggleArchive} onReport={(content) => openModal('report', content)} onShare={(post) => openModal('share', post)} onCopyLink={() => showToast('Link copied')} onViewProfile={(user) => handleNavigate('profile', user)} onGoToPost={(post) => openModal('post', post)} />}
+            {activeModals.reelComments && <ReelCommentsModal reel={activeModals.reelComments} currentUser={currentUser} onClose={() => closeModal('reelComments')} onPostComment={handlePostReelComment} onLikeComment={handleLikeComment} onViewProfile={(user) => handleNavigate('profile', user)} />}
             {activeModals.createStory && <CreateStoryModal onClose={() => closeModal('createStory')} onCreateStory={handleCreateStory} />}
             {activeModals.createHighlight && <CreateHighlightModal userStories={stories.find(s => s.user.id === currentUser.id)?.stories || []} onClose={() => closeModal('createHighlight')} onCreate={handleCreateHighlight} />}
             {activeModals.trends && <TrendsModal topics={trendingTopics} onClose={() => closeModal('trends')} />}
             {activeModals.suggestions && <SuggestionsModal users={suggestedUsers} currentUser={currentUser} onClose={() => closeModal('suggestions')} onViewProfile={(user) => handleNavigate('profile', user)} onFollow={handleFollow} onUnfollow={(user) => openModal('unfollow', user)}/>}
             {activeModals.payment && <PaymentModal onClose={() => closeModal('payment')} onConfirmPayment={() => {setCurrentUser({...currentUser, isPremium: true}); closeModal('payment'); handleNavigate('premium-welcome');}} />}
             {activeModals.getVerified && <GetVerifiedModal onClose={() => closeModal('getVerified')} onSubmit={() => {showToast('Verification application submitted!'); closeModal('getVerified');}} />}
-            {activeModals.changePassword && <ChangePasswordModal onClose={() => closeModal('changePassword')} onSave={() => {showToast('Password changed successfully!'); closeModal('changePassword');}} />}
+            {activeModals.changePassword && <ChangePasswordModal onClose={() => closeModal('changePassword')} onSave={handleChangePassword} />}
             {activeModals.twoFA && <TwoFactorAuthModal onClose={() => closeModal('2fa')} onEnable={() => {showToast('Two-factor authentication enabled!'); closeModal('2fa');}} />}
-            {activeModals.newSupportRequest && <NewSupportRequestModal onClose={() => closeModal('newSupportRequest')} onSubmit={() => {showToast('Support ticket submitted!'); closeModal('newSupportRequest');}} />}
+            {activeModals.newSupportRequest && <NewSupportRequestModal onClose={() => closeModal('newSupportRequest')} onSubmit={handleSubmitSupportTicket} />}
             {activeModals.forgotPassword && <ForgotPasswordModal onClose={() => closeModal('forgotPassword')} onSubmit={async (id) => {await api.forgotPassword(id); showToast('Password reset link sent!'); closeModal('forgotPassword');}} />}
             {activeModals.resetPassword && <ResetPasswordModal onClose={() => closeModal('resetPassword')} onSubmit={async (pw) => {showToast('Password has been reset.'); closeModal('resetPassword');}} />}
-            {activeModals.report && <ReportModal onClose={() => closeModal('report')} onSubmitReport={(reason) => {showToast(`Report submitted for: ${reason}`); closeModal('report');}} />}
+            {activeModals.report && <ReportModal content={activeModals.report} onClose={() => closeModal('report')} onSubmitReport={handleReport} />}
             {activeModals.editPost && <EditPostModal post={activeModals.editPost} onClose={() => closeModal('editPost')} onSave={handleEditPost} />}
             
             {toastMessage && (
