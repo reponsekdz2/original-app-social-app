@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Post } from '../types.ts';
-import Icon from './Icon.tsx';
+import type { Post } from './types.ts';
+import Icon from './components/Icon.tsx';
 
 interface ArchiveViewProps {
   posts: Post[];

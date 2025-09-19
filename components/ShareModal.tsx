@@ -1,6 +1,9 @@
+
 import React, { useState } from 'react';
+// Fix: Corrected import path for types to be relative.
 import type { Post, Reel, User, Conversation } from '../types.ts';
 import Icon from './Icon.tsx';
+// Fix: Corrected import path for apiService to be relative.
 import * as api from '../services/apiService.ts';
 
 interface ShareModalProps {

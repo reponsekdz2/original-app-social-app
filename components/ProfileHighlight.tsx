@@ -1,5 +1,6 @@
+
 import React from 'react';
-// Fix: Add .ts extension to import to resolve module.
+// Fix: Corrected import path for types to be relative.
 import type { StoryHighlight } from '../types.ts';
 
 interface ProfileHighlightProps {

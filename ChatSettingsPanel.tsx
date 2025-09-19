@@ -1,7 +1,7 @@
 import React from 'react';
-import type { User } from '../types.ts';
-import Icon from './Icon.tsx';
-import VerifiedBadge from './VerifiedBadge.tsx';
+import type { User } from './types.ts';
+import Icon from './components/Icon.tsx';
+import VerifiedBadge from './components/VerifiedBadge.tsx';
 
 interface ChatSettingsPanelProps {
   user: User;

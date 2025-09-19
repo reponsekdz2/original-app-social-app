@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Icon from './Icon.tsx';
+import Icon from './components/Icon.tsx';
 
 interface NewSupportRequestModalProps {
   onClose: () => void;

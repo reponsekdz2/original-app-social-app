@@ -1,6 +1,8 @@
 
+
 import React, { useState } from 'react';
-import type { Message, User, SharedContent } from './types.ts';
+// Fix: Corrected import path for types.
+import type { Message, User, SharedContent, FileAttachment, Reaction } from './types.ts';
 import Icon from './components/Icon.tsx';
 import VoicenoteMessage from './components/VoicenoteMessage.tsx';
 import EmojiPicker from './components/EmojiPicker.tsx';
@@ -13,6 +15,7 @@ interface MessageProps {
   sender: User;
   onReply: () => void;
   onAddReaction: (emoji: string) => void;
+  isVanishMode: boolean;
 }
 
 const SharedContentMessage: React.FC<{ content: SharedContent }> = ({ content }) => {
@@ -29,8 +32,29 @@ const SharedContentMessage: React.FC<{ content: SharedContent }> = ({ content })
     );
 };
 
+const FileAttachmentMessage: React.FC<{ file: FileAttachment }> = ({ file }) => {
+    const formatBytes = (bytes: number, decimals = 2) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    };
 
-const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction }) => {
+    return (
+        <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-800/80 rounded-lg w-64 m-1 border border-gray-700/50 hover:bg-gray-700/80">
+            <Icon className="w-8 h-8 text-gray-300 flex-shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></Icon>
+            <div className="overflow-hidden">
+                <p className="text-sm font-semibold truncate">{file.fileName}</p>
+                <p className="text-xs text-gray-400">{formatBytes(file.fileSize)}</p>
+            </div>
+        </a>
+    )
+}
+
+
+const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction, isVanishMode }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const messageAlignment = isCurrentUser ? 'justify-end' : 'justify-start';
@@ -44,6 +68,8 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGrou
   const roundingClasses = isCurrentUser
     ? `${isFirstInGroup ? 'rounded-tr-2xl' : 'rounded-tr-md'} ${isLastInGroup ? 'rounded-br-none' : 'rounded-br-lg'}`
     : `${isFirstInGroup ? 'rounded-tl-2xl' : 'rounded-tl-md'} ${isLastInGroup ? 'rounded-bl-none' : 'rounded-bl-lg'}`;
+    
+  const vanishModeClasses = isVanishMode ? 'border-2 border-dashed border-gray-500 bg-transparent opacity-80' : bubbleStyles;
 
   const renderContent = () => {
     switch (message.type) {
@@ -58,6 +84,8 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGrou
       case 'share_post':
       case 'share_reel':
         return message.sharedContent ? <SharedContentMessage content={message.sharedContent} /> : null;
+      case 'file':
+        return message.fileAttachment ? <FileAttachmentMessage file={message.fileAttachment} /> : null;
       default:
         return null;
     }
@@ -76,7 +104,7 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGrou
       )}
 
       <div className="relative">
-          <div className={`relative max-w-md rounded-2xl ${message.type.startsWith('share') ? '' : bubbleStyles} ${roundingClasses}`}>
+          <div className={`relative max-w-md rounded-2xl ${message.type.startsWith('share') || message.type === 'file' ? '' : vanishModeClasses} ${roundingClasses}`}>
             {renderContent()}
           </div>
           {uniqueReactions.length > 0 && (

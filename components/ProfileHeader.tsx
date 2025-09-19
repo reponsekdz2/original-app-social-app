@@ -1,4 +1,6 @@
+
 import React from 'react';
+// Fix: Corrected import path for types to be relative.
 import type { User, Post } from '../types.ts';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import FollowButton from './FollowButton.tsx';

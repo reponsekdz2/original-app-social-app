@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Post, User } from '../types.ts';
-import Icon from './Icon.tsx';
+import type { Post, User } from './types.ts';
+import Icon from './components/Icon.tsx';
 
 interface PostWithOptionsModalProps {
   post: Post;

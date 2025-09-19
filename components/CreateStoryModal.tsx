@@ -1,24 +1,13 @@
+
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
-import { generateStoryImage } from '../services/geminiService.ts';
 
 interface CreateStoryModalProps {
   onClose: () => void;
   onCreateStory: (formData: FormData) => void;
 }
 
-type CreateMode = 'upload' | 'ai';
-
 const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateStory }) => {
-  const [mode, setMode] = useState<CreateMode>('upload');
-  
-  // AI State
-  const [prompt, setPrompt] = useState('');
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
-  const [errorAI, setErrorAI] = useState<string | null>(null);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-
-  // Upload State
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,28 +19,17 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
       setMediaPreview(URL.createObjectURL(file));
     }
   };
-  
-  const handleGenerateAI = async () => { /* ... remains the same */ };
 
   const handleSubmit = async () => {
-    const formData = new FormData();
+    if (!mediaFile) return;
     
-    if (mode === 'upload' && mediaFile) {
-       formData.append('media', mediaFile);
-    } else if (mode === 'ai' && generatedImage) {
-      // In a real app, you might want to convert the base64 back to a blob/file before sending
-      // For simplicity, we'll assume the backend can handle this (though we'll adjust backend to expect a file)
-      // This part would need more robust handling in production
-      console.log("AI image submission needs to be implemented via file upload");
-      return;
-    } else {
-        return;
-    }
+    const formData = new FormData();
+    formData.append('media', mediaFile);
     
     await onCreateStory(formData);
   };
 
-  const isShareDisabled = (mode === 'upload' && !mediaFile) || (mode === 'ai' && !generatedImage);
+  const isShareDisabled = !mediaFile;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
@@ -63,9 +41,8 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
         </div>
         
         <div className="p-4 flex-1 flex flex-col justify-between">
-            {/* ... rest of the JSX is largely the same, but the logic now handles File objects */ }
             <div className="flex-1 my-4 flex items-center justify-center bg-black/50 rounded-md min-h-[300px]">
-                {mode === 'upload' && !mediaPreview ? (
+                {!mediaPreview ? (
                      <div className="text-center">
                         <Icon className="mx-auto w-16 h-16 text-gray-500"><path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></Icon>
                         <p className="mt-2 text-lg">Select photo or video</p>
@@ -74,17 +51,14 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
                         </button>
                         <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,video/*" />
                     </div>
-                ) : mode === 'upload' && mediaPreview ? (
+                ) : (
                      mediaFile?.type.startsWith('video') ? (
                         <video src={mediaPreview} controls className="max-h-full max-w-full object-contain rounded-md" />
                     ) : (
                         <img src={mediaPreview} alt="Preview" className="max-h-full max-w-full object-contain rounded-md" />
                     )
-                ) : (
-                    <div>AI Mode Placeholder</div>
                 )}
             </div>
-             {/* ... AI mode UI */}
         </div>
       </div>
     </div>

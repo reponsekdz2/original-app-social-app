@@ -1,211 +1,141 @@
-// This file centralizes all API calls to the backend.
 
-import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, Message, ConversationSettings, LiveStream, Report } from './types.ts';
+import type { User, Post, Reel, Story, Conversation, Message, Notification, FeedActivity, SponsoredContent, TrendingTopic, Testimonial, HelpArticle, SupportTicket, LiveStream, Report, AdminStats, AnalyticsData } from '../types.ts';
 
 const API_BASE_URL = '/api';
+let authToken: string | null = null;
 
-// --- Helper Functions ---
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+};
 
-const getAuthHeaders = (): HeadersInit => {
-  const token = localStorage.getItem('authToken');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+const getHeaders = () => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+  return headers;
 };
 
 const handleResponse = async (response: Response) => {
-  if (response.status === 204) return; // No content
-  const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.message || 'An error occurred');
-  }
-  return data;
-};
-
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-  return handleResponse(response);
-};
-
-// --- Authentication ---
-
-export const checkAuth = async (): Promise<{ user: User }> => {
-    return apiRequest('/auth/me');
-};
-
-
-export const login = async (identifier: string, password: string): Promise<{ user: User, token: string }> => {
-  return apiRequest('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ identifier, password }),
-  });
-};
-
-export const register = async (userData: any): Promise<{ user: User, token: string }> => {
-  return apiRequest('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(userData),
-  });
-};
-
-export const changePassword = async (oldPassword: string, newPassword: string): Promise<{ message: string }> => {
-  return apiRequest('/auth/change-password', {
-    method: 'PUT',
-    body: JSON.stringify({ oldPassword, newPassword }),
-  });
-};
-
-export const forgotPassword = async (email: string): Promise<{ message: string, resetTokenForSimulation: string }> => {
-  return apiRequest('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
-};
-
-export const resetPassword = async (token: string, password: string): Promise<{ message: string }> => {
-    return apiRequest('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) });
-};
-
-export const enableTwoFactor = async (): Promise<{ message: string }> => {
-  return apiRequest('/auth/enable-2fa', { method: 'POST' });
-};
-
-// --- Data Fetching ---
-
-export const getFeed = async (): Promise<{ posts: Post[] }> => apiRequest('/posts/feed');
-export const getExplore = async (): Promise<{ posts: Post[] }> => apiRequest('/posts/explore');
-export const getStories = async (): Promise<{ stories: Story[] }> => apiRequest('/stories/feed');
-export const getReels = async (): Promise<Reel[]> => apiRequest('/reels');
-export const getUserProfile = async (username: string): Promise<User> => apiRequest(`/users/profile/${username}`);
-export const getAllUsers = async (): Promise<User[]> => apiRequest('/users');
-export const getTrending = async (): Promise<TrendingTopic[]> => apiRequest('/misc/trending');
-export const getSuggestions = async (): Promise<User[]> => apiRequest('/misc/suggestions');
-export const getFeedActivities = async (): Promise<FeedActivity[]> => apiRequest('/misc/feed-activity');
-export const getSponsoredContent = async (): Promise<SponsoredContent[]> => apiRequest('/misc/sponsored');
-export const getTestimonials = async (): Promise<Testimonial[]> => apiRequest('/misc/testimonials');
-export const getHelpArticles = async (): Promise<HelpArticle[]> => apiRequest('/misc/help-articles');
-export const getSupportTickets = async (): Promise<SupportTicket[]> => apiRequest('/misc/support-tickets');
-export const getStickers = async (): Promise<string[]> => apiRequest('/misc/stickers');
-export const getConversations = async (): Promise<Conversation[]> => apiRequest('/messages');
-export const getSavedPosts = async (): Promise<Post[]> => apiRequest('/users/posts/saved');
-export const getArchivedPosts = async (): Promise<Post[]> => apiRequest('/users/posts/archived');
-export const getNotifications = async (): Promise<Notification[]> => apiRequest('/users/notifications');
-export const getLiveStreams = async (): Promise<LiveStream[]> => apiRequest('/livestreams');
-
-
-// --- User & Post Actions ---
-
-const postWithAuth = (endpoint: string, body?: object) => apiRequest(endpoint, { method: 'POST', body: JSON.stringify(body) });
-const putWithAuth = (endpoint: string, body: object) => apiRequest(endpoint, { method: 'PUT', body: JSON.stringify(body) });
-const deleteWithAuth = (endpoint: string) => apiRequest(endpoint, { method: 'DELETE' });
-
-export const toggleLike = (postId: string) => postWithAuth(`/posts/${postId}/like`);
-export const toggleSave = (postId: string) => postWithAuth(`/posts/${postId}/save`);
-export const addComment = (postId: string, text: string): Promise<Comment> => postWithAuth(`/posts/${postId}/comments`, { text });
-export const followUser = (userId: string) => postWithAuth(`/users/${userId}/follow`);
-export const unfollowUser = (userId: string) => deleteWithAuth(`/users/${userId}/unfollow`);
-export const archivePost = (postId: string) => putWithAuth(`/posts/${postId}/archive`, {});
-export const unarchivePost = (postId: string) => putWithAuth(`/posts/${postId}/unarchive`, {});
-export const editPost = (postId: string, caption: string, location: string) => putWithAuth(`/posts/${postId}`, { caption, location });
-export const deletePost = (postId: string) => deleteWithAuth(`/posts/${postId}`);
-export const createHighlight = (title: string, storyIds: string[]) => postWithAuth('/users/highlights', { title, storyIds });
-export const updateSettings = (settings: Partial<User>) => putWithAuth('/users/settings', settings);
-export const applyForVerification = (applicationData: object) => postWithAuth('/users/verification', applicationData);
-export const subscribePremium = () => postWithAuth('/misc/subscribe-premium');
-export const updateUserRelationship = (userId: string, action: 'mute' | 'unmute' | 'block' | 'unblock') => postWithAuth(`/users/${userId}/relationship`, { action });
-export const markNotificationsRead = () => postWithAuth('/users/notifications/read');
-export const sendTip = (postId: string, amount: number) => postWithAuth(`/posts/${postId}/tip`, { amount });
-
-// --- Actions with FormData ---
-
-const postFormData = async (endpoint: string, formData: FormData) => {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: formData,
-  });
-  return handleResponse(response);
-};
-
-const putFormData = async (endpoint: string, formData: FormData) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: formData,
-    });
-    return handleResponse(response);
-}
-
-export const createPost = (formData: FormData) => postFormData('/posts', formData);
-export const createStory = (formData: FormData) => postFormData('/stories', formData);
-export const updateProfile = (formData: FormData) => putFormData('/users/profile', formData);
-
-// --- Messaging ---
-export const sendMessage = (
-  recipientId: string,
-  content: string | File,
-  type: Message['type'],
-  sharedContentId?: string,
-  contentType?: 'post' | 'reel',
-  conversationId?: string,
-): Promise<Message> => {
-    const formData = new FormData();
-    if (conversationId) {
-        formData.append('conversationId', conversationId);
-    } else {
-        formData.append('recipientId', recipientId);
+    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+    const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+    if (response.status === 401) {
+       console.error('Authentication error. Logging out.');
+       // Here you might want to trigger a logout action globally
     }
-    
+    throw new Error(errorMessage);
+  }
+  return response.json();
+};
+
+const post = (endpoint: string, body: any) => fetch(`${API_BASE_URL}${endpoint}`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) }).then(handleResponse);
+const get = (endpoint: string) => fetch(`${API_BASE_URL}${endpoint}`, { method: 'GET', headers: getHeaders() }).then(handleResponse);
+const put = (endpoint: string, body: any) => fetch(`${API_BASE_URL}${endpoint}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) }).then(handleResponse);
+const del = (endpoint: string) => fetch(`${API_BASE_URL}${endpoint}`, { method: 'DELETE', headers: getHeaders() }).then(handleResponse);
+const postFormData = (endpoint: string, formData: FormData) => {
+    const headers = { ...getHeaders() };
+    delete headers['Content-Type']; // Let the browser set the correct multipart/form-data header
+    return fetch(`${API_BASE_URL}${endpoint}`, { method: 'POST', headers, body: formData }).then(handleResponse);
+};
+
+
+// --- AUTH ---
+export const login = (identifier: string, password: string): Promise<{ user: User, token: string }> => post('/auth/login', { identifier, password });
+export const register = (data: any): Promise<{ user: User, token: string }> => post('/auth/register', data);
+export const getMe = (): Promise<{ user: User }> => get('/auth/me');
+export const changePassword = (oldPassword: string, newPassword: string): Promise<void> => put('/auth/change-password', { oldPassword, newPassword });
+export const forgotPassword = (email: string): Promise<void> => post('/auth/forgot-password', { email });
+export const resetPassword = (token: string, password: string): Promise<void> => post('/auth/reset-password', { token, password });
+export const enableTwoFactor = (): Promise<void> => post('/auth/enable-2fa', {});
+
+// --- POSTS ---
+export const getFeedPosts = (): Promise<{ posts: Post[] }> => get('/posts/feed');
+export const getExplorePosts = (): Promise<{ posts: Post[] }> => get('/posts/explore');
+export const createPost = (formData: FormData): Promise<Post> => postFormData('/posts', formData);
+export const toggleLike = (postId: string): Promise<void> => post(`/posts/${postId}/like`, {});
+export const toggleSave = (postId: string): Promise<void> => post(`/posts/${postId}/save`, {});
+export const addComment = (postId: string, text: string): Promise<Comment> => post(`/posts/${postId}/comments`, { text });
+export const editPost = (postId: string, caption: string, location: string): Promise<void> => put(`/posts/${postId}`, { caption, location });
+export const deletePost = (postId: string): Promise<void> => del(`/posts/${postId}`);
+export const archivePost = (postId: string): Promise<void> => put(`/posts/${postId}/archive`, {});
+export const unarchivePost = (postId: string): Promise<void> => put(`/posts/${postId}/unarchive`, {});
+export const sendTip = (postId: string, amount: number): Promise<void> => post(`/posts/${postId}/tip`, { amount });
+
+// --- REELS ---
+export const getReels = (): Promise<Reel[]> => get('/reels');
+export const toggleReelLike = (reelId: string): Promise<void> => post(`/reels/${reelId}/like`, {});
+export const addReelComment = (reelId: string, text: string): Promise<Comment> => post(`/reels/${reelId}/comments`, { text });
+
+// --- STORIES & HIGHLIGHTS ---
+export const getStories = (): Promise<{ stories: Story[] }> => get('/stories/feed');
+export const createStory = (formData: FormData): Promise<void> => postFormData('/stories', formData);
+export const createHighlight = (title: string, storyIds: string[]): Promise<void> => post('/users/highlights', { title, storyIds });
+
+// --- MESSAGES ---
+export const getConversations = (): Promise<Conversation[]> => get('/messages');
+export const sendMessage = (recipientId: string, content: string | File, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel', conversationId?: string): Promise<Message> => {
+    const formData = new FormData();
     if (typeof content === 'string') {
         formData.append('content', content);
     } else {
         formData.append('file', content);
     }
-
     formData.append('type', type);
-
-    if (sharedContentId) {
-        formData.append('sharedContentId', sharedContentId);
-    }
-    if (contentType) {
-        formData.append('contentType', contentType);
-    }
-
+    if (recipientId) formData.append('recipientId', recipientId);
+    if (conversationId) formData.append('conversationId', conversationId);
+    if (sharedContentId) formData.append('sharedContentId', sharedContentId);
+    if (contentType) formData.append('contentType', contentType);
+    
     return postFormData('/messages', formData);
 };
+export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => post('/messages/group', { name, userIds });
+export const updateConversationSettings = (conversationId: string, settings: any): Promise<void> => put(`/messages/${conversationId}/settings`, settings);
 
-export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => {
-    return postWithAuth('/messages/group', { name, userIds });
-};
+// --- USERS & PROFILE ---
+export const getAllUsers = (): Promise<User[]> => get('/users');
+export const followUser = (userId: string): Promise<void> => post(`/users/${userId}/follow`, {});
+export const unfollowUser = (userId: string): Promise<void> => post(`/users/${userId}/unfollow`, {});
+export const updateProfile = (data: any): Promise<User> => put('/users/profile', data);
+export const updateUserSettings = (settings: any): Promise<void> => put('/users/settings', settings);
 
-export const updateConversationSettings = (conversationId: string, settings: Partial<ConversationSettings>): Promise<{ message: string }> => {
-    return putWithAuth(`/messages/${conversationId}/settings`, settings);
-}
+// --- MISC ---
+export const getNotifications = (): Promise<Notification[]> => get('/misc/notifications');
+export const getTrendingTopics = (): Promise<TrendingTopic[]> => get('/misc/trending');
+export const getSuggestedUsers = (): Promise<User[]> => get('/misc/suggestions');
+export const getFeedActivity = (): Promise<FeedActivity[]> => get('/misc/feed-activity');
+export const getSponsoredContent = (): Promise<SponsoredContent[]> => get('/misc/sponsored');
+export const getTestimonials = (): Promise<Testimonial[]> => get('/misc/testimonials');
+export const getHelpArticles = (): Promise<HelpArticle[]> => get('/misc/help-articles');
+export const getStickers = (): Promise<string[]> => Promise.resolve(['/stickers/1.webp', '/stickers/2.webp']); // Mocked as it's static
+export const createSupportTicket = (subject: string, description: string): Promise<void> => post('/misc/support-tickets', { subject, description });
+export const subscribeToPremium = (): Promise<void> => post('/misc/subscribe-premium', {});
+export const applyForVerification = (data: any): Promise<void> => post('/misc/verification', data);
 
-// --- Live Streaming ---
-export const startLiveStream = (title: string): Promise<LiveStream> => postWithAuth('/livestreams/start', { title });
-export const endLiveStream = (streamId: string): Promise<{ message: string }> => postWithAuth(`/livestreams/${streamId}/end`);
-
-// --- Reels & Comments ---
-export const likeReel = (reelId: string) => postWithAuth(`/reels/${reelId}/like`);
-export const postReelComment = (reelId: string, text: string) => postWithAuth(`/reels/${reelId}/comments`, { text });
-export const likeComment = (commentId: string) => postWithAuth(`/comments/${commentId}/like`);
-
-// --- Support & Reports ---
-export const createSupportTicket = (subject: string, description: string) => postWithAuth('/misc/support-tickets', { subject, description });
-export const submitReport = (entityId: string, entityType: string, reason: string, details: string) => postWithAuth('/reports', { entityId, entityType, reason, details });
+// --- LIVESTREAMS ---
+export const getLiveStreams = (): Promise<LiveStream[]> => get('/livestreams');
+export const startLiveStream = (title: string): Promise<LiveStream> => post('/livestreams/start', { title });
 
 // --- ADMIN ---
-export const getAdminStats = () => apiRequest('/admin/stats');
-export const getAdminUsers = (query: string) => apiRequest(`/admin/users?q=${query}`);
-export const getAdminContent = (type: 'posts' | 'reels') => apiRequest(`/admin/content?type=${type}`);
-export const getAdminReports = () => apiRequest('/admin/reports');
-export const getAdminUserGrowthData = () => apiRequest('/admin/analytics/user-growth');
-export const getAdminContentTrendsData = () => apiRequest('/admin/analytics/content-trends');
-
-export const updateAdminUser = (userId: string, updates: { is_admin?: boolean, is_verified?: boolean }) => putWithAuth(`/admin/users/${userId}`, updates);
-export const deleteAdminUser = (userId: string) => deleteWithAuth(`/admin/users/${userId}`);
-export const deleteAdminContent = (type: 'post' | 'reel', id: string) => deleteWithAuth(`/admin/content/${type}/${id}`);
-export const updateAdminReportStatus = (reportId: number, status: Report['status']) => putWithAuth(`/admin/reports/${reportId}`, { status });
+export const getAdminStats = (): Promise<AdminStats> => get('/admin/stats');
+export const getAdminUserGrowthData = (): Promise<AnalyticsData> => get('/admin/analytics/user-growth');
+export const getAdminContentTrendsData = (): Promise<any> => get('/admin/analytics/content-trends');
+export const getAdminUsers = (query: string): Promise<User[]> => get(`/admin/users?q=${query}`);
+export const updateAdminUser = (userId: string, updates: any): Promise<void> => put(`/admin/users/${userId}`, updates);
+export const deleteAdminUser = (userId: string): Promise<void> => del(`/admin/users/${userId}`);
+export const getAdminContent = (type: 'posts' | 'reels'): Promise<(Post & Reel)[]> => get(`/admin/content?type=${type}`);
+export const deleteAdminContent = (type: 'post' | 'reel', id: string): Promise<void> => del(`/admin/content/${type}/${id}`);
+export const getAdminReports = (): Promise<Report[]> => get('/admin/reports');
+export const updateAdminReportStatus = (reportId: number, status: string): Promise<void> => put(`/admin/reports/${reportId}`, { status });
+export const getAdminSupportTickets = (): Promise<SupportTicket[]> => get('/admin/support-tickets');
+export const getAdminSupportTicketDetails = (ticketId: number): Promise<SupportTicket> => get(`/admin/support-tickets/${ticketId}`);
+export const replyToSupportTicket = (ticketId: number, message: string): Promise<void> => post(`/admin/support-tickets/${ticketId}/reply`, { message });
+export const getAdminSponsoredContent = (): Promise<SponsoredContent[]> => get('/admin/sponsored');
+export const createAdminSponsoredContent = (data: Omit<SponsoredContent, 'id'>): Promise<SponsoredContent> => post('/admin/sponsored', data);
+export const updateAdminSponsoredContent = (id: number, data: Partial<SponsoredContent>): Promise<void> => put(`/admin/sponsored/${id}`, data);
+export const deleteAdminSponsoredContent = (id: number): Promise<void> => del(`/admin/sponsored/${id}`);
+export const getAdminTrendingTopics = (): Promise<TrendingTopic[]> => get('/admin/trending');
+export const createAdminTrendingTopic = (topic: string, post_count: number): Promise<TrendingTopic> => post('/admin/trending', { topic, post_count });
+export const deleteAdminTrendingTopic = (id: number): Promise<void> => del(`/admin/trending/${id}`);

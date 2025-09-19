@@ -1,145 +1,68 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
-import * as api from '../services/apiService.ts';
 
 interface EditProfileModalProps {
   user: User;
   onClose: () => void;
-  onSave: (formData: FormData) => void;
+  onSave: (data: { name: string; bio: string; website: string; gender: string }) => void;
 }
 
-const MAX_BIO_LENGTH = 150;
-
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSave }) => {
-  const [avatarPreview, setAvatarPreview] = useState(user.avatar);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [username, setUsername] = useState(user.username);
   const [name, setName] = useState(user.name);
   const [bio, setBio] = useState(user.bio || '');
   const [website, setWebsite] = useState(user.website || '');
-  const [gender, setGender] = useState(user.gender || 'Prefer not to say');
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const newErrors: { [key: string]: string } = {};
-    if (username && !/^(?=.{3,20}$)(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$/.test(username)) {
-      newErrors.username = 'Invalid username format (3-20 chars, a-z, 0-9, _, .).';
-    }
-    if (name && name.trim().length === 0) {
-      newErrors.name = 'Name cannot be empty.';
-    }
-    if (website && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(website)) {
-      newErrors.website = 'Please enter a valid URL.';
-    }
-    if (bio.length > MAX_BIO_LENGTH) {
-      newErrors.bio = `Bio cannot exceed ${MAX_BIO_LENGTH} characters.`;
-    }
-    setErrors(newErrors);
-  }, [username, name, website, bio]);
-
+  const [gender, setGender] = useState((user as any).gender || 'Prefer not to say');
 
   const handleSave = () => {
-    if (Object.keys(errors).length > 0) return;
-
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('name', name);
-    formData.append('bio', bio);
-    formData.append('website', website);
-    formData.append('gender', gender);
-    if (avatarFile) {
-        formData.append('avatar', avatarFile);
-    }
-    onSave(formData);
+    onSave({ name, bio, website, gender });
   };
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+      <div 
+        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl border border-gray-700 flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <button onClick={onClose} className="text-white text-sm font-semibold">Cancel</button>
-          <h2 className="font-semibold text-lg">Edit Profile</h2>
-          <button onClick={handleSave} disabled={Object.keys(errors).length > 0} className="font-semibold text-red-500 hover:text-red-400 text-sm disabled:text-gray-500 disabled:cursor-not-allowed">Done</button>
+          <button onClick={onClose} className="text-sm">Cancel</button>
+          <h2 className="text-lg font-semibold">Edit Profile</h2>
+          <button onClick={handleSave} className="text-sm font-semibold text-red-500">Done</button>
         </div>
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          <div className="flex flex-col items-center">
-            <img src={avatarPreview} alt="avatar" className="w-24 h-24 rounded-full object-cover" />
-            <button onClick={() => fileInputRef.current?.click()} className="text-red-500 font-semibold mt-2">Change profile photo</button>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-gray-400">Username</label>
-                <input 
-                  type="text" 
-                  value={username} 
-                  onChange={e => setUsername(e.target.value)}
-                  className={`w-full bg-gray-700 border rounded p-2 mt-1 focus:outline-none focus:ring-1 focus:ring-red-500 ${errors.username ? 'border-red-500' : 'border-gray-600'}`} 
-                />
-                {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
-              </div>
-               <div>
-                <label className="text-sm text-gray-400">Name</label>
-                <input 
-                  type="text" 
-                  value={name} 
-                  onChange={e => setName(e.target.value)}
-                  className={`w-full bg-gray-700 border rounded p-2 mt-1 focus:outline-none focus:ring-1 focus:ring-red-500 ${errors.name ? 'border-red-500' : 'border-gray-600'}`} 
-                />
-                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-              </div>
-          </div>
 
-          <div>
-            <label className="text-sm text-gray-400">Website</label>
-            <input 
-              type="text"
-              placeholder="Add your website"
-              value={website} 
-              onChange={e => setWebsite(e.target.value)}
-              className={`w-full bg-gray-700 border rounded p-2 mt-1 focus:outline-none focus:ring-1 focus:ring-red-500 ${errors.website ? 'border-red-500' : 'border-gray-600'}`} 
-            />
-            {errors.website && <p className="text-red-500 text-xs mt-1">{errors.website}</p>}
-          </div>
+        <div className="p-6 space-y-4 overflow-y-auto">
+           <div className="flex items-center gap-6">
+                <div className="relative">
+                    <img src={user.avatar} alt={user.username} className="w-24 h-24 rounded-full" />
+                </div>
+                <div>
+                    <h3 className="text-xl font-semibold">{user.username}</h3>
+                    <button className="text-sm font-semibold text-red-400 mt-1">Change photo</button>
+                </div>
+           </div>
 
-           <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="text-sm text-gray-400">Bio</label>
+            <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2" />
             </div>
-            <textarea 
-              value={bio} 
-              onChange={e => setBio(e.target.value)}
-              className={`w-full bg-gray-700 border rounded p-2 mt-1 h-24 resize-none focus:outline-none focus:ring-1 focus:ring-red-500 ${errors.bio ? 'border-red-500' : 'border-gray-600'}`} 
-            />
-            <div className={`text-right text-xs mt-1 ${bio.length > MAX_BIO_LENGTH ? 'text-red-500' : 'text-gray-400'}`}>
-                {bio.length}/{MAX_BIO_LENGTH}
+            <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Bio</label>
+                <textarea value={bio} onChange={e => setBio(e.target.value)} rows={4} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 resize-none" />
             </div>
-          </div>
-
-           <div>
-            <label className="text-sm text-gray-400">Gender</label>
-            <select
-              value={gender}
-              onChange={e => setGender(e.target.value as User['gender'])}
-              className="w-full bg-gray-700 border border-gray-600 rounded p-2 mt-1 focus:outline-none focus:ring-1 focus:ring-red-500"
-            >
-              <option>Prefer not to say</option>
-              <option>Male</option>
-              <option>Female</option>
-              <option>Other</option>
-            </select>
-          </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Website</label>
+                <input type="text" value={website} onChange={e => setWebsite(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Gender</label>
+                <select value={gender} onChange={e => setGender(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2">
+                    <option>Prefer not to say</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                </select>
+            </div>
         </div>
       </div>
     </div>

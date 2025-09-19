@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+// Fix: Corrected import path for apiService to be relative.
 import * as api from '../services/apiService.ts';
 
 interface EmojiStickerPanelProps {

@@ -1,7 +1,10 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
+// Fix: Corrected import path for types to be relative.
 import type { Conversation, User, Message } from '../types.ts';
 import Icon from './Icon.tsx';
+// Fix: Change import type to a value import for the component.
 import MessageComponent from '../Message.tsx';
 import MessageInput from './MessageInput.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
@@ -122,6 +125,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, currentUser, onSe
               sender={sender}
               onReply={() => setReplyingTo(message)}
               onAddReaction={(emoji) => handleAddReaction(message.id, emoji)}
+              isVanishMode={conversation.settings.vanish_mode_enabled}
             />
           );
         })}

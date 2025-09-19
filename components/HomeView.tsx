@@ -1,4 +1,6 @@
+
 import React from 'react';
+// Fix: Corrected import path for types to be relative.
 import type { Post, Story, User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types.ts';
 import PostComponent from './Post.tsx';
 import Sidebar from './Sidebar.tsx';

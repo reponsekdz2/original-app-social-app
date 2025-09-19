@@ -1,88 +1,75 @@
+
 import express from 'express';
-import cors from 'cors';
-import bodyParser from 'body-parser';
 import http from 'http';
 import { Server } from 'socket.io';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import cors from 'cors';
+import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+// Socket.io setup
 import { initSocket } from './socket.js';
 
-// Load environment variables
-dotenv.config();
-
-// Import Routers
+// Route imports
 import authRoutes from './auth.js';
 import postRoutes from './posts.js';
-import userRoutes from './users.js';
 import reelRoutes from './reels.js';
-import commentRoutes from './comments.js';
-import messageRoutes from './messages.js';
-import miscRoutes from './misc.js';
 import storyRoutes from './stories.js';
-import liveStreamRoutes from './livestreams.js';
-import adminRoutes from './admin.js';
+import messageRoutes from './messages.js';
+import userRoutes from './users.js';
+import miscRoutes from './misc.js';
+import adminRoutes from './admin.js'; // New admin routes
 
-// ES Module equivalent of __dirname
+dotenv.config();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*", // In production, restrict this to your frontend's URL
-        methods: ["GET", "POST", "PUT", "DELETE"]
-    }
+  cors: {
+    origin: "*", // Allow all origins for simplicity, restrict in production
+    methods: ["GET", "POST"]
+  }
 });
+app.set('io', io); // Make io accessible in request handlers
 
-const port = process.env.PORT || 3000;
-
-// Make io accessible to our routers by attaching it to the app object
-app.set('io', io);
-
-// Initialize Socket.IO connection handling
+// Initialize Socket.io
 initSocket(io);
 
-// --- Middleware ---
+// Middleware
 app.use(cors());
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-
-// Request logger for debugging
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
-  });
-  next();
-});
-
-// --- API Routes ---
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
-app.use('/api/users', userRoutes);
 app.use('/api/reels', reelRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/misc', miscRoutes);
 app.use('/api/stories', storyRoutes);
-app.use('/api/livestreams', liveStreamRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/misc', miscRoutes);
+app.use('/api/admin', adminRoutes); // Use admin routes
 
-
-// Root endpoint for health check
+// Basic route for testing
 app.get('/', (req, res) => {
-    res.status(200).send('talka backend is running and healthy!');
+  res.send('Talka backend is running.');
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
 });
 
 
-// --- Server Startup ---
-server.listen(port, () => {
-  console.log(`Backend server with Socket.IO listening at http://localhost:${port}`);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });

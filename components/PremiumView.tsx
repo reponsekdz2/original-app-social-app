@@ -1,7 +1,7 @@
+
 import React from 'react';
 import type { Testimonial } from '../types.ts';
 import Icon from './Icon.tsx';
-import VerifiedBadge from './VerifiedBadge.tsx';
 
 interface PremiumViewProps {
   testimonials: Testimonial[];
@@ -10,57 +10,59 @@ interface PremiumViewProps {
 
 const PremiumView: React.FC<PremiumViewProps> = ({ testimonials, onSubscribe }) => {
   const features = [
-    'Verified Badge',
-    'Magic Compose AI',
-    '4K UHD Video Uploads',
-    'Ad-Free Experience',
-    'Priority Support',
-    'Exclusive Content',
+    'Get a verified badge on your profile.',
+    'Upload videos in stunning 4K UHD.',
+    'Enjoy a completely ad-free experience.',
+    'Priority support from our team.',
+    'Early access to new features.',
+    'Eligible to receive a share of ad revenue.',
   ];
 
   return (
-    <div className="p-4 md:p-8 min-h-[calc(100vh-4rem)] flex items-center justify-center">
-      <div className="max-w-4xl mx-auto w-full">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 font-serif tracking-wide">Unlock Premium</h1>
-          <p className="text-lg text-gray-300 mb-8">Elevate your experience with exclusive features designed for creators and fans.</p>
+    <div className="p-4 md:p-8 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
+        <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 font-serif tracking-wide">Go Premium</h1>
+            <p className="text-lg md:text-xl text-gray-300 mb-10">Unlock exclusive features, get verified, and enhance your experience.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-6">What you get</h2>
-            <ul className="space-y-4">
-              {features.map(feature => (
-                <li key={feature} className="flex items-center gap-3">
-                  <Icon className="w-6 h-6 text-red-500"><path fillRule="evenodd" clipRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 6.22a.75.75 0 00-1.06-1.06L11 11.69l-1.72-1.72a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l4.5-4.5z" /></Icon>
-                  <span>{feature}</span>
-                </li>
-              ))}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-8 shadow-2xl shadow-red-900/10 mb-12">
+            <h2 className="text-2xl font-bold text-center mb-6">Premium Features</h2>
+            <ul className="space-y-4 mb-8">
+                {features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                        <Icon className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.052-.143z" clipRule="evenodd" /></Icon>
+                        <span>{feature}</span>
+                    </li>
+                ))}
             </ul>
-            <button
-              onClick={onSubscribe}
-              className="mt-8 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform hover:scale-105"
-            >
-              Subscribe for $95.99/year
+            <div className="text-center mb-2">
+                <span className="text-5xl font-bold">$95.99</span>
+                <span className="text-gray-400">/ year</span>
+            </div>
+            <button onClick={onSubscribe} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg transition-transform hover:scale-105">
+                Subscribe Now
             </button>
-            <p className="text-xs text-gray-500 mt-4 text-center">Billed annually. Cancel anytime.</p>
-          </div>
-          <div className="space-y-4 hidden md:block">
-            {testimonials.map(testimonial => (
-              <div key={testimonial.id} className="bg-gray-900/50 border border-gray-800 p-6 rounded-xl">
-                <p className="text-gray-300 mb-4">"{testimonial.quote}"</p>
-                <div className="flex items-center gap-3">
-                  <img src={testimonial.user.avatar} alt={testimonial.user.username} className="w-10 h-10 rounded-full" />
-                  <div>
-                    <p className="font-semibold flex items-center gap-1.5">{testimonial.user.name} {testimonial.user.isVerified && <VerifiedBadge />}</p>
-                    <p className="text-sm text-gray-400">@{testimonial.user.username}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
-      </div>
+
+        {testimonials.length > 0 && (
+             <div className="max-w-4xl mx-auto w-full">
+                <h3 className="text-2xl font-bold text-center mb-6">What Creators Are Saying</h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                    {testimonials.map(t => (
+                        <div key={t.id} className="bg-gray-900 p-6 rounded-lg border border-gray-800">
+                             <p className="text-gray-300 mb-4">"{t.quote}"</p>
+                             <div className="flex items-center gap-3">
+                                <img src={t.user.avatar} alt={t.user.username} className="w-10 h-10 rounded-full" />
+                                <div>
+                                    <p className="font-semibold">{t.user.name}</p>
+                                    <p className="text-sm text-gray-500">@{t.user.username}</p>
+                                </div>
+                             </div>
+                        </div>
+                    ))}
+                </div>
+             </div>
+        )}
     </div>
   );
 };

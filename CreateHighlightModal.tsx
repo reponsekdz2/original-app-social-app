@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { StoryItem } from '../types.ts';
-import Icon from './Icon.tsx';
+import type { StoryItem } from './types.ts';
+import Icon from './components/Icon.tsx';
 
 interface CreateHighlightModalProps {
   userStories: StoryItem[];

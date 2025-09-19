@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
-import Icon from './Icon.tsx';
-import { generateStoryImage } from '../services/geminiService.ts';
+import Icon from './components/Icon.tsx';
 
 interface CreateStoryModalProps {
   onClose: () => void;

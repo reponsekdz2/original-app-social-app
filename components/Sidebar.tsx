@@ -2,8 +2,10 @@
 
 
 
+
+
 import React from 'react';
-// Fix: Corrected import path for types
+// Fix: Corrected import path for types to be relative.
 import type { User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types.ts';
 import Icon from './Icon.tsx';
 import FollowButton from './FollowButton.tsx';
@@ -101,7 +103,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Icon className="w-5 h-5 text-gray-500"><path d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></Icon>
               </div>
               <p className="font-bold">{topic.topic}</p>
-              <p className="text-xs text-gray-500">{topic.postCount > 1000 ? `${(topic.postCount / 1000).toFixed(1)}k` : topic.postCount} posts</p>
+              {/* Fix: Property 'postCount' does not exist on type 'TrendingTopic'. Did you mean 'post_count'? */}
+              <p className="text-xs text-gray-500">{topic.post_count > 1000 ? `${(topic.post_count / 1000).toFixed(1)}k` : topic.post_count} posts</p>
             </div>
           ))}
         </div>
@@ -173,10 +176,12 @@ const Sidebar: React.FC<SidebarProps> = ({
             {sponsoredContent.map(ad => (
               <a key={ad.id} href={ad.link} target="_blank" rel="noopener noreferrer" className="block group">
                 <div className="flex items-center gap-3">
-                  <img src={ad.media} alt={ad.company} className="w-16 h-16 rounded-lg object-cover" />
+                  {/* Fix: Property 'media' does not exist on type 'SponsoredContent'. */}
+                  <img src={ad.media_url} alt={ad.company} className="w-16 h-16 rounded-lg object-cover" />
                   <div>
                       <p className="font-semibold group-hover:underline text-sm">{ad.company}</p>
-                      <p className="text-xs text-gray-400">{ad.callToAction}</p>
+                      {/* Fix: Property 'callToAction' does not exist on type 'SponsoredContent'. Did you mean 'call_to_action'? */}
+                      <p className="text-xs text-gray-400">{ad.call_to_action}</p>
                   </div>
                 </div>
               </a>

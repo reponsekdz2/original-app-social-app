@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import pool from './db.js';
 import { protect, adminProtect } from './middleware/authMiddleware.js';
@@ -12,103 +13,69 @@ router.use(protect, adminProtect);
 // @access  Admin
 router.get('/stats', async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT COUNT(*) as totalUsers FROM users');
-        const [posts] = await pool.query('SELECT COUNT(*) as totalPosts FROM posts');
-        const [reels] = await pool.query('SELECT COUNT(*) as totalReels FROM reels');
-        const [reports] = await pool.query("SELECT COUNT(*) as pendingReports FROM reports WHERE status = 'pending'");
-        const [live] = await pool.query("SELECT COUNT(*) as liveStreams FROM live_streams WHERE status = 'live'");
+        const [users] = await pool.query('SELECT COUNT(*) as count FROM users');
+        const [posts] = await pool.query('SELECT COUNT(*) as count FROM posts');
+        const [reels] = await pool.query('SELECT COUNT(*) as count FROM reels');
+        const [reports] = await pool.query("SELECT COUNT(*) as count FROM reports WHERE status = 'pending'");
+        const [live] = await pool.query("SELECT COUNT(*) as count FROM live_streams WHERE status = 'live'");
 
         res.json({
-            totalUsers: users[0].totalUsers,
-            totalPosts: posts[0].totalPosts,
-            totalReels: reels[0].totalReels,
-            pendingReports: reports[0].pendingReports,
-            liveStreams: live[0].liveStreams,
+            totalUsers: users[0].count,
+            totalPosts: posts[0].count,
+            totalReels: reels[0].count,
+            pendingReports: reports[0].count,
+            liveStreams: live[0].count,
         });
     } catch (error) {
-        console.error('Get Admin Stats Error:', error);
-        res.status(500).json({ message: 'Server error fetching stats' });
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
-// @desc    Get user growth analytics data
+// @desc    Get user growth analytics
 // @route   GET /api/admin/analytics/user-growth
 // @access  Admin
 router.get('/analytics/user-growth', async (req, res) => {
     try {
         const [data] = await pool.query(`
-            SELECT DATE(created_at) as date, COUNT(id) as count
-            FROM users
-            WHERE created_at >= NOW() - INTERVAL 30 DAY
-            GROUP BY DATE(created_at)
+            SELECT DATE(created_at) as date, COUNT(id) as count 
+            FROM users 
+            WHERE created_at >= CURDATE() - INTERVAL 30 DAY 
+            GROUP BY DATE(created_at) 
             ORDER BY date ASC
         `);
-        const result = {
-            labels: data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
-            values: data.map(d => d.count),
-        };
-        res.json(result);
+        const labels = data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        const values = data.map(d => d.count);
+        res.json({ labels, values });
     } catch (error) {
-        console.error('Get User Growth Error:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server Error' });
     }
 });
-
-// @desc    Get content trends analytics data
-// @route   GET /api/admin/analytics/content-trends
-// @access  Admin
-router.get('/analytics/content-trends', async (req, res) => {
-     try {
-        const [data] = await pool.query(`
-            SELECT date, SUM(posts) as posts, SUM(reels) as reels FROM (
-                SELECT DATE(created_at) as date, COUNT(id) as posts, 0 as reels
-                FROM posts
-                WHERE created_at >= NOW() - INTERVAL 30 DAY
-                GROUP BY date
-                UNION ALL
-                SELECT DATE(created_at) as date, 0 as posts, COUNT(id) as reels
-                FROM reels
-                WHERE created_at >= NOW() - INTERVAL 30 DAY
-                GROUP BY date
-            ) as combined
-            GROUP BY date
-            ORDER BY date ASC
-        `);
-        const result = {
-            labels: data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
-            postValues: data.map(d => d.posts),
-            reelValues: data.map(d => d.reels),
-        };
-        res.json(result);
-    } catch (error) {
-        console.error('Get Content Trends Error:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
 
 // @desc    Get all users for management
 // @route   GET /api/admin/users
 // @access  Admin
 router.get('/users', async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT id, username, name, email, avatar_url, created_at, is_admin, is_verified FROM users ORDER BY created_at DESC');
+        const [users] = await pool.query('SELECT id, username, email, created_at, is_admin, is_verified, avatar_url as avatar FROM users ORDER BY created_at DESC');
         res.json(users);
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
-// @desc    Update a user
+// @desc    Update a user's status
 // @route   PUT /api/admin/users/:id
 // @access  Admin
 router.put('/users/:id', async (req, res) => {
     const { is_admin, is_verified } = req.body;
     try {
-        await pool.query('UPDATE users SET is_admin = ?, is_verified = ? WHERE id = ?', [is_admin, is_verified, req.params.id]);
-        res.json({ message: 'User updated' });
+        await pool.query(
+            'UPDATE users SET is_admin = ?, is_verified = ? WHERE id = ?',
+            [is_admin, is_verified, req.params.id]
+        );
+        res.json({ message: 'User updated successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
@@ -117,55 +84,11 @@ router.put('/users/:id', async (req, res) => {
 // @access  Admin
 router.delete('/users/:id', async (req, res) => {
     try {
+        // You might want to add more logic here (e.g., reassigning content or soft deleting)
         await pool.query('DELETE FROM users WHERE id = ?', [req.params.id]);
         res.status(204).send();
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-// @desc    Get all content for moderation
-// @route   GET /api/admin/content
-// @access  Admin
-router.get('/content', async (req, res) => {
-    const { type } = req.query; // 'posts' or 'reels'
-    try {
-        if (type === 'posts') {
-            const [posts] = await pool.query(`
-                SELECT p.id, p.caption, p.created_at, u.username, 
-                (SELECT pm.media_url FROM post_media pm WHERE pm.post_id = p.id LIMIT 1) as media_url
-                FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC
-            `);
-            return res.json(posts);
-        } else if (type === 'reels') {
-            const [reels] = await pool.query(`
-                SELECT r.id, r.caption, r.video_url as media_url, r.created_at, u.username
-                FROM reels r JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC
-            `);
-            return res.json(reels);
-        }
-        res.status(400).json({ message: 'Invalid content type' });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-// @desc    Delete content
-// @route   DELETE /api/admin/content/:type/:id
-// @access  Admin
-router.delete('/content/:type/:id', async (req, res) => {
-    const { type, id } = req.params;
-    try {
-        if (type === 'post') {
-            await pool.query('DELETE FROM posts WHERE id = ?', [id]);
-        } else if (type === 'reel') {
-            await pool.query('DELETE FROM reels WHERE id = ?', [id]);
-        } else {
-            return res.status(400).json({ message: 'Invalid content type' });
-        }
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
@@ -175,34 +98,160 @@ router.delete('/content/:type/:id', async (req, res) => {
 router.get('/reports', async (req, res) => {
     try {
         const [reports] = await pool.query(`
-            SELECT 
-                r.id, r.reason, r.status, r.created_at, r.entity_type, r.reported_entity_id,
-                reporter.username as reporter_username,
-                reported_user.username as reported_username,
-                reported_post.caption as reported_post_caption
+            SELECT r.*, ru.username as reporter_username, reported_u.username as reported_username, p.caption as reported_post_caption
             FROM reports r
-            JOIN users reporter ON r.reporter_id = reporter.id
-            LEFT JOIN users reported_user ON r.entity_type = 'user' AND r.reported_entity_id = reported_user.id
-            LEFT JOIN posts reported_post ON r.entity_type = 'post' AND r.reported_entity_id = reported_post.id
+            JOIN users ru ON r.reporter_id = ru.id
+            LEFT JOIN users reported_u ON r.reported_entity_id = reported_u.id AND r.entity_type = 'user'
+            LEFT JOIN posts p ON r.reported_entity_id = p.id AND r.entity_type = 'post'
             ORDER BY r.created_at DESC
         `);
         res.json(reports);
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
-// @desc    Update a report status
+// @desc    Update a report's status
 // @route   PUT /api/admin/reports/:id
 // @access  Admin
 router.put('/reports/:id', async (req, res) => {
     const { status } = req.body;
     try {
-        await pool.query("UPDATE reports SET status = ? WHERE id = ?", [status, req.params.id]);
+        await pool.query('UPDATE reports SET status = ? WHERE id = ?', [status, req.params.id]);
         res.json({ message: 'Report status updated' });
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server Error' });
     }
 });
+
+
+// @desc    Get all support tickets
+// @route   GET /api/admin/support-tickets
+// @access  Admin
+router.get('/support-tickets', async (req, res) => {
+    try {
+        const [tickets] = await pool.query(`
+            SELECT st.*, u.username as user_username
+            FROM support_tickets st
+            JOIN users u ON st.user_id = u.id
+            ORDER BY st.updated_at DESC
+        `);
+        res.json(tickets);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get a single support ticket with replies
+// @route   GET /api/admin/support-tickets/:id
+// @access  Admin
+router.get('/support-tickets/:id', async (req, res) => {
+    try {
+        const [tickets] = await pool.query('SELECT * FROM support_tickets WHERE id = ?', [req.params.id]);
+        if (tickets.length === 0) return res.status(404).json({ message: 'Ticket not found' });
+        
+        const [replies] = await pool.query(`
+            SELECT ar.*, u.username as admin_username
+            FROM admin_replies ar
+            JOIN users u ON ar.admin_id = u.id
+            WHERE ar.ticket_id = ? ORDER BY ar.created_at ASC
+        `, [req.params.id]);
+
+        res.json({ ...tickets[0], replies });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Reply to a support ticket
+// @route   POST /api/admin/support-tickets/:id/reply
+// @access  Admin
+router.post('/support-tickets/:id/reply', async (req, res) => {
+    const { message } = req.body;
+    const adminId = req.user.id;
+    const ticketId = req.params.id;
+    try {
+        await pool.query('INSERT INTO admin_replies (ticket_id, admin_id, message) VALUES (?, ?, ?)', [ticketId, adminId, message]);
+        await pool.query("UPDATE support_tickets SET status = 'Pending' WHERE id = ?", [ticketId]); // Update status to pending admin reply
+        res.status(201).json({ message: 'Reply sent' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get all sponsored content
+// @route   GET /api/admin/sponsored
+// @access  Admin
+router.get('/sponsored', async (req, res) => {
+    try {
+        const [content] = await pool.query('SELECT * FROM sponsored_content ORDER BY id DESC');
+        res.json(content);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Create sponsored content
+// @route   POST /api/admin/sponsored
+// @access  Admin
+router.post('/sponsored', async (req, res) => {
+    const { company, logo_url, media_url, tagline, call_to_action, link } = req.body;
+    try {
+        const [result] = await pool.query('INSERT INTO sponsored_content (company, logo_url, media_url, tagline, call_to_action, link) VALUES (?,?,?,?,?,?)', [company, logo_url, media_url, tagline, call_to_action, link]);
+        res.status(201).json({ id: result.insertId, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Delete sponsored content
+// @route   DELETE /api/admin/sponsored/:id
+// @access  Admin
+router.delete('/sponsored/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM sponsored_content WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get all trending topics
+// @route   GET /api/admin/trending
+// @access  Admin
+router.get('/trending', async (req, res) => {
+    try {
+        const [topics] = await pool.query('SELECT * FROM trending_topics ORDER BY post_count DESC');
+        res.json(topics);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Create a trending topic
+// @route   POST /api/admin/trending
+// @access  Admin
+router.post('/trending', async (req, res) => {
+    const { topic, post_count } = req.body;
+    try {
+        const [result] = await pool.query('INSERT INTO trending_topics (topic, post_count) VALUES (?,?)', [topic, post_count]);
+        res.status(201).json({ id: result.insertId, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Delete a trending topic
+// @route   DELETE /api/admin/trending/:id
+// @access  Admin
+router.delete('/trending/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM trending_topics WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 
 export default router;

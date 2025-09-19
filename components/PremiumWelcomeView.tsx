@@ -1,4 +1,6 @@
+
 import React from 'react';
+// Fix: Corrected import path for types to be relative.
 import type { View } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';

@@ -1,29 +1,26 @@
-// This file is now primarily for type exports if needed, as all mock data is being moved to the backend.
 
-export type View = 
-  'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 
-  'create' | 'notifications' | 'saved' | 'premium' | 'search' | 'activity' |
-  'premium-welcome' | 'help' | 'support' | 'archive' | 'live' | 'reset-password' | 'admin';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'post' | 'create' | 'notifications' | 'search' | 'saved' | 'live' | 'admin' | 'premium' | 'premium-welcome' | 'activity' | 'archive' | 'help' | 'support';
 
 export interface User {
   id: string;
   username: string;
   name: string;
-  avatar: string;
   email: string;
-  phone: string;
-  dob: string;
+  avatar: string;
   bio?: string;
   website?: string;
-  gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   followers: User[];
   following: User[];
-  stories?: Story[];
+  posts: Post[];
+  reels: Reel[];
+  stories: Story[];
+  saved: Post[];
   highlights?: StoryHighlight[];
   isVerified: boolean;
-  isPremium: boolean;
   isPrivate: boolean;
   isAdmin: boolean;
+  isPremium: boolean;
+  created_at?: string;
   notificationSettings: {
     likes: boolean;
     comments: boolean;
@@ -31,8 +28,11 @@ export interface User {
   };
   mutedUsers: string[];
   blockedUsers: string[];
-  // Fix: Add optional created_at property to align with admin API response.
-  created_at?: string;
+}
+
+export interface Reaction {
+  emoji: string;
+  user: User;
 }
 
 export interface Comment {
@@ -41,10 +41,10 @@ export interface Comment {
   text: string;
   timestamp: string;
   likes: number;
-  likedBy: User[];
+  replies?: Comment[];
 }
 
-export interface PostMedia {
+export interface Media {
   id: string;
   url: string;
   type: 'image' | 'video';
@@ -53,82 +53,64 @@ export interface PostMedia {
 export interface Post {
   id: string;
   user: User;
-  media: PostMedia[];
+  media: Media[];
   caption: string;
+  location?: string;
   likes: number;
   likedBy: User[];
   comments: Comment[];
-  savedBy: User[];
   timestamp: string;
-  location?: string;
+  isSaved: boolean;
   isArchived?: boolean;
+}
+
+export interface Reel {
+    id: string;
+    user: User;
+    video: string;
+    caption: string;
+    audio?: string;
+    likes: number;
+    likedBy: User[];
+    comments: Comment[];
+    shares: number;
+    timestamp: string;
 }
 
 export interface StoryItem {
   id: string;
   media: string;
   mediaType: 'image' | 'video';
-  duration: number; // in ms for images
+  duration?: number; // in ms
+  link?: string;
 }
 
 export interface Story {
-  id:string;
+  id: string;
   user: User;
   stories: StoryItem[];
 }
 
 export interface StoryHighlight {
-  id: string;
-  title: string;
-  cover: string;
-  stories: StoryItem[];
-}
-
-export interface Reel {
-  id: string;
-  user: User;
-  video: string;
-  caption: string;
-  likes: number;
-  likedBy: User[];
-  comments: Comment[];
-  shares: number;
-  timestamp: string;
-}
-
-export interface ConversationSettings {
-  theme: string;
-  vanish_mode_enabled: boolean;
-}
-
-export interface Conversation {
-  id: string;
-  participants: User[];
-  messages: Message[];
-  isGroup: boolean;
-  name?: string; // For group chats
-  settings: ConversationSettings;
-}
-
-export interface MessageReaction {
-  emoji: string;
-  user: User;
+    id: string;
+    title: string;
+    cover: string;
+    stories: StoryItem[];
 }
 
 export interface SharedContent {
-  id: string;
-  type: 'post' | 'reel';
-  media_url: string;
-  caption: string;
-  username: string;
-  avatar_url: string;
+    type: 'post' | 'reel';
+    id: string;
+    username: string;
+    avatar_url: string;
+    media_url: string;
 }
 
 export interface FileAttachment {
-  fileName: string;
-  fileSize: number;
-  fileUrl: string;
-  fileType: string;
+    fileName: string;
+    fileSize: number;
+    fileUrl: string;
+    fileType: string;
 }
 
 export interface Message {
@@ -136,98 +118,103 @@ export interface Message {
   senderId: string;
   content: string;
   timestamp: string;
-  type: 'text' | 'image' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel' | 'file';
   read: boolean;
-  reactions?: MessageReaction[];
+  type: 'text' | 'image' | 'video' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel' | 'file';
+  reactions?: Reaction[];
+  replyTo?: string;
   sharedContent?: SharedContent;
   fileAttachment?: FileAttachment;
 }
 
-export interface Call {
+export interface Conversation {
   id: string;
-  caller: User;
-  receiver: User;
-  type: 'audio' | 'video';
-  status: 'answered' | 'missed' | 'declined';
-  duration: number; // in seconds
-  timestamp: string;
+  participants: User[];
+  messages: Message[];
+  isGroup: boolean;
+  name?: string;
+  settings: {
+    theme: string;
+    vanish_mode_enabled: boolean;
+  };
 }
 
 export interface Notification {
     id: string;
-    user: User;
-    type: 'like' | 'comment' | 'follow' | 'mention' | 'tip_post';
+    user: User; // The user who performed the action
+    type: 'like' | 'comment' | 'follow' | 'mention' | 'tip';
     post?: Post;
     commentText?: string;
     timestamp: string;
-    read: boolean;
 }
-
-export type Activity = Notification; // For ActivityView
 
 export interface FeedActivity {
     id: string;
     user: User;
     action: 'liked' | 'followed';
-    targetPost?: Post;
     targetUser?: User;
+    targetPost?: Post;
     timestamp: string;
 }
+
+export interface SponsoredContent {
+    id: number;
+    company: string;
+    logo_url: string;
+    media_url: string;
+    tagline: string;
+    call_to_action: string;
+    link: string;
+    is_active: boolean;
+}
+
+export interface TrendingTopic {
+    id: number;
+    topic: string;
+    post_count: number;
+}
+
+export interface Testimonial {
+    id: string;
+    user: User;
+    quote: string;
+}
+
+export interface HelpArticle {
+    id: string;
+    category: string;
+    title: string;
+    content: string;
+}
+
+export interface AdminReply {
+    id: number;
+    admin_id: string;
+    message: string;
+    created_at: string;
+    admin_username?: string; // To be joined on the frontend
+}
+
+export interface SupportTicket {
+    id: number;
+    user_id: string;
+    subject: string;
+    description: string;
+    status: 'Open' | 'Pending' | 'Resolved';
+    created_at: string;
+    updated_at: string;
+    user_username?: string; // To be joined
+    replies: AdminReply[];
+}
+
 
 export interface LiveStream {
     id: string;
     user: User;
     title: string;
-    status: 'live' | 'ended';
-    started_at: string;
+    viewers: number;
 }
 
-export interface TrendingTopic {
-    topic: string;
-    postCount: number;
-}
-
-export interface SponsoredContent {
-  id: string;
-  company: string;
-  logo: string;
-  media: string;
-  callToAction: string;
-  link: string;
-}
-
-export interface Testimonial {
-  id: string;
-  user: User;
-  quote: string;
-}
-
-export interface HelpArticle {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-}
-
-export interface SupportTicket {
-  id: string;
-  subject: string;
-  lastUpdated: string;
-  status: 'Open' | 'Resolved' | 'Pending';
-}
-
-export interface Report {
-    id: number;
-    reporter: User;
-    reported_entity_id: string;
-    entity_type: 'user' | 'post' | 'comment' | 'reel';
-    reason: string;
-    status: 'pending' | 'resolved' | 'dismissed';
-    created_at: string;
-    reported_user?: User;
-    reported_post?: Post;
-}
-
+// Admin types
 export interface AdminStats {
     totalUsers: number;
     totalPosts: number;
@@ -239,4 +226,17 @@ export interface AdminStats {
 export interface AnalyticsData {
     labels: string[];
     values: number[];
+}
+
+export interface Report {
+    id: number;
+    reporter_id: number;
+    reported_entity_id: number;
+    entity_type: 'post' | 'user' | 'comment' | 'reel';
+    reason: string;
+    status: 'pending' | 'resolved' | 'dismissed';
+    created_at: string;
+    reporter_username: string;
+    reported_username?: string;
+    reported_post_caption?: string;
 }

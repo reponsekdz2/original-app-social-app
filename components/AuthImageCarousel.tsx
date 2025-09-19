@@ -1,35 +1,43 @@
+
 import React, { useState, useEffect } from 'react';
 
 const images = [
-  'https://images.pexels.com/photos/7130666/pexels-photo-7130666.jpeg?auto=compress&cs=tinysrgb&w=800',
-  'https://images.pexels.com/photos/19409815/pexels-photo-19409815.jpeg?auto=compress&cs=tinysrgb&w=800',
-  'https://images.pexels.com/photos/3171837/pexels-photo-3171837.jpeg?auto=compress&cs=tinysrgb&w=800',
-  'https://images.pexels.com/photos/7770433/pexels-photo-7770433.jpeg?auto=compress&cs=tinysrgb&w=800',
+  'https://images.unsplash.com/photo-1528360983277-13d401cdc186?q=80&w=1974&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1517026575980-3e1e2ded2ab4?q=80&w=1974&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1542372421-256952764f53?q=80&w=1964&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop',
 ];
 
 const AuthImageCarousel: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 5000); // Change image every 5 seconds
-
-    return () => clearTimeout(timer);
-  }, [currentIndex]);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="hidden md:block w-[380px] h-[580px] bg-black border-[14px] border-gray-800 rounded-[40px] shadow-2xl relative flex-shrink-0">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-5 bg-gray-800 rounded-b-lg"></div>
-      <div className="w-full h-full rounded-[26px] overflow-hidden relative">
+    <div className="relative w-80 h-[500px] rounded-3xl overflow-hidden shadow-2xl shadow-red-900/20 border-4 border-gray-800">
+      <div 
+        className="flex transition-transform duration-700 ease-in-out h-full"
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+      >
         {images.map((src, index) => (
           <img
-            key={src}
+            key={index}
             src={src}
-            alt="Authentication showcase"
-            className={`w-full h-full object-cover absolute top-0 left-0 transition-opacity duration-1000 ease-in-out ${
-              index === currentIndex ? 'opacity-100' : 'opacity-0'
-            }`}
+            alt={`Carousel image ${index + 1}`}
+            className="w-full h-full object-cover flex-shrink-0"
+          />
+        ))}
+      </div>
+       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        {images.map((_, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 rounded-full transition-all ${currentIndex === index ? 'bg-white scale-125' : 'bg-white/50'}`}
           />
         ))}
       </div>

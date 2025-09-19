@@ -1,7 +1,7 @@
 import React from 'react';
-import type { User, View } from '../types.ts';
-import Icon from './Icon.tsx';
-import ToggleSwitch from './ToggleSwitch.tsx';
+import type { User, View } from './types.ts';
+import Icon from './components/Icon.tsx';
+import ToggleSwitch from './components/ToggleSwitch.tsx';
 
 interface SettingsViewProps {
   currentUser: User;
