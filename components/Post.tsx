@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
-import type { Post, User, Comment as CommentType } from '../types.ts';
+import type { Post, User, Comment as CommentType } from '../types';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import FollowButton from './FollowButton.tsx';

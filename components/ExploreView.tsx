@@ -1,9 +1,10 @@
 
 
 
+
 import React from 'react';
 // Fix: Corrected import path for types to be relative.
-import type { Post } from '../types.ts';
+import type { Post } from '../types';
 import Icon from './Icon.tsx';
 
 interface ExploreViewProps {

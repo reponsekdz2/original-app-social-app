@@ -1,8 +1,9 @@
 
 
+
 import React, { useState } from 'react';
 // Fix: Corrected import path for types.
-import type { Message, User, SharedContent, FileAttachment, Reaction } from './types.ts';
+import type { Message, User, SharedContent, FileAttachment, Reaction } from './types';
 import Icon from './components/Icon.tsx';
 import VoicenoteMessage from './components/VoicenoteMessage.tsx';
 import EmojiPicker from './components/EmojiPicker.tsx';
@@ -109,7 +110,7 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGrou
           </div>
           {uniqueReactions.length > 0 && (
             <div className={`absolute -bottom-3 flex items-center bg-gray-900 border border-gray-700 rounded-full px-1 py-0.5 text-xs ${isCurrentUser ? 'right-2' : 'left-2'}`}>
-                {uniqueReactions.slice(0, 3).map(r => <span key={r.emoji}>{r.emoji}</span>)}
+                {uniqueReactions.slice(0, 3).map((r: Reaction) => <span key={r.emoji}>{r.emoji}</span>)}
                 {uniqueReactions.length > 0 && <span className="ml-1 font-semibold">{message.reactions?.length}</span>}
             </div>
            )}

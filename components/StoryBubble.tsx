@@ -1,8 +1,9 @@
 
 
+
 import React from 'react';
 // Fix: Corrected import path for types to be relative.
-import type { Story } from '../types.ts';
+import type { Story } from '../types';
 
 interface StoryBubbleProps {
   story: Story;

@@ -1,8 +1,9 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon.tsx';
 // Fix: Corrected import path for types to be relative.
-import type { Message, User } from '../types.ts';
+import type { Message, User } from '../types';
 import EmojiStickerPanel from './EmojiStickerPanel.tsx';
 import { socketService } from '../services/socketService.ts';
 

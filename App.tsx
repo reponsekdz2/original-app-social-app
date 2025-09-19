@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { View, User, Post, Reel, Story, Conversation, Message, Notification, FeedActivity, SponsoredContent, TrendingTopic, Testimonial, HelpArticle, SupportTicket, LiveStream, StoryItem, StoryHighlight, Report, AdminStats, AnalyticsData } from './types.ts';
+import type { View, User, Post, Reel, Story, Conversation, Message, Notification, FeedActivity, SponsoredContent, TrendingTopic, Testimonial, HelpArticle, SupportTicket, LiveStream, StoryItem, StoryHighlight, Report, AdminStats, AnalyticsData } from './types';
 import AuthView from './components/AuthView.tsx';
 import HomeView from './components/HomeView.tsx';
 import LeftSidebar from './components/LeftSidebar.tsx';
@@ -49,7 +49,7 @@ import TipModal from './components/TipModal.tsx';
 import CallModal from './components/CallModal.tsx';
 import IncomingCallModal from './components/IncomingCallModal.tsx';
 
-import * as api from './services/apiService.ts';
+import * as api from './services/apiService';
 import { socketService } from './services/socketService.ts';
 import { webRTCManager } from './services/WebRTCManager.ts';
 import CreateStoryModal from './components/CreateStoryModal.tsx';
@@ -225,7 +225,7 @@ export const App: React.FC = () => {
                  const newSavedBy = isSaved 
                     ? (p as any).savedBy.filter((u: User) => u.id !== currentUser!.id) 
                     : [...((p as any).savedBy || []), {id: currentUser!.id, username: currentUser!.username}];
-                return { ...p, isSaved: !isSaved, savedBy: newSavedBy };
+                return { ...p, isSaved: !p.isSaved, savedBy: newSavedBy };
             }
             return p;
         }));

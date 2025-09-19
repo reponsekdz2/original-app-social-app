@@ -1,14 +1,15 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 // Fix: Corrected import path for types to be relative.
-import type { Conversation, User, Message } from './types.ts';
+import type { Conversation, User, Message } from './types';
 import Icon from './components/Icon.tsx';
 // Fix: Correct import path for ChatWindow
 import ChatWindow from './components/ChatWindow.tsx';
 import VerifiedBadge from './components/VerifiedBadge.tsx';
 import NewMessageModal from './components/NewMessageModal.tsx';
 import { socketService } from './services/socketService.ts';
-import * as api from './services/apiService.ts';
+import * as api from './services/apiService';
 
 interface MessagesViewProps {
   conversations: Conversation[];

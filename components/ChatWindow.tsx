@@ -1,8 +1,9 @@
 
 
+
 import React, { useState, useEffect, useRef } from 'react';
 // Fix: Corrected import path for types to be relative.
-import type { Conversation, User, Message } from '../types.ts';
+import type { Conversation, User, Message } from '../types';
 import Icon from './Icon.tsx';
 // Fix: Change import type to a value import for the component.
 import MessageComponent from '../Message.tsx';

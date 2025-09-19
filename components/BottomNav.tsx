@@ -1,9 +1,10 @@
 
 
+
 import React from 'react';
 import Icon from './Icon.tsx';
 // Fix: Corrected import path for types to be relative.
-import type { View, User } from '../types.ts';
+import type { View, User } from '../types';
 
 interface BottomNavProps {
   currentView: View;

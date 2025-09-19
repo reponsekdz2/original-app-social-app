@@ -1,6 +1,7 @@
 
+
 import React, { useState } from 'react';
-import type { User } from '../types.ts';
+import type { User } from '../types';
 import Icon from './Icon.tsx';
 
 interface EditProfileModalProps {

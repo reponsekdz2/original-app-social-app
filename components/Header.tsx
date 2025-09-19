@@ -1,9 +1,10 @@
 
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon.tsx';
 // Fix: Corrected import path for types to be relative.
-import type { User, View } from '../types.ts';
+import type { User, View } from '../types';
 
 interface HeaderProps {
     currentUser: User;

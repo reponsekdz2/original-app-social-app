@@ -1,6 +1,7 @@
 
+
 import React from 'react';
-import type { Testimonial } from '../types.ts';
+import type { Testimonial } from '../types';
 import Icon from './Icon.tsx';
 
 interface PremiumViewProps {

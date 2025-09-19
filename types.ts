@@ -1,5 +1,6 @@
+// This file defines all the shared types used across the application.
 
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'post' | 'create' | 'notifications' | 'search' | 'saved' | 'live' | 'admin' | 'premium' | 'premium-welcome' | 'activity' | 'archive' | 'help' | 'support';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'admin' | 'premium' | 'premium-welcome' | 'activity' | 'help' | 'support' | 'live' | 'post';
 
 export interface User {
   id: string;
@@ -9,18 +10,14 @@ export interface User {
   avatar: string;
   bio?: string;
   website?: string;
-  followers: User[];
-  following: User[];
-  posts: Post[];
-  reels: Reel[];
-  stories: Story[];
-  saved: Post[];
-  highlights?: StoryHighlight[];
+  gender?: string;
+  isPremium: boolean;
   isVerified: boolean;
   isPrivate: boolean;
   isAdmin: boolean;
-  isPremium: boolean;
-  created_at?: string;
+  followers: User[];
+  following: User[];
+  highlights?: StoryHighlight[];
   notificationSettings: {
     likes: boolean;
     comments: boolean;
@@ -28,32 +25,26 @@ export interface User {
   };
   mutedUsers: string[];
   blockedUsers: string[];
+  created_at?: string;
 }
 
-export interface Reaction {
-  emoji: string;
-  user: User;
-}
-
-export interface Comment {
-  id: string;
-  user: User;
-  text: string;
-  timestamp: string;
-  likes: number;
-  replies?: Comment[];
-}
-
-export interface Media {
+export interface PostMedia {
   id: string;
   url: string;
   type: 'image' | 'video';
 }
 
+export interface Comment {
+  id: string;
+  text: string;
+  user: User;
+  timestamp: string;
+}
+
 export interface Post {
   id: string;
   user: User;
-  media: Media[];
+  media: PostMedia[];
   caption: string;
   location?: string;
   likes: number;
@@ -69,7 +60,6 @@ export interface Reel {
     user: User;
     video: string;
     caption: string;
-    audio?: string;
     likes: number;
     likedBy: User[];
     comments: Comment[];
@@ -81,8 +71,7 @@ export interface StoryItem {
   id: string;
   media: string;
   mediaType: 'image' | 'video';
-  duration?: number; // in ms
-  link?: string;
+  duration: number;
 }
 
 export interface Story {
@@ -92,25 +81,29 @@ export interface Story {
 }
 
 export interface StoryHighlight {
-    id: string;
-    title: string;
-    cover: string;
-    stories: StoryItem[];
+  id: string;
+  title: string;
+  cover: string;
+  stories: StoryItem[];
 }
 
 export interface SharedContent {
-    type: 'post' | 'reel';
-    id: string;
-    username: string;
-    avatar_url: string;
-    media_url: string;
+  type: 'post' | 'reel';
+  media_url: string;
+  avatar_url: string;
+  username: string;
 }
 
 export interface FileAttachment {
-    fileName: string;
-    fileSize: number;
-    fileUrl: string;
-    fileType: string;
+  fileName: string;
+  fileSize: number;
+  fileUrl: string;
+  fileType: string;
+}
+
+export interface Reaction {
+  emoji: string;
+  user: User;
 }
 
 export interface Message {
@@ -118,12 +111,11 @@ export interface Message {
   senderId: string;
   content: string;
   timestamp: string;
+  type: 'text' | 'image' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel' | 'file';
   read: boolean;
-  type: 'text' | 'image' | 'video' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel' | 'file';
-  reactions?: Reaction[];
-  replyTo?: string;
   sharedContent?: SharedContent;
   fileAttachment?: FileAttachment;
+  reactions?: Reaction[];
 }
 
 export interface Conversation {
@@ -139,32 +131,31 @@ export interface Conversation {
 }
 
 export interface Notification {
-    id: string;
-    user: User; // The user who performed the action
-    type: 'like' | 'comment' | 'follow' | 'mention' | 'tip';
-    post?: Post;
-    commentText?: string;
-    timestamp: string;
+  id: string;
+  user: User;
+  type: 'like' | 'comment' | 'follow' | 'mention';
+  commentText?: string;
+  post?: Post;
+  timestamp: string;
 }
 
 export interface FeedActivity {
-    id: string;
-    user: User;
-    action: 'liked' | 'followed';
-    targetUser?: User;
-    targetPost?: Post;
-    timestamp: string;
+  id: string;
+  user: User;
+  action: 'liked' | 'followed';
+  targetUser?: User;
+  targetPost?: Post;
+  timestamp: string;
 }
 
 export interface SponsoredContent {
-    id: number;
-    company: string;
-    logo_url: string;
-    media_url: string;
-    tagline: string;
-    call_to_action: string;
-    link: string;
-    is_active: boolean;
+  id: number;
+  company: string;
+  logo_url: string;
+  media_url: string;
+  tagline: string;
+  call_to_action: string;
+  link: string;
 }
 
 export interface TrendingTopic {
@@ -187,56 +178,50 @@ export interface HelpArticle {
 }
 
 export interface AdminReply {
-    id: number;
-    admin_id: string;
-    message: string;
-    created_at: string;
-    admin_username?: string; // To be joined on the frontend
+  id: number;
+  message: string;
+  admin_user_id: number;
+  created_at: string;
 }
 
 export interface SupportTicket {
-    id: number;
-    user_id: string;
-    subject: string;
-    description: string;
-    status: 'Open' | 'Pending' | 'Resolved';
-    created_at: string;
-    updated_at: string;
-    user_username?: string; // To be joined
-    replies: AdminReply[];
+  id: number;
+  user_id: number;
+  user_username: string;
+  subject: string;
+  description: string;
+  status: 'Open' | 'Pending' | 'Resolved';
+  created_at: string;
+  updated_at: string;
+  replies: AdminReply[];
 }
-
 
 export interface LiveStream {
     id: string;
     user: User;
     title: string;
-    viewers: number;
-}
-
-// Admin types
-export interface AdminStats {
-    totalUsers: number;
-    totalPosts: number;
-    totalReels: number;
-    pendingReports: number;
-    liveStreams: number;
-}
-
-export interface AnalyticsData {
-    labels: string[];
-    values: number[];
+    started_at: string;
 }
 
 export interface Report {
     id: number;
     reporter_id: number;
     reported_entity_id: number;
-    entity_type: 'post' | 'user' | 'comment' | 'reel';
+    entity_type: 'post' | 'user' | 'comment';
     reason: string;
     status: 'pending' | 'resolved' | 'dismissed';
     created_at: string;
-    reporter_username: string;
-    reported_username?: string;
-    reported_post_caption?: string;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalPosts: number;
+  totalReels: number;
+  pendingReports: number;
+  liveStreams: number;
+}
+
+export interface AnalyticsData {
+  labels: string[];
+  values: number[];
 }

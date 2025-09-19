@@ -1,7 +1,8 @@
 
+
 import React, { useRef, useEffect, useState } from 'react';
 // Fix: Corrected import path for types to be relative.
-import type { Reel as ReelType, User } from '../types.ts';
+import type { Reel as ReelType, User } from '../types';
 import Reel from './Reel.tsx';
 import Icon from './Icon.tsx';
 

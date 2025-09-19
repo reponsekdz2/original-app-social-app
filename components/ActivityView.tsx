@@ -1,7 +1,8 @@
 
+
 import React from 'react';
 // Fix: Corrected import path for types to be relative.
-import type { Notification, User } from '../types.ts';
+import type { Notification, User } from '../types';
 
 interface ActivityViewProps {
   activities: Notification[];

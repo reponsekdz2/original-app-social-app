@@ -4,9 +4,10 @@
 
 
 
+
 import React from 'react';
 // Fix: Corrected import path for types to be relative.
-import type { User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types.ts';
+import type { User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types';
 import Icon from './Icon.tsx';
 import FollowButton from './FollowButton.tsx';
 
