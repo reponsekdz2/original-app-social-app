@@ -3,7 +3,7 @@ import Icon from './Icon.tsx';
 
 interface NewSupportRequestModalProps {
   onClose: () => void;
-  onSubmit: (subject: string, description: string) => void;
+  onSubmit: (subject: string, description: string) => Promise<void>;
 }
 
 const NewSupportRequestModal: React.FC<NewSupportRequestModalProps> = ({ onClose, onSubmit }) => {
@@ -17,6 +17,7 @@ const NewSupportRequestModal: React.FC<NewSupportRequestModalProps> = ({ onClose
     setIsSubmitting(true);
     try {
         await onSubmit(subject, description);
+        onClose();
     } catch (error) {
         console.error("Failed to submit ticket", error);
         // Optionally show an error message to the user

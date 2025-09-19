@@ -32,7 +32,7 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({ user, currentUser
         <div onClick={() => onViewProfile(user)} className="flex flex-col items-center text-center mb-6 cursor-pointer">
             <img src={user.avatar} alt={user.username} className="w-20 h-20 rounded-full mb-2" />
             <p className="font-semibold flex items-center gap-1">{user.username} {user.isVerified && <VerifiedBadge />}</p>
-            <p className="text-xs text-gray-400">{user.followers.length} followers</p>
+            <p className="text-xs text-gray-400">{user.followers.length.toLocaleString()} followers</p>
         </div>
 
         <div className="space-y-2">

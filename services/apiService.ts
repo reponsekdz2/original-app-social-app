@@ -1,108 +1,155 @@
-// This file handles all communication with the backend API.
-import type { User, Post, Comment, Reel, Story, Conversation, FeedActivity, TrendingTopic, SponsoredContent, Testimonial, HelpArticle, SupportTicket, Message, StoryHighlight, Notification } from '../types.ts';
+// This file centralizes all API calls to the backend.
 
-const BASE_URL = 'http://localhost:3000/api';
+import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket } from './types.ts';
 
-let authToken: string | null = localStorage.getItem('authToken');
+const API_BASE_URL = 'http://localhost:3000/api';
 
-export const setAuthToken = (token: string | null) => {
-    authToken = token;
-    if (token) {
-        localStorage.setItem('authToken', token);
-    } else {
-        localStorage.removeItem('authToken');
-    }
+// --- Helper Functions ---
+
+const getAuthHeaders = (): HeadersInit => {
+  const token = localStorage.getItem('authToken');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
-export const getAuthToken = (): string | null => authToken;
-
-const getAuthHeaders = () => {
-    return authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+const handleResponse = async (response: Response) => {
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'An error occurred');
+  }
+  return data;
 };
 
-const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
-    const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-        ...options.headers,
-    };
-
-    const response = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
-    return response.json();
+const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+  return handleResponse(response);
 };
 
-const apiFetchFormData = async (endpoint: string, formData: FormData, method: 'POST' | 'PUT' = 'POST') => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        method,
-        headers: { ...getAuthHeaders() },
-        body: formData,
-    });
-     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
-    return response.json();
+// --- Authentication ---
+
+export const login = async (identifier: string, password: string): Promise<{ user: User, token: string }> => {
+  return apiRequest('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ identifier, password }),
+  });
 };
 
+export const register = async (userData: Omit<User, 'id' | 'followers' | 'following' | 'isVerified' | 'isPremium' | 'isPrivate' | 'notificationSettings' | 'mutedUsers' | 'blockedUsers' | 'avatar'> & { password?: string }): Promise<{ user: User, token: string }> => {
+  return apiRequest('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
+};
 
-// --- Auth ---
-export const login = (identifier: string, password: string): Promise<{ user: User, token: string }> => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ identifier, password }) });
-// Fix: Added 'avatar' to the Omit list, as it's not required from the client during registration.
-export const register = (userData: Omit<User, 'id' | 'avatar' | 'followers' | 'following' | 'stories' | 'highlights' | 'isVerified' | 'isPremium' | 'isPrivate' | 'notificationSettings' | 'mutedUsers' | 'blockedUsers'> & { password: string }): Promise<{ user: User, token: string }> => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(userData) });
-export const changePassword = (oldPassword: string, newPassword: string): Promise<{ message: string }> => apiFetch('/auth/change-password', { method: 'PUT', body: JSON.stringify({ oldPassword, newPassword }) });
+export const changePassword = async (oldPassword: string, newPassword: string): Promise<{ message: string }> => {
+  return apiRequest('/auth/change-password', {
+    method: 'PUT',
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+};
 
+export const forgotPassword = async (email: string): Promise<{ message: string }> => {
+  return apiRequest('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+};
+
+export const enableTwoFactor = async (): Promise<{ message: string }> => {
+  return apiRequest('/auth/enable-2fa', { method: 'POST' });
+};
 
 // --- Data Fetching ---
-export const getFeed = (): Promise<{ posts: Post[] }> => apiFetch('/posts/feed');
-export const getStories = (): Promise<{ stories: Story[] }> => apiFetch('/stories/feed');
-export const getSuggestedUsers = (): Promise<{ users: User[] }> => apiFetch('/users/suggestions'); // This would be a real endpoint
-export const getExplorePosts = (): Promise<{ posts: Post[] }> => apiFetch('/posts/explore');
-export const getReels = (): Promise<{ reels: Reel[] }> => apiFetch('/reels');
-export const getAllUsers = (): Promise<{ users: User[] }> => apiFetch('/users/all'); // For search/new message
-export const getConversations = (): Promise<{ conversations: Conversation[] }> => apiFetch('/messages/conversations');
-export const getMiscFeedData = (): Promise<{ feedActivities: FeedActivity[], trendingTopics: TrendingTopic[], sponsoredContent: SponsoredContent[] }> => apiFetch('/misc/feed-data');
-export const getPremiumData = (): Promise<{ testimonials: Testimonial[] }> => apiFetch('/misc/premium-data');
-export const getHelpArticles = (): Promise<{ articles: HelpArticle[] }> => apiFetch('/misc/help-articles');
-export const getSupportTickets = (): Promise<{ tickets: SupportTicket[] }> => apiFetch('/misc/support-tickets');
-export const getStickers = (): Promise<string[]> => apiFetch('/misc/stickers');
-export const getSavedPosts = (): Promise<{ posts: Post[] }> => apiFetch('/users/saved-posts');
-export const getArchivedPosts = (): Promise<{ posts: Post[] }> => apiFetch('/users/archived-posts');
-export const getNotifications = (): Promise<{ notifications: Notification[] }> => apiFetch('/users/notifications');
+
+export const getFeed = async (): Promise<{ posts: Post[] }> => apiRequest('/posts/feed');
+export const getExplore = async (): Promise<{ posts: Post[] }> => apiRequest('/posts/explore');
+export const getStories = async (): Promise<{ stories: Story[] }> => apiRequest('/stories/feed');
+// Fix: Add missing getReels function.
+export const getReels = async (): Promise<Reel[]> => apiRequest('/reels');
+export const getUserProfile = async (username: string): Promise<User> => apiRequest(`/users/profile/${username}`);
+export const getTrending = async (): Promise<TrendingTopic[]> => apiRequest('/misc/trending');
+export const getSuggestions = async (): Promise<User[]> => apiRequest('/misc/suggestions');
+export const getFeedActivities = async (): Promise<FeedActivity[]> => apiRequest('/misc/feed-activity');
+export const getSponsoredContent = async (): Promise<SponsoredContent[]> => apiRequest('/misc/sponsored');
+export const getTestimonials = async (): Promise<Testimonial[]> => apiRequest('/misc/testimonials');
+export const getHelpArticles = async (): Promise<HelpArticle[]> => apiRequest('/misc/help-articles');
+export const getSupportTickets = async (): Promise<SupportTicket[]> => apiRequest('/misc/support-tickets');
+export const getStickers = async (): Promise<string[]> => apiRequest('/misc/stickers'); // Assuming this endpoint exists now
+export const getConversations = async (): Promise<Conversation[]> => apiRequest('/messages');
+export const getSavedPosts = async (): Promise<Post[]> => apiRequest('/users/posts/saved');
+export const getArchivedPosts = async (): Promise<Post[]> => apiRequest('/users/posts/archived');
+export const getNotifications = async (): Promise<Notification[]> => apiRequest('/users/notifications');
 
 
-// --- Actions ---
-export const togglePostLike = (postId: string): Promise<{ liked: boolean }> => apiFetch(`/posts/${postId}/like`, { method: 'POST' });
-export const togglePostSave = (postId: string): Promise<{ saved: boolean }> => apiFetch(`/posts/${postId}/save`, { method: 'POST' });
-export const archivePost = (postId: string): Promise<{ success: boolean, isArchived: boolean }> => apiFetch(`/posts/${postId}/archive`, { method: 'POST' });
-export const unarchivePost = (postId: string): Promise<{ success: boolean, isArchived: boolean }> => apiFetch(`/posts/${postId}/unarchive`, { method: 'POST' });
-export const deletePost = (postId: string): Promise<{ success: boolean }> => apiFetch(`/posts/${postId}`, { method: 'DELETE' });
-export const editPost = (postId: string, caption: string, location: string): Promise<Post> => apiFetch(`/posts/${postId}`, { method: 'PUT', body: JSON.stringify({ caption, location }) });
-export const addComment = (postId: string, text: string): Promise<Comment> => apiFetch(`/posts/${postId}/comment`, { method: 'POST', body: JSON.stringify({ text }) });
-export const followUser = (userId: string): Promise<{ success: boolean }> => apiFetch(`/users/${userId}/follow`, { method: 'POST' });
-export const unfollowUser = (userId: string): Promise<{ success: boolean }> => apiFetch(`/users/${userId}/unfollow`, { method: 'POST' });
-export const createPost = (formData: FormData): Promise<Post> => apiFetchFormData('/posts', formData);
-export const createStory = (formData: FormData): Promise<Story> => apiFetchFormData('/stories', formData);
-export const updateProfile = (formData: FormData): Promise<User> => apiFetchFormData('/users/profile', formData, 'PUT');
-export const updateSettings = (settings: object): Promise<{ message: string }> => apiFetch('/users/settings', { method: 'PUT', body: JSON.stringify(settings) });
-export const createHighlight = (title: string, storyIds: string[]): Promise<{ message: string }> => apiFetch('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
+// --- User & Post Actions ---
 
-export const toggleReelLike = (reelId: string): Promise<{ liked: boolean }> => apiFetch(`/reels/${reelId}/like`, { method: 'POST' });
-export const addReelComment = (reelId: string, text: string): Promise<Comment> => apiFetch(`/reels/${reelId}/comment`, { method: 'POST', body: JSON.stringify({ text }) });
-export const toggleCommentLike = (commentId: string): Promise<{ liked: boolean }> => apiFetch(`/comments/${commentId}/like`, { method: 'POST' });
+const postWithAuth = (endpoint: string) => apiRequest(endpoint, { method: 'POST' });
+const putWithAuth = (endpoint: string, body: object) => apiRequest(endpoint, { method: 'PUT', body: JSON.stringify(body) });
 
-export const sendMessage = (recipientId: string, content: string, type: Message['type'], sharedContentId?: string): Promise<Message> => apiFetch('/messages', { method: 'POST', body: JSON.stringify({ recipientId, content, type, sharedContentId }) });
+export const toggleLike = (postId: string) => postWithAuth(`/posts/${postId}/like`);
+export const toggleSave = (postId: string) => postWithAuth(`/posts/${postId}/save`);
+export const addComment = (postId: string, text: string) => apiRequest(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+export const followUser = (userId: string) => postWithAuth(`/users/${userId}/follow`);
+export const unfollowUser = (userId: string) => apiRequest(`/users/${userId}/unfollow`, { method: 'DELETE' });
+export const archivePost = (postId: string) => putWithAuth(`/posts/${postId}/archive`, {});
+export const unarchivePost = (postId: string) => putWithAuth(`/posts/${postId}/unarchive`, {});
+// Fix: Corrected function call to use apiRequest to allow a body to be sent.
+export const createHighlight = (title: string, storyIds: string[]) => apiRequest('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
+export const updateSettings = (settings: Partial<User>) => putWithAuth('/users/settings', settings);
+// Fix: Corrected function call to use apiRequest to allow a body to be sent.
+export const applyForVerification = (applicationData: object) => apiRequest('/users/verification', { method: 'POST', body: JSON.stringify(applicationData) });
+export const subscribePremium = () => postWithAuth('/misc/subscribe-premium');
+// Fix: Corrected function call to use apiRequest to allow a body to be sent.
+export const updateUserRelationship = (userId: string, action: 'mute' | 'unmute' | 'block' | 'unblock') => apiRequest(`/users/${userId}/relationship`, { method: 'POST', body: JSON.stringify({ action }) });
+export const markNotificationsRead = () => postWithAuth('/users/notifications/read');
 
-export const submitSupportTicket = (subject: string, description: string): Promise<{ message: string }> => apiFetch('/misc/support-tickets', { method: 'POST', body: JSON.stringify({ subject, description }) });
-export const submitReport = (contentId: string, contentType: 'user' | 'post' | 'reel', reason: string): Promise<{ message: string }> => apiFetch('/misc/reports', { method: 'POST', body: JSON.stringify({ contentId, contentType, reason }) });
+// --- Actions with FormData ---
+
+const postFormData = async (endpoint: string, formData: FormData) => {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: formData,
+  });
+  return handleResponse(response);
+};
+
+const putFormData = async (endpoint: string, formData: FormData) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: formData,
+    });
+    return handleResponse(response);
+}
+
+export const createPost = (formData: FormData) => postFormData('/posts', formData);
+export const createStory = (formData: FormData) => postFormData('/stories', formData);
+export const updateProfile = (formData: FormData) => putFormData('/users/profile', formData);
 
 
-// --- AI Generation ---
-export const generateCaption = (base64Data: string, mimeType: string): Promise<{ caption: string }> => apiFetch('/ai/generate-caption', { method: 'POST', body: JSON.stringify({ base64Data, mimeType }) });
-export const generateStoryImage = (prompt: string): Promise<{ imageB64: string }> => apiFetch('/ai/generate-story-image', { method: 'POST', body: JSON.stringify({ prompt }) });
-export const generateComment = (postCaption: string, style: string): Promise<{ comment: string }> => apiFetch('/ai/generate-comment', { method: 'POST', body: JSON.stringify({ postCaption, style }) });
-export const generateBio = (username: string, name: string): Promise<{ bio: string }> => apiFetch('/ai/generate-bio', { method: 'POST', body: JSON.stringify({ username, name }) });
+// --- AI Service ---
+export const generateCaption = (base64Data: string, mimeType: string) => apiRequest('/ai/generate-caption', { method: 'POST', body: JSON.stringify({ base64Data, mimeType }) });
+export const generateStoryImage = (prompt: string) => apiRequest('/ai/generate-story-image', { method: 'POST', body: JSON.stringify({ prompt }) });
+export const generateComment = (postCaption: string, style: string) => apiRequest('/ai/generate-comment', { method: 'POST', body: JSON.stringify({ postCaption, style }) });
+export const generateBio = (username: string, name: string) => apiRequest('/ai/generate-bio', { method: 'POST', body: JSON.stringify({ username, name }) });
+
+// --- Messaging ---
+export const sendMessage = (recipientId: string, content: string, type: string, sharedContentId?: string) => {
+    return apiRequest('/messages', {
+        method: 'POST',
+        body: JSON.stringify({ recipientId, content, type, sharedContentId })
+    });
+};
+
+// --- Reels & Comments ---
+export const likeReel = (reelId: string) => postWithAuth(`/reels/${reelId}/like`);
+export const postReelComment = (reelId: string, text: string) => apiRequest(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+export const likeComment = (commentId: string) => postWithAuth(`/comments/${commentId}/like`);
+
+// --- Support & Reports ---
+export const createSupportTicket = (subject: string, description: string) => apiRequest('/misc/support-tickets', { method: 'POST', body: JSON.stringify({ subject, description }) });
+export const submitReport = (entityId: string, entityType: string, reason: string, details: string) => apiRequest('/misc/reports', { method: 'POST', body: JSON.stringify({ entityId, entityType, reason, details }) });

@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { Conversation, User, Message as MessageType } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
-import Message from '../Message.tsx';
+import Message from './Message.tsx';
 import MessageInput from './MessageInput.tsx';
 import ChatSettingsPanel from './ChatSettingsPanel.tsx';
 import TypingIndicator from './TypingIndicator.tsx';

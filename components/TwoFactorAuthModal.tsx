@@ -7,59 +7,37 @@ interface TwoFactorAuthModalProps {
 }
 
 const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({ onClose, onEnable }) => {
-    const [step, setStep] = useState(1);
     const [code, setCode] = useState('');
 
-    const renderStep = () => {
-        switch (step) {
-            case 1:
-                return (
-                    <>
-                        <p className="text-gray-400 mb-6">
-                            Add an extra layer of security to your account. You'll be asked for a code from an authenticator app when you log in.
-                        </p>
-                        <div className="flex justify-center my-4 p-4 bg-white rounded-lg">
-                            {/* In a real app, this would be a dynamically generated QR code */}
-                           <img src="/qr-code-placeholder.svg" alt="QR Code" className="w-40 h-40"/>
-                        </div>
-                        <p className="text-sm text-gray-500 mb-6">Scan this with your authenticator app (like Google Authenticator or Authy) to get started.</p>
-                        <button onClick={() => setStep(2)} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md">
-                            Next
-                        </button>
-                    </>
-                );
-            case 2:
-                 return (
-                    <>
-                        <p className="text-gray-400 mb-6">Enter the 6-digit code from your authenticator app to complete setup.</p>
-                        <input
-                            type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            placeholder="_ _ _ _ _ _"
-                            maxLength={6}
-                            className="w-full text-center text-2xl tracking-[.5em] bg-gray-700 border border-gray-600 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-red-500"
-                        />
-                        <button onClick={onEnable} disabled={code.length !== 6} className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-600">
-                            Enable 2FA
-                        </button>
-                    </>
-                 );
-        }
-    }
-
+    const handleEnable = () => {
+        // In a real app, you'd verify the code
+        onEnable();
+        onClose();
+    };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
       <div 
-        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md border border-gray-700 text-center p-8"
+        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md border border-gray-700 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <Icon className="w-12 h-12 text-red-500 mx-auto mb-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l3 3m0 0l3-3m-3 3v-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </Icon>
-        <h2 className="text-2xl font-bold mb-3">Two-Factor Authentication</h2>
-        {renderStep()}
+        <div className="flex items-center justify-center p-4 border-b border-gray-700 relative">
+          <h2 className="text-lg font-semibold">Enable Two-Factor Auth</h2>
+          <button onClick={onClose} className="absolute top-3 right-3"><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
+        </div>
+        <div className="p-6 text-center">
+            <h3 className="font-semibold text-lg">Scan QR Code</h3>
+            <p className="text-sm text-gray-400 mb-4">Scan this QR code with your authenticator app (like Google Authenticator or Authy).</p>
+            <div className="bg-white p-4 inline-block rounded-lg">
+                {/* Placeholder for QR Code Image */}
+                <div className="w-40 h-40 bg-gray-300 flex items-center justify-center text-gray-600">QR Code</div>
+            </div>
+            <div className="mt-4">
+                 <label htmlFor="2fa-code" className="block text-sm font-medium text-gray-400 mb-1">Enter Confirmation Code</label>
+                 <input id="2fa-code" type="text" value={code} onChange={e => setCode(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-center tracking-widest" placeholder="123456" />
+            </div>
+            <button onClick={handleEnable} disabled={code.length !== 6} className="mt-6 w-full bg-red-600 text-white font-semibold py-2 rounded-md disabled:bg-gray-600">Enable</button>
+        </div>
       </div>
     </div>
   );

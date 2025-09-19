@@ -1,21 +1,21 @@
-
-// Fix: Create the NotificationsPanel component.
 import React from 'react';
-// Fix: Corrected import path for types
-import type { Notification } from '../types.ts';
+import type { Notification, User } from '../types.ts';
+import Icon from './Icon.tsx';
 
 interface NotificationsPanelProps {
   notifications: Notification[];
   onClose: () => void;
+  onViewProfile: (user: User) => void;
+  onMarkAsRead: () => void;
 }
 
-const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose }) => {
-  const renderActivityText = (activity: Notification) => {
-    switch (activity.type) {
+const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose, onViewProfile, onMarkAsRead }) => {
+  const renderNotificationText = (notification: Notification) => {
+    switch (notification.type) {
       case 'like':
         return <>liked your post.</>;
       case 'comment':
-        return <>commented: "{activity.commentText}"</>;
+        return <>commented: "{notification.commentText}"</>;
       case 'follow':
         return <>started following you.</>;
       case 'mention':
@@ -27,27 +27,34 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, 
 
   return (
     <div className="fixed top-0 left-0 w-screen h-screen z-30" onClick={onClose}>
-        <div 
-            className="fixed top-0 left-0 md:left-[72px] lg:left-64 w-[397px] h-screen bg-black border-r border-gray-800 z-40 shadow-2xl rounded-r-2xl flex flex-col transition-transform duration-300 ease-in-out"
-            onClick={(e) => e.stopPropagation()}
-        >
-            <div className="p-6 h-full flex flex-col">
-                <h2 className="text-2xl font-bold mb-6">Notifications</h2>
-                 <div className="border-t border-gray-800 flex-1 overflow-y-auto -mx-6">
-                    {notifications.map(activity => (
-                        <div key={activity.id} className={`flex items-center gap-3 p-4 hover:bg-gray-900 relative ${!activity.read ? 'bg-red-500/10' : ''}`}>
-                            {!activity.read && <div className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-500"></div>}
-                            <img src={activity.user.avatar} alt={activity.user.username} className="w-11 h-11 rounded-full object-cover ml-4" />
-                            <p className="text-sm flex-1">
-                                <span className="font-bold">{activity.user.username}</span> {renderActivityText(activity)}
-                                <span className="text-gray-500"> · {activity.timestamp}</span>
-                            </p>
-                            {activity.post && <img src={activity.post.media[0].url} alt="post" className="w-11 h-11 object-cover rounded-md" />}
-                        </div>
-                    ))}
-                 </div>
-            </div>
+      <div 
+        className="fixed top-0 left-0 md:left-[72px] lg:left-64 w-[397px] h-screen bg-black border-r border-gray-800 z-40 shadow-2xl rounded-r-2xl flex flex-col transition-transform duration-300 ease-in-out"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6 h-full flex flex-col">
+          <h2 className="text-2xl font-bold mb-6">Notifications</h2>
+          <div className="border-t border-gray-800 flex-1 overflow-y-auto -mx-6">
+            {notifications.length > 0 ? (
+              <div className="py-2">
+                {notifications.map(notification => (
+                  <div key={notification.id} className="flex items-start gap-3 p-4 hover:bg-gray-800/50 cursor-pointer" onClick={() => onViewProfile(notification.user)}>
+                    <img src={notification.user.avatar} alt={notification.user.username} className="w-10 h-10 rounded-full object-cover" />
+                    <div className="flex-1">
+                      <p className="text-sm">
+                        <span className="font-semibold">{notification.user.username}</span> {renderNotificationText(notification)}
+                      </p>
+                      <p className="text-xs text-gray-500">{notification.timestamp}</p>
+                    </div>
+                    {notification.post && <img src={notification.post.media[0].url} alt="post" className="w-11 h-11 rounded-md object-cover" />}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 p-8">No new notifications.</p>
+            )}
+          </div>
         </div>
+      </div>
     </div>
   );
 };
