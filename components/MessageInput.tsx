@@ -5,7 +5,7 @@ import EmojiStickerPanel from './EmojiStickerPanel.tsx';
 import { socketService } from '../services/socketService.ts';
 
 interface MessageInputProps {
-  onSend: (content: string, type: Message['type']) => void;
+  onSend: (content: string | File, type: Message['type']) => void;
   replyingTo: Message | null;
   onCancelReply: () => void;
   conversationId: string;
@@ -32,7 +32,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
     setText(e.target.value);
     
-    if (!socketService.socket) return;
+    if (!socketService.socket || !otherUser) return;
     const payload = { conversationId, toUserId: otherUser.id };
 
     if (!typingTimeoutRef.current) {
@@ -55,20 +55,17 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
       onSend(text, 'text');
       setText('');
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      socketService.emit('stop_typing', { conversationId, toUserId: otherUser.id });
+      if(otherUser) socketService.emit('stop_typing', { conversationId, toUserId: otherUser.id });
     }
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        // In a real app, you would upload the file to a server and get a URL.
-        // For now, we'll use the base64 data URL as a mock.
-        onSend(reader.result as string, 'image');
-      };
-      reader.readAsDataURL(file);
+      const fileType = file.type.startsWith('image/') ? 'image' : 'file';
+      onSend(file, fileType);
+      // Clear the input value to allow selecting the same file again
+      if(fileInputRef.current) fileInputRef.current.value = "";
     }
   };
   
@@ -125,9 +122,9 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
                 <button onClick={handleSendVoicenote} className="p-1.5 rounded-full hover:bg-gray-700">
                     <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m12 7.5v-1.5a6 6 0 00-6-6v-1.5a6 6 0 00-6 6v1.5m6 6v-1.5m0-10.5v-1.5a6 6 0 00-6 6v1.5" /></Icon>
                 </button>
-                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                 <button onClick={() => fileInputRef.current?.click()} className="p-1.5 rounded-full hover:bg-gray-700">
-                    <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></Icon>
+                    <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.735L16.5 14.61m0 0l-1.875-1.875M16.5 14.61V9.75m1.125 9.75a8.966 8.966 0 01-1.583 5.054 8.966 8.966 0 01-11.874 0 8.966 8.966 0 01-1.583-5.054m15.04 0a8.966 8.966 0 00-1.583-5.054 8.966 8.966 0 00-11.874 0 8.966 8.966 0 00-1.583 5.054" /></Icon>
                 </button>
             </div>
           )}

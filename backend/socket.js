@@ -35,14 +35,20 @@ export const initSocket = (io) => {
                 recipientSocket.emit('stop_typing', { conversationId });
             }
         });
-
-        // --- Calling ---
-        socket.on('outgoing_call', ({ fromUser, toUserId }) => {
+        
+        socket.on('mark_as_seen', ({ conversationId, messageId, toUserId }) => {
             const recipientSocket = getSocketFromUserId(toUserId);
             if (recipientSocket) {
-                recipientSocket.emit('incoming_call', { fromUser });
+                recipientSocket.emit('message_seen', { conversationId, messageId });
+            }
+        });
+
+        // --- Video Calling & WebRTC Signaling ---
+        socket.on('outgoing_call', ({ fromUser, toUserId, callType }) => {
+            const recipientSocket = getSocketFromUserId(toUserId);
+            if (recipientSocket) {
+                recipientSocket.emit('incoming_call', { fromUser, callType });
             } else {
-                // Let the caller know the user is not online
                 socket.emit('call_error', { message: `${fromUser.username} is not online.` });
             }
         });
@@ -67,6 +73,29 @@ export const initSocket = (io) => {
                 otherUserSocket.emit('call_ended');
             }
         });
+
+        // WebRTC Signaling Events
+        socket.on('webrtc-offer', ({ offer, toUserId }) => {
+            const recipientSocket = getSocketFromUserId(toUserId);
+            if (recipientSocket) {
+                recipientSocket.emit('webrtc-offer', { offer });
+            }
+        });
+        
+        socket.on('webrtc-answer', ({ answer, toUserId }) => {
+            const recipientSocket = getSocketFromUserId(toUserId);
+            if (recipientSocket) {
+                recipientSocket.emit('webrtc-answer', { answer });
+            }
+        });
+
+        socket.on('webrtc-ice-candidate', ({ candidate, toUserId }) => {
+             const recipientSocket = getSocketFromUserId(toUserId);
+            if (recipientSocket) {
+                recipientSocket.emit('webrtc-ice-candidate', { candidate });
+            }
+        });
+
 
         socket.on('disconnect', () => {
             console.log(`Socket disconnected: ${socket.id}`);

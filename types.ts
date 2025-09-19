@@ -69,7 +69,7 @@ export interface StoryItem {
 }
 
 export interface Story {
-  id: string;
+  id:string;
   user: User;
   stories: StoryItem[];
 }
@@ -93,10 +93,18 @@ export interface Reel {
   timestamp: string;
 }
 
+export interface ConversationSettings {
+  theme: string;
+  vanish_mode_enabled: boolean;
+}
+
 export interface Conversation {
   id: string;
   participants: User[];
   messages: Message[];
+  isGroup: boolean;
+  name?: string; // For group chats
+  settings: ConversationSettings;
 }
 
 export interface MessageReaction {
@@ -113,15 +121,33 @@ export interface SharedContent {
   avatar_url: string;
 }
 
+export interface FileAttachment {
+  fileName: string;
+  fileSize: number;
+  fileUrl: string;
+  fileType: string;
+}
+
 export interface Message {
   id: string;
   senderId: string;
   content: string;
   timestamp: string;
-  type: 'text' | 'image' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel';
+  type: 'text' | 'image' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel' | 'file';
   read: boolean;
   reactions?: MessageReaction[];
   sharedContent?: SharedContent;
+  fileAttachment?: FileAttachment;
+}
+
+export interface Call {
+  id: string;
+  caller: User;
+  receiver: User;
+  type: 'audio' | 'video';
+  status: 'answered' | 'missed' | 'declined';
+  duration: number; // in seconds
+  timestamp: string;
 }
 
 export interface Notification {

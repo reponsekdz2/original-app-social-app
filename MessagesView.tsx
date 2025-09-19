@@ -72,10 +72,13 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     if (existingConvo) {
       setSelectedConversation(existingConvo);
     } else {
+      // Fix: Add missing isGroup and settings properties to the temporary conversation object.
       const tempConvo: Conversation = {
         id: `temp-convo-${Date.now()}`,
         participants: [currentUser, user],
         messages: [],
+        isGroup: false,
+        settings: { theme: 'default', vanish_mode_enabled: false },
       };
       setConversations(prev => [tempConvo, ...prev]);
       setSelectedConversation(tempConvo);
@@ -83,16 +86,19 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     setNewMessageModalOpen(false);
   };
   
-  const handleSendMessage = async (content: string, type: Message['type']) => {
+  // Fix: Update handleSendMessage to use FormData and handle file uploads, resolving API call errors.
+  const handleSendMessage = async (content: string | File, type: Message['type']) => {
     if (!selectedConversation) return;
     const otherUser = selectedConversation.participants.find(p => p.id !== currentUser.id);
     if (!otherUser) return;
 
     const tempId = `temp-msg-${Date.now()}`;
+    const optimisticContent = typeof content === 'string' ? content : URL.createObjectURL(content);
+
     const newMessage: Message = {
       id: tempId,
       senderId: currentUser.id,
-      content,
+      content: optimisticContent,
       type,
       timestamp: new Date().toISOString(),
       read: false,
@@ -101,8 +107,10 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     // Optimistic update
     updateConversationWithMessage(selectedConversation.id, newMessage);
     
+    const conversationId = selectedConversation.id.startsWith('temp-convo') ? undefined : selectedConversation.id;
+
     try {
-        const sentMessage = await api.sendMessage(otherUser.id, content, type);
+        await api.sendMessage(otherUser.id, content, type, undefined, undefined, conversationId);
         
         // If it was a new conversation, we need to refresh the list to get the real ID
         if (selectedConversation.id.startsWith('temp-convo')) {
@@ -110,8 +118,6 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             setConversations(newConversations); 
             const newSelected = newConversations.find(c => c.participants.some(p => p.id === otherUser.id));
             setSelectedConversation(newSelected || null);
-        } else {
-             // We rely on the socket confirmation to update the final message state
         }
     } catch(error) {
         console.error("Failed to send message:", error);

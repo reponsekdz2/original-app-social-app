@@ -12,7 +12,8 @@ import ChatSettingsPanel from './ChatSettingsPanel.tsx';
 interface ChatWindowProps {
   conversation: Conversation;
   currentUser: User;
-  onSendMessage: (content: string, type: Message['type']) => void;
+  // Fix: Update onSendMessage prop to handle File objects for attachments.
+  onSendMessage: (content: string | File, type: Message['type']) => void;
   onBack: () => void;
   onViewProfile: (user: User) => void;
   onInitiateCall: (user: User) => void;
@@ -78,6 +79,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, currentUser, onSe
   
   const handleUpdateUserRelationship = () => { /* Placeholder */ };
   const handleReport = () => { /* Placeholder */ };
+  // Fix: Add a placeholder handler for onUpdateSettings to satisfy the prop requirement.
+  const handleUpdateSettings = () => { /* Placeholder for updating chat settings */ };
 
   return (
     <div className="flex flex-col h-full relative">
@@ -137,12 +140,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, currentUser, onSe
 
       {isSettingsOpen && (
         <ChatSettingsPanel 
-            user={otherUser}
+            // Fix: Pass `conversation` prop instead of `user` and add `onUpdateSettings`.
+            conversation={conversation}
             currentUser={currentUser}
             onClose={() => setSettingsOpen(false)}
             onUpdateUserRelationship={handleUpdateUserRelationship}
             onReport={handleReport}
             onViewProfile={onViewProfile}
+            onUpdateSettings={handleUpdateSettings}
         />
       )}
     </div>

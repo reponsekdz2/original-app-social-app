@@ -1,6 +1,6 @@
 // This file centralizes all API calls to the backend.
 
-import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, Message } from './types.ts';
+import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket, Message, ConversationSettings } from './types.ts';
 
 const API_BASE_URL = '/api';
 
@@ -141,12 +141,53 @@ export const generateComment = (postCaption: string, style: string) => apiReques
 export const generateBio = (username: string, name: string) => apiRequest('/ai/generate-bio', { method: 'POST', body: JSON.stringify({ username, name }) });
 
 // --- Messaging ---
-export const sendMessage = (recipientId: string, content: string, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel'): Promise<Message> => {
-    return apiRequest('/messages', {
+// Fix: Update sendMessage to accept parameters and build FormData internally. This simplifies calls from components and resolves argument mismatch errors.
+export const sendMessage = (
+  recipientId: string,
+  content: string | File,
+  type: Message['type'],
+  sharedContentId?: string,
+  contentType?: 'post' | 'reel',
+  conversationId?: string,
+): Promise<Message> => {
+    const formData = new FormData();
+    if (conversationId) {
+        formData.append('conversationId', conversationId);
+    } else {
+        formData.append('recipientId', recipientId);
+    }
+    
+    if (typeof content === 'string') {
+        formData.append('content', content);
+    } else {
+        formData.append('file', content);
+    }
+
+    formData.append('type', type);
+
+    if (sharedContentId) {
+        formData.append('sharedContentId', sharedContentId);
+    }
+    if (contentType) {
+        formData.append('contentType', contentType);
+    }
+
+    return postFormData('/messages', formData);
+};
+
+export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => {
+    return apiRequest('/messages/group', {
         method: 'POST',
-        body: JSON.stringify({ recipientId, content, type, sharedContentId, contentType })
+        body: JSON.stringify({ name, userIds })
     });
 };
+
+export const updateConversationSettings = (conversationId: string, settings: Partial<ConversationSettings>): Promise<{ message: string }> => {
+    return apiRequest(`/messages/${conversationId}/settings`, {
+        method: 'PUT',
+        body: JSON.stringify(settings)
+    });
+}
 
 // --- Reels & Comments ---
 export const likeReel = (reelId: string) => postWithAuth(`/reels/${reelId}/like`);

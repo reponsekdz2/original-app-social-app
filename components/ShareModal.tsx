@@ -42,6 +42,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversat
     setSentTo(prev => [...prev, user.id]);
 
     try {
+        // Fix: Use the correct arguments for api.sendMessage.
         await api.sendMessage(user.id, `Shared a ${contentType}`, messageType, contentId, contentType);
         onShareSuccess(user);
     } catch (error) {

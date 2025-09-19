@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 
 // API & Services
 import * as api from './services/apiService.ts';
 import { socketService } from './services/socketService.ts';
+// Fix: Import webRTCManager to handle call logic.
+import { webRTCManager } from './services/WebRTCManager.ts';
 
 // Types
 // Fix: Add `Message` to the import list to resolve type errors.
@@ -13,7 +16,7 @@ import AuthView from './components/AuthView.tsx';
 import HomeView from './components/HomeView.tsx';
 import ExploreView from './components/ExploreView.tsx';
 import ReelsView from './components/ReelsView.tsx';
-import MessagesView from './components/MessagesView.tsx';
+import MessagesView from './MessagesView.tsx';
 import ProfileView from './components/ProfileView.tsx';
 import SettingsView from './components/SettingsView.tsx';
 import SavedView from './components/SavedView.tsx';
@@ -104,6 +107,11 @@ const App: React.FC = () => {
     const [isNotificationsVisible, setNotificationsVisible] = useState(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [callState, setCallState] = useState<CallState>({ status: 'idle' });
+    // Fix: Add state for call streams and controls
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isCameraOff, setIsCameraOff] = useState(false);
 
     const showToast = (message: string) => {
         setToastMessage(message);
@@ -298,36 +306,33 @@ const App: React.FC = () => {
         try { await api.toggleLike(postId); } catch (error) { setPosts(originalPosts); showToast('Failed to update like.'); }
     };
     
-    // Fix: Correctly implement optimistic update for saving posts by manipulating the `savedBy` array.
-    // This resolves the TypeScript error about `isSaved` not existing on type `Post` and fixes the underlying logic bug.
     const handleToggleSave = async (postId: string) => {
         if (!currentUser) return;
-
         const originalPosts = [...posts];
-        const postToUpdate = originalPosts.find(p => p.id === postId);
-
-        if (!postToUpdate) return;
         
-        const isSaved = postToUpdate.savedBy.some(u => u.id === currentUser.id);
-
-        setPosts(posts.map(p => {
+        // Optimistic update
+        setPosts(currentPosts => currentPosts.map(p => {
             if (p.id === postId) {
-                return {
-                    ...p,
-                    savedBy: isSaved
-                        ? p.savedBy.filter(u => u.id !== currentUser.id)
-                        : [...p.savedBy, currentUser],
-                };
+                const isSaved = p.savedBy.some(u => u.id === currentUser.id);
+                if (isSaved) {
+                    // Unsave
+                    return { ...p, savedBy: p.savedBy.filter(u => u.id !== currentUser.id) };
+                } else {
+                    // Save
+                    return { ...p, savedBy: [...p.savedBy, currentUser] };
+                }
             }
             return p;
         }));
-        
+
         try {
             await api.toggleSave(postId);
-            showToast(isSaved ? "Post unsaved" : "Post saved to your collection.");
+            const post = posts.find(p => p.id === postId);
+            const isCurrentlySaved = post ? post.savedBy.some(u => u.id === currentUser.id) : false;
+            showToast(isCurrentlySaved ? "Post unsaved" : "Post saved");
         } catch (error) {
-            showToast("Failed to update save status.");
             setPosts(originalPosts);
+            showToast('Failed to update save status.');
         }
     };
     
@@ -383,30 +388,68 @@ const App: React.FC = () => {
         }
     };
 
+    // Fix: Add handlers for toggling mute and camera
+    const handleToggleMute = useCallback(() => {
+        if (webRTCManager.localStream) {
+            webRTCManager.localStream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+            setIsMuted(prev => !prev);
+        }
+    }, []);
+
+    const handleToggleCamera = useCallback(() => {
+        if (webRTCManager.localStream) {
+            webRTCManager.localStream.getVideoTracks().forEach(track => track.enabled = !track.enabled);
+            setIsCameraOff(prev => !prev);
+        }
+    }, []);
+
     // --- Call Handlers ---
-    const handleInitiateCall = (userToCall: User) => {
+    // Fix: Update call handlers to manage WebRTC streams
+    const handleInitiateCall = async (userToCall: User) => {
         if (!currentUser) return;
-        setCallState({ status: 'outgoing', toUser: userToCall });
-        socketService.emit('outgoing_call', { fromUser: currentUser, toUserId: userToCall.id });
+        try {
+            const stream = await webRTCManager.getLocalStream();
+            setLocalStream(stream);
+            webRTCManager.createPeerConnection(userToCall.id, setRemoteStream);
+            setCallState({ status: 'outgoing', toUser: userToCall });
+            socketService.emit('outgoing_call', { fromUser: currentUser, toUserId: userToCall.id });
+        } catch(e) {
+            showToast("Couldn't start call. Check permissions.");
+            console.error(e);
+        }
     };
-    const handleAcceptCall = () => {
+    const handleAcceptCall = async () => {
         if (callState.status === 'incoming' && callState.fromUser && currentUser) {
-            socketService.emit('accept_call', { toUser: currentUser, fromUserId: callState.fromUser.id });
-            setCallState({ status: 'active', withUser: callState.fromUser });
+             try {
+                const stream = await webRTCManager.getLocalStream();
+                setLocalStream(stream);
+                webRTCManager.createPeerConnection(callState.fromUser.id, setRemoteStream);
+                socketService.emit('accept_call', { toUser: currentUser, fromUserId: callState.fromUser.id });
+                setCallState({ status: 'active', withUser: callState.fromUser });
+            } catch(e) {
+                showToast("Couldn't start call. Check permissions.");
+                console.error(e);
+            }
         }
     };
     const handleDeclineCall = () => {
         if (callState.status === 'incoming' && callState.fromUser) {
             socketService.emit('decline_call', { fromUserId: callState.fromUser.id });
         }
+        webRTCManager.hangup();
         setCallState({ status: 'idle' });
+        setLocalStream(null);
+        setRemoteStream(null);
     };
     const handleEndCall = () => {
         const otherUserId = callState.toUser?.id || callState.withUser?.id || callState.fromUser?.id;
         if (otherUserId) {
             socketService.emit('end_call', { toUserId: otherUserId });
         }
+        webRTCManager.hangup();
         setCallState({ status: 'idle' });
+        setLocalStream(null);
+        setRemoteStream(null);
     };
 
     const renderView = () => {
@@ -469,7 +512,20 @@ const App: React.FC = () => {
 
             {/* Call Modals */}
             {callState?.status === 'incoming' && callState.fromUser && <IncomingCallModal user={callState.fromUser} onAccept={handleAcceptCall} onDecline={handleDeclineCall} />}
-            {(callState?.status === 'outgoing' || callState?.status === 'active') && (callState.toUser || callState.withUser) && <CallModal user={(callState.toUser || callState.withUser)!} status={callState.status} onEndCall={handleEndCall} />}
+            {/* Fix: Pass all required props to CallModal to resolve type error */}
+            {(callState?.status === 'outgoing' || callState?.status === 'active') && (callState.toUser || callState.withUser) && 
+                <CallModal 
+                    user={(callState.toUser || callState.withUser)!} 
+                    status={callState.status} 
+                    onEndCall={handleEndCall}
+                    localStream={localStream}
+                    remoteStream={remoteStream}
+                    isMuted={isMuted}
+                    isCameraOff={isCameraOff}
+                    onToggleMute={handleToggleMute}
+                    onToggleCamera={handleToggleCamera}
+                />
+            }
             
             {toastMessage && (
                 <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50">
