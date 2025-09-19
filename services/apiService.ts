@@ -1,193 +1,130 @@
-// A simple API wrapper for making requests to the backend.
-import type { User, Post, Reel, Story, Comment, Conversation, Notification, TrendingTopic, FeedActivity, SponsoredContent, Testimonial, HelpArticle, SupportTicket } from '../types.ts';
+// Fix: Create the apiService.ts file to handle backend communication.
+import type { User, Post, Comment, Reel, Story, Conversation, FeedActivity, TrendingTopic, SponsoredContent, Testimonial, HelpArticle, SupportTicket } from '../types.ts';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://localhost:3000/api';
 
-let authToken: string | null = null;
+// A helper to manage the auth token
+let authToken: string | null = localStorage.getItem('authToken');
 
 export const setAuthToken = (token: string | null) => {
     authToken = token;
+    if (token) {
+        localStorage.setItem('authToken', token);
+    } else {
+        localStorage.removeItem('authToken');
+    }
 };
 
-const getHeaders = (isFormData = false) => {
-    const headers: Record<string, string> = {};
-    if (!isFormData) {
-        headers['Content-Type'] = 'application/json';
-    }
+export const getAuthToken = (): string | null => {
+    return authToken;
+};
+
+// A generic fetch wrapper to handle errors and headers
+const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+    };
     if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
     }
-    return headers;
-};
 
-
-const handleResponse = async (response: Response) => {
-    if (response.status === 204) { // No Content
-        return;
-    }
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-    return data;
-};
-
-const apiRequest = async (method: string, endpoint: string, body?: any) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method,
-        headers: getHeaders(),
-        body: body ? JSON.stringify(body) : null,
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
     });
-    return handleResponse(response);
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
 };
 
 // --- Auth ---
 export const login = (identifier: string, password: string): Promise<{ user: User, token: string }> => {
-    return apiRequest('POST', '/auth/login', { identifier, password });
+    return apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ identifier, password }),
+    });
 };
 
-// Fix: Changed type of userData from Partial<User> to `any` to allow for the 'password' field during registration.
-export const register = (userData: any): Promise<{ user: User, token: string }> => {
-    return apiRequest('POST', '/auth/register', userData);
-};
-
-export const getCurrentUser = (): Promise<{ user: User }> => {
-    return apiRequest('GET', '/auth/me');
-};
-
-// --- AI ---
-export const generateCaption = (base64Data: string, mimeType: string): Promise<{ caption: string }> => {
-    return apiRequest('POST', '/ai/generate-caption', { base64Data, mimeType });
-};
-
-export const generateStoryImage = (prompt: string): Promise<{ imageB64: string }> => {
-    return apiRequest('POST', '/ai/generate-story-image', { prompt });
-};
-
-export const generateComment = (postCaption: string, style: string): Promise<{ comment: string }> => {
-    return apiRequest('POST', '/ai/generate-comment', { postCaption, style });
-};
-
-export const generateBio = (username: string, name: string): Promise<{ bio: string }> => {
-    return apiRequest('POST', '/ai/generate-bio', { username, name });
+export const register = (userData: Omit<User, 'id' | 'followers' | 'following' | 'stories' | 'highlights' | 'isVerified' | 'isPremium' | 'isPrivate' | 'notificationSettings' | 'mutedUsers' | 'blockedUsers'> & { password: string }): Promise<{ user: User, token: string }> => {
+    return apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+    });
 };
 
 // --- Data Fetching ---
-export const getFeed = (): Promise<{ posts: Post[], stories: Story[] }> => {
-    return apiRequest('GET', '/feed');
-};
+export const getFeed = (): Promise<{ posts: Post[] }> => apiFetch('/posts/feed');
+export const getStories = (): Promise<{ stories: Story[] }> => apiFetch('/stories/feed');
+export const getSuggestedUsers = (): Promise<{ users: User[] }> => apiFetch('/users/suggestions');
+export const getExplorePosts = (): Promise<{ posts: Post[] }> => apiFetch('/posts/explore');
+export const getReels = (): Promise<{ reels: Reel[] }> => apiFetch('/reels');
+export const getAllUsers = (): Promise<{ users: User[] }> => apiFetch('/users/all');
+export const getConversations = (): Promise<{ conversations: Conversation[] }> => apiFetch('/messages/conversations');
+export const getMiscFeedData = (): Promise<{ feedActivities: FeedActivity[], trendingTopics: TrendingTopic[], sponsoredContent: SponsoredContent[] }> => apiFetch('/misc/feed-data');
+export const getPremiumData = (): Promise<{ testimonials: Testimonial[] }> => apiFetch('/misc/premium-data');
+export const getHelpArticles = (): Promise<{ articles: HelpArticle[] }> => apiFetch('/misc/help-articles');
+export const getSupportTickets = (): Promise<{ tickets: SupportTicket[] }> => apiFetch('/misc/support-tickets');
+export const getStickers = (): Promise<string[]> => apiFetch('/misc/stickers'); // For EmojiStickerPanel
 
-export const getExplorePosts = (): Promise<Post[]> => {
-    return apiRequest('GET', '/explore');
-};
-
-export const getReels = (): Promise<Reel[]> => {
-    return apiRequest('GET', '/reels');
-};
-
-export const getConversations = (): Promise<Conversation[]> => {
-    return apiRequest('GET', '/messages');
-};
-
-export const getSidebarData = (): Promise<{
-    trendingTopics: TrendingTopic[];
-    suggestedUsers: User[];
-    feedActivities: FeedActivity[];
-    sponsoredContent: SponsoredContent[];
-}> => {
-    return apiRequest('GET', '/misc/sidebar-data');
-};
-
-export const getAllUsers = (): Promise<User[]> => {
-    return apiRequest('GET', '/users');
-};
-
-export const getUserProfile = (username: string): Promise<{ user: User, posts: Post[], reels: Reel[] }> => {
-    return apiRequest('GET', `/users/profile/${username}`);
-};
-
-export const getPremiumPageData = (): Promise<{ testimonials: Testimonial[] }> => {
-    return apiRequest('GET', '/misc/premium-data');
-}
-
-export const getHelpArticles = (): Promise<HelpArticle[]> => {
-    return apiRequest('GET', '/misc/help');
-}
-
-export const getSupportTickets = (): Promise<SupportTicket[]> => {
-    return apiRequest('GET', '/misc/support');
-}
-
-// Fix: Added missing API service functions used in App.tsx.
-export const getSavedPosts = (): Promise<Post[]> => {
-    return apiRequest('GET', '/posts/saved');
-};
-
-export const getArchivedPosts = (): Promise<Post[]> => {
-    return apiRequest('GET', '/posts/archived');
-};
-
-export const getNotifications = (): Promise<Notification[]> => {
-    return apiRequest('GET', '/notifications');
-};
-
-
-// --- Posts ---
+// --- Actions ---
+export const togglePostLike = (postId: string): Promise<{ liked: boolean }> => apiFetch(`/posts/${postId}/like`, { method: 'POST' });
+export const togglePostSave = (postId: string): Promise<{ saved: boolean }> => apiFetch(`/posts/${postId}/save`, { method: 'POST' });
+export const addComment = (postId: string, text: string): Promise<Comment> => apiFetch(`/posts/${postId}/comment`, { method: 'POST', body: JSON.stringify({ text }) });
+export const followUser = (userId: string): Promise<{ success: boolean }> => apiFetch(`/users/${userId}/follow`, { method: 'POST' });
+export const unfollowUser = (userId: string): Promise<{ success: boolean }> => apiFetch(`/users/${userId}/unfollow`, { method: 'POST' });
 export const createPost = (formData: FormData): Promise<Post> => {
-    return fetch(`${API_BASE_URL}/posts`, {
+    // For FormData, we don't set Content-Type, fetch does it automatically
+    return fetch(`${BASE_URL}/posts`, {
         method: 'POST',
-        headers: getHeaders(true),
+        headers: { 'Authorization': `Bearer ${authToken}` },
         body: formData,
-    }).then(handleResponse);
+    }).then(res => res.json());
 };
-
-export const createStory = (formData: FormData): Promise<{message: string}> => {
-     return fetch(`${API_BASE_URL}/stories`, {
+export const createStory = (formData: FormData): Promise<Story> => {
+     return fetch(`${BASE_URL}/stories`, {
         method: 'POST',
-        headers: getHeaders(true),
+        headers: { 'Authorization': `Bearer ${authToken}` },
         body: formData,
-    }).then(handleResponse);
-};
-
-export const toggleLikePost = (postId: string): Promise<{ liked: boolean, likesCount: number }> => {
-    return apiRequest('POST', `/posts/${postId}/like`);
-};
-
-export const toggleLikeReel = (reelId: string): Promise<{ liked: boolean, likesCount: number }> => {
-    return apiRequest('POST', `/reels/${reelId}/like`);
-};
-
-export const toggleSave = (postId: string): Promise<{ saved: boolean }> => {
-    return apiRequest('POST', `/posts/${postId}/save`);
-};
-
-export const addComment = (postId: string, text: string): Promise<Comment> => {
-    return apiRequest('POST', `/posts/${postId}/comment`, { text });
-};
-
-export const updateUser = (formData: FormData): Promise<User> => {
-    return fetch(`${API_BASE_URL}/users/me`, {
+    }).then(res => res.json());
+}
+export const updateProfile = (formData: FormData): Promise<User> => {
+    return fetch(`${BASE_URL}/users/profile`, {
         method: 'PUT',
-        headers: getHeaders(true),
+        headers: { 'Authorization': `Bearer ${authToken}` },
         body: formData,
-    }).then(handleResponse);
+    }).then(res => res.json());
 };
 
-export const followUser = (userId: string): Promise<{ success: boolean }> => {
-    return apiRequest('POST', `/users/${userId}/follow`);
+// --- AI Generation (called by geminiService) ---
+export const generateCaption = (base64Data: string, mimeType: string): Promise<{ caption: string }> => {
+  return apiFetch('/ai/generate-caption', {
+    method: 'POST',
+    body: JSON.stringify({ base64Data, mimeType }),
+  });
 };
 
-export const unfollowUser = (userId: string): Promise<{ success: boolean }> => {
-    return apiRequest('POST', `/users/${userId}/unfollow`);
+export const generateStoryImage = (prompt: string): Promise<{ imageB64: string }> => {
+  return apiFetch('/ai/generate-story-image', {
+    method: 'POST',
+    body: JSON.stringify({ prompt }),
+  });
 };
 
-// This is a placeholder. Stickers would likely be a static asset or from a CDN.
-export const getStickers = async (): Promise<string[]> => {
-    // In a real app, this would fetch from an API endpoint.
-    // For now, returning mock data.
-    return Promise.resolve([
-        '/stickers/sticker1.png',
-        '/stickers/sticker2.png',
-        '/stickers/sticker3.png',
-    ]);
+export const generateComment = (postCaption: string, style: string): Promise<{ comment: string }> => {
+  return apiFetch('/ai/generate-comment', {
+    method: 'POST',
+    body: JSON.stringify({ postCaption, style }),
+  });
+};
+
+export const generateBio = (username: string, name: string): Promise<{ bio: string }> => {
+  return apiFetch('/ai/generate-bio', {
+    method: 'POST',
+    body: JSON.stringify({ username, name }),
+  });
 };
