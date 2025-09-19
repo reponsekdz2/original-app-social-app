@@ -56,10 +56,10 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
           {options.map((option, index) => (
             <button 
               key={index} 
-              onClick={() => { if(option.action) option.action(); onClose(); }} 
-              className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 transition-colors ${option.className || ''}`}
+              onClick={() => { if(option && option.action) option.action(); onClose(); }} 
+              className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 transition-colors ${option ? option.className || '' : ''}`}
             >
-              {option.label}
+              {option ? option.label : ''}
             </button>
           ))}
            <button onClick={onClose} className="w-full py-3 text-sm hover:bg-gray-700/50 transition-colors">

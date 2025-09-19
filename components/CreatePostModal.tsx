@@ -21,7 +21,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
     if (e.target.files) {
       const files = Array.from(e.target.files);
       setMediaFiles(files);
-      const previews = files.map(file => ({
+      // Fix: Explicitly type the `previews` array to ensure type compatibility with `mediaPreviews` state.
+      const previews: { url: string; type: 'image' | 'video' }[] = files.map(file => ({
         url: URL.createObjectURL(file),
         type: file.type.startsWith('video') ? 'video' : 'image',
       }));
