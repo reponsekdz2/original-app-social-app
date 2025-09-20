@@ -146,6 +146,13 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             onBack={() => setSelectedConversation(null)}
             onViewProfile={(user) => onNavigate('profile', user)}
             onInitiateCall={onInitiateCall}
+            // Fix: Pass the onUpdateConversation prop to satisfy ChatWindow's required props.
+            onUpdateConversation={(updatedConvo) => {
+                setConversations(prev => prev.map(c => c.id === updatedConvo.id ? updatedConvo : c));
+                if (selectedConversation?.id === updatedConvo.id) {
+                    setSelectedConversation(updatedConvo);
+                }
+            }}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 p-4">

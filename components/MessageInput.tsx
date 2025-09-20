@@ -1,8 +1,5 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon.tsx';
-// Fix: Corrected import path for types to be relative.
 import type { Message, User } from '../types';
 import EmojiStickerPanel from './EmojiStickerPanel.tsx';
 import { socketService } from '../services/socketService.ts';
@@ -67,7 +64,6 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
       const file = e.target.files[0];
       const fileType = file.type.startsWith('image/') ? 'image' : 'file';
       onSend(file, fileType);
-      // Clear the input value to allow selecting the same file again
       if(fileInputRef.current) fileInputRef.current.value = "";
     }
   };

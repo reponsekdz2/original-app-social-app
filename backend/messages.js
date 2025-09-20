@@ -49,7 +49,7 @@ router.get('/', protect, async (req, res) => {
             
             const [messages] = await pool.query(
                 `SELECT 
-                    m.id, m.sender_id as senderId, m.content, m.created_at as timestamp, m.message_type as type,
+                    m.id, m.sender_id as senderId, m.content, m.created_at as timestamp, m.message_type as type, m.read_status as 'read',
                     m.shared_content_id, m.shared_content_type, m.file_name, m.file_size, m.file_url, m.file_type
                  FROM messages m WHERE m.conversation_id = ? ORDER BY m.created_at ASC`,
                 [convo.id]
@@ -109,7 +109,8 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
             const [convos] = await connection.query(
                 `SELECT cp1.conversation_id FROM conversation_participants cp1
                  JOIN conversation_participants cp2 ON cp1.conversation_id = cp2.conversation_id
-                 WHERE cp1.user_id = ? AND cp2.user_id = ?`,
+                 JOIN conversations c ON cp1.conversation_id = c.id
+                 WHERE cp1.user_id = ? AND cp2.user_id = ? AND c.is_group = FALSE`,
                 [senderId, recipientId]
             );
             if (convos.length > 0) {
@@ -129,7 +130,7 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
             file_size = req.file.size;
             file_url = `/uploads/attachments/${req.file.filename}`;
             file_type = req.file.mimetype;
-            if (type === 'image') messageContent = file_url; // For image type, content is the URL
+            if (type === 'image') messageContent = file_url;
         }
 
         const [msgResult] = await connection.query(
@@ -140,14 +141,13 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
         
         await connection.commit();
         
-        const [msgRows] = await connection.query('SELECT * FROM messages WHERE id = ?', [messageId]);
+        const [msgRows] = await connection.query('SELECT *, sender_id as senderId FROM messages WHERE id = ?', [messageId]);
         const dbMessage = msgRows[0];
-
+        
         const messageToEmit = {
-            id: dbMessage.id, senderId: dbMessage.sender_id, content: dbMessage.content,
-            timestamp: dbMessage.created_at, type: dbMessage.message_type, reactions: [],
+            ...dbMessage,
+            reactions: [],
             fileAttachment: (dbMessage.file_url) ? { fileName: dbMessage.file_name, fileSize: dbMessage.file_size, fileUrl: dbMessage.file_url, fileType: dbMessage.file_type } : null,
-            // ... add shared content resolving if needed
         };
 
         const participants = await getParticipants(connection, conversationId);
@@ -155,7 +155,7 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
         participants.forEach(p => {
             const socket = getSocketFromUserId(p.id);
             if (socket) {
-                const event = p.id === senderId ? 'message_sent_confirmation' : 'receive_message';
+                const event = String(p.id) === String(senderId) ? 'message_sent_confirmation' : 'receive_message';
                 socket.emit(event, { conversationId, message: messageToEmit });
             }
         });
@@ -218,13 +218,14 @@ router.post('/group', protect, async (req, res) => {
 router.put('/:id/settings', protect, async (req, res) => {
     const conversationId = req.params.id;
     const { theme, vanish_mode_enabled } = req.body;
-    const userId = req.user.id;
     
     try {
         await pool.query(
             `INSERT INTO conversation_settings (conversation_id, theme, vanish_mode_enabled)
              VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE theme = VALUES(theme), vanish_mode_enabled = VALUES(vanish_mode_enabled)`,
+             ON DUPLICATE KEY UPDATE 
+                theme = VALUES(theme), 
+                vanish_mode_enabled = VALUES(vanish_mode_enabled)`,
             [conversationId, theme, vanish_mode_enabled]
         );
         res.json({ message: 'Settings updated' });

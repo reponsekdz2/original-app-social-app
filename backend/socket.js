@@ -14,7 +14,6 @@ export const initSocket = (io) => {
     io.on('connection', (socket) => {
         console.log(`Socket connected: ${socket.id}`);
 
-        // Fix: Use socket.handshake.auth instead of query, to match modern socket.io-client standards.
         const userId = socket.handshake.auth.userId;
         if (userId) {
             console.log(`User registered: ${userId} with socket ${socket.id}`);
@@ -36,18 +35,18 @@ export const initSocket = (io) => {
             }
         });
         
-        socket.on('mark_as_seen', ({ conversationId, messageId, toUserId }) => {
+        socket.on('mark_as_read', ({ conversationId, messageId, toUserId }) => {
             const recipientSocket = getSocketFromUserId(toUserId);
             if (recipientSocket) {
-                recipientSocket.emit('message_seen', { conversationId, messageId });
+                recipientSocket.emit('message_read', { conversationId, messageId });
             }
         });
 
         // --- Video Calling & WebRTC Signaling ---
-        socket.on('outgoing_call', ({ fromUser, toUserId, callType }) => {
+        socket.on('outgoing_call', ({ fromUser, toUserId, callType, offer }) => {
             const recipientSocket = getSocketFromUserId(toUserId);
             if (recipientSocket) {
-                recipientSocket.emit('incoming_call', { fromUser, callType });
+                recipientSocket.emit('incoming_call', { fromUser, callType, offer });
             } else {
                 socket.emit('call_error', { message: `${fromUser.username} is not online.` });
             }
@@ -60,8 +59,8 @@ export const initSocket = (io) => {
             }
         });
         
-        socket.on('decline_call', ({ fromUserId }) => {
-            const callerSocket = getSocketFromUserId(fromUserId);
+        socket.on('decline_call', ({ toUserId }) => {
+            const callerSocket = getSocketFromUserId(toUserId);
             if (callerSocket) {
                 callerSocket.emit('call_declined');
             }
@@ -78,7 +77,7 @@ export const initSocket = (io) => {
         socket.on('webrtc-offer', ({ offer, toUserId }) => {
             const recipientSocket = getSocketFromUserId(toUserId);
             if (recipientSocket) {
-                recipientSocket.emit('webrtc-offer', { offer });
+                recipientSocket.emit('webrtc-offer', { offer, fromUserId: userId });
             }
         });
         

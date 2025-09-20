@@ -103,7 +103,6 @@ export const toggleSave = (postId: string): Promise<void> => apiFetch(`/posts/${
 export const addComment = (postId: string, text: string): Promise<Comment> => apiFetch(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
 export const toggleReelLike = (reelId: string): Promise<void> => apiFetch(`/reels/${reelId}/like`, { method: 'POST' });
 export const addReelComment = (reelId: string, text: string): Promise<void> => apiFetch(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
-// Fix: Add missing getNotifications function.
 export const getNotifications = (): Promise<Notification[]> => apiFetch('/misc/notifications');
 
 // --- Post Management ---
@@ -138,6 +137,11 @@ export const sendMessage = (recipientId: string, content: string | File, type: M
     return apiFetch('/messages', { method: 'POST', body: formData });
 };
 export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => apiFetch('/messages/group', { method: 'POST', body: JSON.stringify({ name, userIds }) });
+export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => 
+    apiFetch(`/messages/${conversationId}/settings`, {
+        method: 'PUT',
+        body: JSON.stringify(settings)
+    });
 
 // --- Misc ---
 export const getTrendingTopics = (): Promise<TrendingTopic[]> => apiFetch('/misc/trending');
@@ -161,7 +165,6 @@ export const getAdminContentTrendsData = (): Promise<{ labels: string[], postVal
 export const getAdminUsers = (searchTerm: string): Promise<User[]> => apiFetch(`/admin/users?search=${searchTerm}`);
 export const updateAdminUser = (userId: string, updates: any): Promise<void> => apiFetch(`/admin/users/${userId}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteAdminUser = (userId: string): Promise<void> => apiFetch(`/admin/users/${userId}`, { method: 'DELETE' });
-// Fix: Correct the return type to match the actual API response for the admin content endpoint.
 export const getAdminContent = (type: 'posts' | 'reels'): Promise<({ id: string, username: string, caption: string, media_url: string })[]> => apiFetch(`/admin/content?type=${type}`);
 export const deleteAdminContent = (type: 'post' | 'reel', id: string): Promise<void> => apiFetch(`/admin/content/${type}/${id}`, { method: 'DELETE' });
 export const getAdminReports = (): Promise<Report[]> => apiFetch('/admin/reports');

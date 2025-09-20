@@ -15,13 +15,11 @@ class WebRTCManager {
 
   private onRemoteStreamCallback: ((stream: MediaStream) => void) | null = null;
 
-  async getLocalStream(): Promise<MediaStream> {
-    if (this.localStream) return this.localStream;
+  async getLocalStream(video = true, audio = true): Promise<MediaStream> {
+    // Stop any existing tracks before getting a new stream
+    this.localStream?.getTracks().forEach(track => track.stop());
     
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
+    const stream = await navigator.mediaDevices.getUserMedia({ video, audio });
     this.localStream = stream;
     return stream;
   }
@@ -89,17 +87,26 @@ class WebRTCManager {
   }
 
   async handleIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
-    if (!this.peerConnection) return;
-    await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    if (!this.peerConnection || !candidate) return;
+    try {
+      await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (e) {
+      console.error('Error adding received ice candidate', e);
+    }
   }
   
   hangup(): void {
     this.localStream?.getTracks().forEach(track => track.stop());
-    this.peerConnection?.close();
+    if (this.peerConnection) {
+        this.peerConnection.ontrack = null;
+        this.peerConnection.onicecandidate = null;
+        this.peerConnection.close();
+    }
     this.peerConnection = null;
     this.localStream = null;
     this.remoteStream = null;
     this.otherUserId = null;
+    this.onRemoteStreamCallback = null;
   }
 }
 

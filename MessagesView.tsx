@@ -1,10 +1,6 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { Conversation, User, Message } from './types';
 import Icon from './components/Icon.tsx';
-// Fix: Correct import path for ChatWindow
 import ChatWindow from './components/ChatWindow.tsx';
 import VerifiedBadge from './components/VerifiedBadge.tsx';
 import NewMessageModal from './components/NewMessageModal.tsx';
@@ -16,10 +12,11 @@ interface MessagesViewProps {
   currentUser: User;
   allUsers: User[];
   onNavigate: (view: 'profile', user: User) => void;
-  onInitiateCall: (user: User) => void;
+  onInitiateCall: (user: User, type: 'video' | 'audio') => void;
+  onUpdateConversation: (updatedConvo: Conversation) => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall }) => {
+const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall, onUpdateConversation }) => {
   const [conversations, setConversations] = useState(initialConversations);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(initialConversations[0] || null);
   const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
@@ -28,15 +25,27 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     setConversations(initialConversations);
     if (!selectedConversation && initialConversations.length > 0) {
         setSelectedConversation(initialConversations[0]);
+    } else if (selectedConversation) {
+        // If the selected conversation is in the updated list, use the updated version
+        const updatedSelected = initialConversations.find(c => c.id === selectedConversation.id);
+        setSelectedConversation(updatedSelected || null);
     }
-  }, [initialConversations, selectedConversation]);
+  }, [initialConversations]);
   
   const updateConversationWithMessage = useCallback((conversationId: string, message: Message, isFinal: boolean = false) => {
     const updateFn = (convo: Conversation) => {
         if (convo.id === conversationId) {
-            const messages = isFinal 
-                ? convo.messages.map(m => m.id === message.id || m.id === `temp-${message.id}` ? message : m)
-                : [...convo.messages.filter(m => m.id !== message.id), message];
+            let messages;
+            const existingMsgIndex = convo.messages.findIndex(m => m.id === message.id || m.id === `temp-${message.id}`);
+
+            if (existingMsgIndex > -1) {
+                // Update existing message (e.g., confirmation)
+                messages = [...convo.messages];
+                messages[existingMsgIndex] = message;
+            } else {
+                // Add new message
+                messages = [...convo.messages, message];
+            }
             return { ...convo, messages };
         }
         return convo;
@@ -71,11 +80,10 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
   };
   
   const handleStartNewConversation = (user: User) => {
-    const existingConvo = conversations.find(c => c.participants.length === 2 && c.participants.some(p => p.id === user.id));
+    const existingConvo = conversations.find(c => !c.isGroup && c.participants.length === 2 && c.participants.some(p => p.id === user.id));
     if (existingConvo) {
       setSelectedConversation(existingConvo);
     } else {
-      // Fix: Add missing isGroup and settings properties to the temporary conversation object.
       const tempConvo: Conversation = {
         id: `temp-convo-${Date.now()}`,
         participants: [currentUser, user],
@@ -89,11 +97,10 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     setNewMessageModalOpen(false);
   };
   
-  // Fix: Update handleSendMessage to use FormData and handle file uploads, resolving API call errors.
   const handleSendMessage = async (content: string | File, type: Message['type']) => {
     if (!selectedConversation) return;
     const otherUser = selectedConversation.participants.find(p => p.id !== currentUser.id);
-    if (!otherUser) return;
+    if (!otherUser && !selectedConversation.isGroup) return;
 
     const tempId = `temp-msg-${Date.now()}`;
     const optimisticContent = typeof content === 'string' ? content : URL.createObjectURL(content);
@@ -113,18 +120,16 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     const conversationId = selectedConversation.id.startsWith('temp-convo') ? undefined : selectedConversation.id;
 
     try {
-        await api.sendMessage(otherUser.id, content, type, undefined, undefined, conversationId);
+        await api.sendMessage(otherUser!.id, content, type, undefined, undefined, conversationId);
         
-        // If it was a new conversation, we need to refresh the list to get the real ID
         if (selectedConversation.id.startsWith('temp-convo')) {
             const newConversations = await api.getConversations();
             setConversations(newConversations); 
-            const newSelected = newConversations.find(c => c.participants.some(p => p.id === otherUser.id));
+            const newSelected = newConversations.find(c => c.participants.some(p => p.id === otherUser!.id));
             setSelectedConversation(newSelected || null);
         }
     } catch(error) {
         console.error("Failed to send message:", error);
-        // Revert optimistic update on failure
         setConversations(prev => prev.map(c => 
             c.id === selectedConversation.id 
                 ? { ...c, messages: c.messages.filter(m => m.id !== tempId) } 
@@ -177,6 +182,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             onBack={() => setSelectedConversation(null)}
             onViewProfile={(user) => onNavigate('profile', user)}
             onInitiateCall={onInitiateCall}
+            onUpdateConversation={onUpdateConversation}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 p-4">

@@ -1,1 +1,351 @@
-full contents of backend/schema.txt
+-- Users Table: Core of the application
+CREATE TABLE `users` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `username` varchar(50) NOT NULL UNIQUE,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL UNIQUE,
+  `password` varchar(255) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `dob` date DEFAULT NULL,
+  `avatar_url` varchar(255) DEFAULT '/uploads/default_avatar.png',
+  `bio` text,
+  `website` varchar(255) DEFAULT NULL,
+  `gender` enum('Male','Female','Other','Prefer not to say') DEFAULT 'Prefer not to say',
+  `is_verified` tinyint(1) NOT NULL DEFAULT '0',
+  `is_premium` tinyint(1) NOT NULL DEFAULT '0',
+  `is_private` tinyint(1) NOT NULL DEFAULT '0',
+  `is_2fa_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `password_reset_token` VARCHAR(255) DEFAULT NULL,
+  `password_reset_expires` DATETIME DEFAULT NULL,
+  `wallet_balance` DECIMAL(10, 2) NOT NULL DEFAULT 100.00,
+  `is_admin` BOOLEAN NOT NULL DEFAULT FALSE,
+  PRIMARY KEY (`id`)
+);
+
+-- User Settings: Separated for clarity
+CREATE TABLE `user_settings` (
+  `user_id` varchar(36) NOT NULL,
+  `likes_notifications` tinyint(1) NOT NULL DEFAULT '1',
+  `comments_notifications` tinyint(1) NOT NULL DEFAULT '1',
+  `follows_notifications` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Followers/Following relationship table
+CREATE TABLE `followers` (
+  `follower_id` varchar(36) NOT NULL,
+  `following_id` varchar(36) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`follower_id`,`following_id`),
+  FOREIGN KEY (`follower_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`following_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Posts Table
+CREATE TABLE `posts` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `user_id` varchar(36) NOT NULL,
+  `caption` text,
+  `location` varchar(255) DEFAULT NULL,
+  `is_archived` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Post Media (for multi-image/video posts)
+CREATE TABLE `post_media` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `post_id` varchar(36) NOT NULL,
+  `media_url` varchar(255) NOT NULL,
+  `media_type` enum('image','video') NOT NULL,
+  `sort_order` int NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
+);
+
+-- Reels Table
+CREATE TABLE `reels` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `user_id` varchar(36) NOT NULL,
+  `video_url` varchar(255) NOT NULL,
+  `caption` text,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Comments Table
+CREATE TABLE `comments` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `post_id` varchar(36) DEFAULT NULL,
+  `reel_id` varchar(36) DEFAULT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `text` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`reel_id`) REFERENCES `reels` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Post Likes (Join Table)
+CREATE TABLE `post_likes` (
+  `post_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`post_id`,`user_id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Comment Likes (Join Table)
+CREATE TABLE `comment_likes` (
+  `comment_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`comment_id`,`user_id`),
+  FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+
+-- Post Saves (Bookmarks)
+CREATE TABLE `post_saves` (
+  `post_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`post_id`,`user_id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Stories Table (acts as a container for items)
+CREATE TABLE `stories` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `user_id` varchar(36) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Individual Story Items
+CREATE TABLE `story_items` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `story_id` varchar(36) NOT NULL,
+  `media_url` varchar(255) NOT NULL,
+  `media_type` enum('image','video') NOT NULL,
+  `duration_ms` int DEFAULT '7000',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`story_id`) REFERENCES `stories` (`id`) ON DELETE CASCADE
+);
+
+-- Story Highlights
+CREATE TABLE `story_highlights` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `user_id` varchar(36) NOT NULL,
+  `title` varchar(100) NOT NULL,
+  `cover_image_url` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Link table for highlights and stories
+CREATE TABLE `highlight_stories` (
+  `highlight_id` varchar(36) NOT NULL,
+  `story_item_id` varchar(36) NOT NULL,
+  PRIMARY KEY (`highlight_id`,`story_item_id`),
+  FOREIGN KEY (`highlight_id`) REFERENCES `story_highlights` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`story_item_id`) REFERENCES `story_items` (`id`) ON DELETE CASCADE
+);
+
+-- Reel Likes (Join Table)
+CREATE TABLE `reel_likes` (
+  `reel_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`reel_id`,`user_id`),
+  FOREIGN KEY (`reel_id`) REFERENCES `reels` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Messaging Conversations
+CREATE TABLE `conversations` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `is_group` BOOLEAN NOT NULL DEFAULT FALSE,
+  `name` VARCHAR(255),
+  `created_by` VARCHAR(36),
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+-- Conversation Participants
+CREATE TABLE `conversation_participants` (
+  `conversation_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  PRIMARY KEY (`conversation_id`,`user_id`),
+  FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Messages Table
+CREATE TABLE `messages` (
+  `id` varchar(36) NOT NULL DEFAULT (uuid()),
+  `conversation_id` varchar(36) NOT NULL,
+  `sender_id` varchar(36) NOT NULL,
+  `content` text NOT NULL,
+  `message_type` enum('text','image','sticker','voicenote','share_post','share_reel', 'file') NOT NULL DEFAULT 'text',
+  `read_at` timestamp NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `shared_content_id` VARCHAR(36),
+  `shared_content_type` ENUM('post', 'reel'),
+  `file_name` VARCHAR(255),
+  `file_size` INT,
+  `file_url` VARCHAR(255),
+  `file_type` VARCHAR(100),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `conversation_settings` (
+  `conversation_id` varchar(36) NOT NULL,
+  `theme` varchar(50) NOT NULL DEFAULT 'default',
+  `vanish_mode_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`conversation_id`),
+  FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE
+);
+
+-- Notifications Table
+CREATE TABLE `notifications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(36) NOT NULL,
+  `actor_id` varchar(36) NOT NULL,
+  `type` enum('like_post','comment_post','follow','like_reel','comment_reel', 'like_comment', 'tip_post') NOT NULL,
+  `entity_id` varchar(36) DEFAULT NULL,
+  `read_at` timestamp NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Muted Users Table
+CREATE TABLE `muted_users` (
+  `user_id` varchar(36) NOT NULL,
+  `muted_user_id` varchar(36) NOT NULL,
+  PRIMARY KEY (`user_id`, `muted_user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`muted_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- Blocked Users Table
+CREATE TABLE `blocked_users` (
+  `user_id` varchar(36) NOT NULL,
+  `blocked_user_id` varchar(36) NOT NULL,
+  PRIMARY KEY (`user_id`, `blocked_user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`blocked_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- Reports Table
+CREATE TABLE `reports` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reporter_id` varchar(36) NOT NULL,
+  `reported_entity_id` varchar(36) NOT NULL,
+  `entity_type` enum('user','post','comment','reel') NOT NULL,
+  `reason` varchar(255) NOT NULL,
+  `details` text,
+  `status` ENUM('pending', 'resolved', 'dismissed') NOT NULL DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`reporter_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- Support Tickets Table
+CREATE TABLE `support_tickets` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(36) NOT NULL,
+  `subject` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `status` enum('Open','Pending','Resolved') NOT NULL DEFAULT 'Open',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `support_ticket_replies` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ticket_id` int NOT NULL,
+  `admin_user_id` varchar(36) NOT NULL,
+  `message` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`ticket_id`) REFERENCES `support_tickets` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`admin_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+
+-- Verification Applications Table
+CREATE TABLE `verification_applications` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `user_id` VARCHAR(36) NOT NULL,
+    `full_name` VARCHAR(255) NOT NULL,
+    `category` VARCHAR(100) NOT NULL,
+    `document_url` VARCHAR(255) NOT NULL,
+    `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- Tables for sidebar content
+CREATE TABLE `trending_topics` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `topic` VARCHAR(255) NOT NULL,
+    `post_count` INT NOT NULL,
+    PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `sponsored_content` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `company` VARCHAR(255) NOT NULL,
+    `logo_url` VARCHAR(255) NOT NULL,
+    `media_url` VARCHAR(255) NOT NULL,
+    `tagline` VARCHAR(255) NOT NULL,
+    `call_to_action` VARCHAR(255) NOT NULL,
+    `link` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`)
+);
+
+-- Transactions for Tipping
+CREATE TABLE `transactions` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `sender_id` VARCHAR(36) NOT NULL,
+  `receiver_id` VARCHAR(36) NOT NULL,
+  `post_id` VARCHAR(36),
+  `amount` DECIMAL(10, 2) NOT NULL,
+  `type` ENUM('tip', 'purchase') NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`),
+  FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`)
+);
+
+-- Live Streams
+CREATE TABLE `live_streams` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` VARCHAR(36) NOT NULL,
+  `title` VARCHAR(255),
+  `status` ENUM('live', 'ended') DEFAULT 'live',
+  `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `ended_at` TIMESTAMP NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+);

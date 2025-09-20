@@ -95,7 +95,8 @@ export const App: React.FC = () => {
     const [viewedLiveStream, setViewedLiveStream] = useState<LiveStream | null>(null);
     
     // --- WebRTC & Calling State ---
-    const [callState, setCallState] = useState<{ user: User, status: 'outgoing' | 'incoming' | 'active' | 'connecting' } | null>(null);
+    // Fix: Add callType to the callState to differentiate between video and audio calls and satisfy modal props.
+    const [callState, setCallState] = useState<{ user: User, status: 'outgoing' | 'incoming' | 'active' | 'connecting', callType: 'video' | 'audio' } | null>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [isMuted, setIsMuted] = useState(false);
@@ -374,6 +375,14 @@ export const App: React.FC = () => {
         }
     };
 
+    // --- Conversation ---
+    // Fix: Add handler to update conversation state, passed down to child components to fix missing prop error.
+    const handleUpdateConversation = (updatedConvo: Conversation) => {
+        setConversations(prevConvos =>
+            prevConvos.map(c => (c.id === updatedConvo.id ? updatedConvo : c))
+        );
+    };
+
     // --- Premium & Verification ---
     const handleSubscribeToPremium = async () => {
         try {
@@ -455,11 +464,12 @@ export const App: React.FC = () => {
     };
     
     // --- Calling and WebRTC ---
-    const handleInitiateCall = async (user: User) => {
-        setCallState({ user, status: 'outgoing' });
+    // Fix: Update handleInitiateCall to accept callType and store it in the call state.
+    const handleInitiateCall = async (user: User, callType: 'video' | 'audio') => {
+        setCallState({ user, status: 'outgoing', callType });
         const stream = await webRTCManager.getLocalStream();
         setLocalStream(stream);
-        socketService.emit('outgoing_call', { fromUser: currentUser, toUserId: user.id, callType: 'video' });
+        socketService.emit('outgoing_call', { fromUser: currentUser, toUserId: user.id, callType });
     };
 
     const handleEndCall = () => {
@@ -522,11 +532,18 @@ export const App: React.FC = () => {
             showToast(`New notification from ${notification.user.username}`);
         };
 
+        // Fix: Add listener for incoming calls to update the UI state correctly.
+        const handleIncomingCall = ({ fromUser, callType }: { fromUser: User, callType: 'video' | 'audio' }) => {
+            setCallState({ user: fromUser, status: 'incoming', callType });
+        };
+
         socketService.on('new_notification', handleNewNotification);
+        socketService.on('incoming_call', handleIncomingCall);
         // ... add other listeners for messages, etc.
 
         return () => {
             socketService.off('new_notification', handleNewNotification);
+            socketService.off('incoming_call', handleIncomingCall);
         };
     }, [currentUser]);
 
@@ -544,7 +561,8 @@ export const App: React.FC = () => {
             case 'home': return <HomeView posts={feedPosts} stories={stories} currentUser={currentUser} suggestedUsers={sidebarData.suggestions} trendingTopics={sidebarData.trending} feedActivities={sidebarData.activity} sponsoredContent={sidebarData.sponsored} conversations={conversations} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => openModal('share', { content: post })} onViewStory={(story) => setViewedStory(story)} onViewLikes={(users) => openModal('viewLikes', { users })} onViewProfile={(user) => handleNavigate('profile', user)} onViewPost={(post) => openModal('post', { post })} onOptions={(post) => openModal('options', { post })} onShowSuggestions={() => openModal('suggestions')} onShowTrends={() => openModal('trends')} onCreateStory={() => openModal('createStory')} onShowSearch={() => setSearchVisible(true)} onNavigate={handleNavigate} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={(post) => openModal('tip', {post})}/>;
             case 'explore': return <ExploreView posts={explorePosts} onViewPost={(post) => openModal('post', { post })} />;
             case 'reels': return <ReelsView reels={reels} currentUser={currentUser} onLikeReel={async (id) => {await api.toggleReelLike(id); await fetchData();}} onCommentOnReel={(reel) => openModal('reelComments', { reel })} onShareReel={(reel) => openModal('share', { content: reel })} />;
-            case 'messages': return <MessagesView conversations={conversations} currentUser={currentUser} allUsers={allUsers} onNavigate={(view, user) => handleNavigate('profile', user)} onInitiateCall={handleInitiateCall} />;
+            // Fix: Pass the onUpdateConversation handler to MessagesView to fix missing prop error.
+            case 'messages': return <MessagesView conversations={conversations} currentUser={currentUser} allUsers={allUsers} onNavigate={(view, user) => handleNavigate('profile', user)} onInitiateCall={handleInitiateCall} onUpdateConversation={handleUpdateConversation} />;
             case 'profile': return <ProfileView user={viewedUser || currentUser} posts={feedPosts.filter(p => p.user.id === (viewedUser?.id || currentUser.id))} reels={reels.filter(r => r.user.id === (viewedUser?.id || currentUser.id))} isCurrentUser={!viewedUser || viewedUser.id === currentUser.id} currentUser={currentUser} onEditProfile={() => openModal('editProfile')} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={(users) => openModal('followList', { title: 'Followers', users })} onShowFollowing={(users) => openModal('followList', { title: 'Following', users })} onEditPost={handleEditPost} onViewPost={(post) => openModal('post', { post })} onViewReel={(reel) => {}} onOpenCreateHighlightModal={() => openModal('createHighlight')} onMessage={(user) => {}} />;
             case 'settings': return <SettingsView currentUser={currentUser} onNavigate={handleNavigate} onShowHelp={() => handleNavigate('help')} onShowSupport={() => handleNavigate('support')} onChangePassword={() => openModal('changePassword')} onManageAccount={() => openModal('editProfile')} onToggleTwoFactor={() => openModal('twoFactor')} onGetVerified={() => openModal('getVerified')} onUpdateSettings={handleUpdateSettings}/>;
             case 'saved': return <SavedView posts={feedPosts.filter(p => p.isSaved)} onViewPost={(post) => openModal('post', { post })} />;
@@ -625,6 +643,8 @@ export const App: React.FC = () => {
                 <CallModal 
                     user={callState.user} 
                     status={callState.status} 
+                    // Fix: Pass the required callType prop to the CallModal.
+                    callType={callState.callType}
                     onEndCall={handleEndCall}
                     localStream={localStream}
                     remoteStream={remoteStream}
@@ -637,6 +657,8 @@ export const App: React.FC = () => {
             {callState && callState.status === 'incoming' && (
                 <IncomingCallModal 
                     user={callState.user}
+                    // Fix: Pass the required callType prop to the IncomingCallModal.
+                    callType={callState.callType}
                     onAccept={() => {}} // This needs WebRTCManager integration
                     onDecline={handleEndCall}
                 />
