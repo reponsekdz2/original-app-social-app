@@ -25,7 +25,21 @@ const POST_QUERY = `
         (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pm.id, 'url', pm.media_url, 'type', pm.media_type)) FROM post_media pm WHERE pm.post_id = p.id) AS media,
         (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) AS likes,
         (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', lu.id, 'username', lu.username)) FROM post_likes pl JOIN users lu ON pl.user_id = lu.id WHERE pl.post_id = p.id) as likedBy,
-        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', su.id, 'username', su.username)) FROM post_saves ps JOIN users su ON ps.user_id = su.id WHERE ps.post_id = p.id) as savedBy,
+        (SELECT JSON_ARRAYAGG(
+            JSON_OBJECT('id', col.id, 'username', col.username, 'avatar', col.avatar_url)
+        ) FROM post_collaborators pc JOIN users col ON pc.user_id = col.id WHERE pc.post_id = p.id AND pc.status = 'accepted') as collaborators,
+        (SELECT JSON_OBJECT(
+            'id', poll.id, 
+            'question', poll.question,
+            'options', (SELECT JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'id', po.id, 
+                                'text', po.option_text,
+                                'votes', (SELECT COUNT(*) FROM poll_votes pv WHERE pv.poll_option_id = po.id)
+                            )
+                        ) FROM poll_options po WHERE po.poll_id = poll.id),
+            'userVote', (SELECT pov.poll_option_id FROM poll_votes pv JOIN poll_options po ON pv.poll_option_id = po.id JOIN poll_votes pov ON po.id = pov.poll_option_id WHERE po.poll_id = poll.id AND pov.user_id = ?)
+        ) FROM polls poll WHERE poll.post_id = p.id) as poll,
         (SELECT JSON_ARRAYAGG(
              JSON_OBJECT('id', c.id, 'text', c.text, 'timestamp', c.created_at, 'user', 
                 JSON_OBJECT('id', cu.id, 'username', cu.username, 'avatar', cu.avatar_url)
@@ -46,9 +60,9 @@ router.get('/feed', protect, async (req, res) => {
              WHERE (p.user_id IN (SELECT following_id FROM followers WHERE follower_id = ?) OR p.user_id = ?)
              AND p.is_archived = FALSE
              ORDER BY p.created_at DESC LIMIT 20`,
-            [userId, userId]
+            [userId, userId, userId]
         );
-        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], savedBy: p.savedBy || []})) });
+        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], collaborators: p.collaborators || []})) });
     } catch (error) {
         console.error('Get Feed Error:', error);
         res.status(500).json({ message: 'Server Error' });
@@ -59,13 +73,15 @@ router.get('/feed', protect, async (req, res) => {
 // @route   GET /api/posts/explore
 // @access  Private
 router.get('/explore', protect, async (req, res) => {
+    const userId = req.user.id;
     try {
         const [posts] = await pool.query(
             `${POST_QUERY}
              WHERE p.is_archived = FALSE
-             ORDER BY RAND() LIMIT 30`
+             ORDER BY RAND() LIMIT 30`,
+             [userId]
         );
-        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], savedBy: p.savedBy || []})) });
+        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], collaborators: p.collaborators || []})) });
     } catch (error) {
         console.error('Get Explore Error:', error);
         res.status(500).json({ message: 'Server Error' });
@@ -77,7 +93,7 @@ router.get('/explore', protect, async (req, res) => {
 // @route   POST /api/posts
 // @access  Private
 router.post('/', protect, upload.array('media', 10), async (req, res) => {
-    const { caption, location } = req.body;
+    const { caption, location, pollQuestion, pollOptions, collaborators } = req.body;
     const userId = req.user.id;
     
     if (!req.files || req.files.length === 0) {
@@ -94,6 +110,7 @@ router.post('/', protect, upload.array('media', 10), async (req, res) => {
         );
         const postId = postResult.insertId;
 
+        // Handle media
         const mediaPromises = req.files.map((file, index) => {
             const mediaUrl = `/uploads/${file.filename}`;
             const mediaType = file.mimetype.startsWith('video') ? 'video' : 'image';
@@ -103,6 +120,41 @@ router.post('/', protect, upload.array('media', 10), async (req, res) => {
             );
         });
         await Promise.all(mediaPromises);
+        
+        // Handle poll
+        if (pollQuestion && pollOptions) {
+            const options = JSON.parse(pollOptions);
+            if(options.length > 1) {
+                const [pollResult] = await connection.query(
+                    'INSERT INTO polls (post_id, question) VALUES (?, ?)',
+                    [postId, pollQuestion]
+                );
+                const pollId = pollResult.insertId;
+                const optionPromises = options.map((opt: string) => 
+                    connection.query('INSERT INTO poll_options (poll_id, option_text) VALUES (?, ?)', [pollId, opt])
+                );
+                await Promise.all(optionPromises);
+            }
+        }
+        
+        // Handle collaborators
+        if (collaborators) {
+            const collabIds = JSON.parse(collaborators);
+            // Always add the post owner as an accepted collaborator
+            await connection.query(
+                'INSERT INTO post_collaborators (post_id, user_id, status) VALUES (?, ?, ?)',
+                [postId, userId, 'accepted']
+            );
+            const collabPromises = collabIds.map((id: string) => 
+                connection.query(
+                    'INSERT INTO post_collaborators (post_id, user_id, status) VALUES (?, ?, ?)',
+                    [postId, id, 'pending']
+                )
+            );
+            await Promise.all(collabPromises);
+            // TODO: Send notifications to collaborators
+        }
+
 
         await connection.commit();
         const [newPost] = await connection.query('SELECT * FROM posts WHERE id = ?', [postId]);
@@ -115,6 +167,35 @@ router.post('/', protect, upload.array('media', 10), async (req, res) => {
         connection.release();
     }
 });
+
+// @desc    Vote on a poll
+// @route   POST /api/posts/polls/:optionId/vote
+// @access  Private
+router.post('/polls/:optionId/vote', protect, async (req, res) => {
+    const { optionId } = req.params;
+    const userId = req.user.id;
+    
+    try {
+        // Simple check to prevent duplicate votes (unique key on DB does the real work)
+        const [[option]] = await pool.query('SELECT poll_id FROM poll_options WHERE id = ?', [optionId]);
+        if (!option) return res.status(404).json({ message: 'Poll option not found.' });
+
+        const [existingVotes] = await pool.query(
+            `SELECT pv.id FROM poll_votes pv JOIN poll_options po ON pv.poll_option_id = po.id WHERE po.poll_id = ? AND pv.user_id = ?`,
+            [option.poll_id, userId]
+        );
+        if (existingVotes.length > 0) {
+            return res.status(409).json({ message: 'User has already voted on this poll.' });
+        }
+        
+        await pool.query('INSERT INTO poll_votes (poll_option_id, user_id) VALUES (?, ?)', [optionId, userId]);
+        res.status(201).json({ message: 'Vote recorded.' });
+    } catch (error) {
+        console.error('Poll Vote Error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 
 // @desc    Toggle like on a post
 // @route   POST /api/posts/:id/like

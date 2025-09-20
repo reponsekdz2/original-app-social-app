@@ -15,6 +15,7 @@ export interface User {
   isVerified: boolean;
   isPrivate: boolean;
   isAdmin: boolean;
+  status: 'active' | 'suspended' | 'banned';
   followers: User[];
   following: User[];
   highlights?: StoryHighlight[];
@@ -26,6 +27,19 @@ export interface User {
   mutedUsers: string[];
   blockedUsers: string[];
   created_at?: string;
+}
+
+export interface PollOption {
+    id: number;
+    text: string;
+    votes: number;
+}
+
+export interface Poll {
+    id: number;
+    question: string;
+    options: PollOption[];
+    userVote: number | null; // The ID of the option the user voted for
 }
 
 export interface PostMedia {
@@ -44,6 +58,7 @@ export interface Comment {
 export interface Post {
   id: string;
   user: User;
+  collaborators: User[];
   media: PostMedia[];
   caption: string;
   location?: string;
@@ -53,6 +68,7 @@ export interface Post {
   timestamp: string;
   isSaved: boolean;
   isArchived?: boolean;
+  poll?: Poll;
 }
 
 export interface Reel {
@@ -133,7 +149,7 @@ export interface Conversation {
 export interface Notification {
   id: string;
   user: User;
-  type: 'like' | 'comment' | 'follow' | 'mention';
+  type: 'like' | 'comment' | 'follow' | 'mention' | 'collab_invite';
   commentText?: string;
   post?: Post;
   timestamp: string;
@@ -224,4 +240,13 @@ export interface AdminStats {
 export interface AnalyticsData {
   labels: string[];
   values: number[];
+}
+
+export interface Announcement {
+    id: number;
+    title: string;
+    content: string;
+    type: 'info' | 'warning' | 'success';
+    is_active: boolean;
+    expires_at?: string;
 }

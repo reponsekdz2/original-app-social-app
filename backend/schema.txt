@@ -20,6 +20,7 @@ CREATE TABLE `users` (
   `password_reset_expires` DATETIME DEFAULT NULL,
   `wallet_balance` DECIMAL(10, 2) NOT NULL DEFAULT 100.00,
   `is_admin` BOOLEAN NOT NULL DEFAULT FALSE,
+  `status` ENUM('active', 'suspended', 'banned') NOT NULL DEFAULT 'active',
   PRIMARY KEY (`id`)
 );
 
@@ -52,6 +53,16 @@ CREATE TABLE `posts` (
   `is_archived` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Post Collaborators
+CREATE TABLE `post_collaborators` (
+  `post_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `status` ENUM('pending', 'accepted') NOT NULL DEFAULT 'pending',
+  PRIMARY KEY (`post_id`, `user_id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
@@ -225,7 +236,7 @@ CREATE TABLE `notifications` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` varchar(36) NOT NULL,
   `actor_id` varchar(36) NOT NULL,
-  `type` enum('like_post','comment_post','follow','like_reel','comment_reel', 'like_comment', 'tip_post') NOT NULL,
+  `type` enum('like_post','comment_post','follow','like_reel','comment_reel', 'like_comment', 'tip_post', 'collab_invite') NOT NULL,
   `entity_id` varchar(36) DEFAULT NULL,
   `read_at` timestamp NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -348,4 +359,64 @@ CREATE TABLE `live_streams` (
   `ended_at` TIMESTAMP NULL,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+);
+
+-- NEW TABLES FOR ADVANCED FEATURES
+
+-- Polls for Posts
+CREATE TABLE `polls` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `post_id` VARCHAR(36) NOT NULL,
+  `question` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `poll_options` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `poll_id` INT NOT NULL,
+  `option_text` VARCHAR(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`poll_id`) REFERENCES `polls`(`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `poll_votes` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `poll_option_id` INT NOT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_vote` (`poll_option_id`, `user_id`),
+  FOREIGN KEY (`poll_option_id`) REFERENCES `poll_options`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- Global App Settings (Managed by Admin)
+CREATE TABLE `app_settings` (
+  `setting_key` VARCHAR(50) NOT NULL,
+  `setting_value` TEXT,
+  PRIMARY KEY (`setting_key`)
+);
+
+-- Global Announcements (Managed by Admin)
+CREATE TABLE `announcements` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(255) NOT NULL,
+  `content` TEXT NOT NULL,
+  `type` ENUM('info', 'warning', 'success') NOT NULL DEFAULT 'info',
+  `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
+  `expires_at` TIMESTAMP NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+-- User Warnings (Moderation)
+CREATE TABLE `user_warnings` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` VARCHAR(36) NOT NULL,
+  `admin_user_id` VARCHAR(36) NOT NULL,
+  `reason` TEXT NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`admin_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );

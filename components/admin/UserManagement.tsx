@@ -8,6 +8,7 @@ const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -25,13 +26,21 @@ const UserManagement: React.FC = () => {
         fetchUsers();
     }, []);
 
-    const handleUpdateUser = async (user: User, updates: { is_admin?: boolean, is_verified?: boolean }) => {
+    const handleUpdateUser = async (user: User, updates: { is_admin?: boolean, is_verified?: boolean, status?: User['status'] }) => {
         if (!window.confirm(`Are you sure you want to update ${user.username}?`)) return;
         try {
             await api.updateAdminUser(user.id, updates);
             fetchUsers(); // Refresh the list
         } catch (error) {
             console.error("Failed to update user:", error);
+        }
+    };
+    
+    const handleWarnUser = async (user: User) => {
+        const reason = prompt(`Enter a reason for warning ${user.username}:`);
+        if (reason) {
+            await api.issueUserWarning(user.id, reason);
+            // Optionally show a success message
         }
     };
 
@@ -47,8 +56,14 @@ const UserManagement: React.FC = () => {
 
     const filteredUsers = users.filter(u => 
         u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase())
+        (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+    
+    const getStatusColor = (status: User['status']) => ({
+        active: 'bg-green-500/20 text-green-300',
+        suspended: 'bg-yellow-500/20 text-yellow-300',
+        banned: 'bg-red-500/20 text-red-400'
+    }[status]);
 
     return (
         <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
@@ -76,19 +91,34 @@ const UserManagement: React.FC = () => {
                             <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/30">
                                 <td className="px-4 py-3 font-medium flex items-center gap-3">
                                     <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full" />
-                                    {user.username}
+                                    {user.username} {user.isVerified && <VerifiedBadge />}
                                 </td>
                                 <td className="px-4 py-3">{user.email}</td>
-                                {/* Fix: Add a check for the optional created_at property before formatting. */}
                                 <td className="px-4 py-3">{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
                                 <td className="px-4 py-3">
-                                    {user.isAdmin && <span className="text-xs font-semibold mr-2 px-2.5 py-0.5 rounded bg-red-500 text-white">Admin</span>}
-                                    {user.isVerified && <VerifiedBadge />}
+                                    <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded ${getStatusColor(user.status)}`}>
+                                        {user.status}
+                                    </span>
+                                    {user.isAdmin && <span className="text-xs font-semibold mr-2 px-2.5 py-0.5 rounded bg-purple-500 text-white">Admin</span>}
                                 </td>
-                                <td className="px-4 py-3 text-right space-x-1">
-                                    <button onClick={() => handleUpdateUser(user, { is_admin: !user.isAdmin })} className="p-1 text-xs">{user.isAdmin ? 'Revoke Admin' : 'Make Admin'}</button>
-                                    <button onClick={() => handleUpdateUser(user, { is_verified: !user.isVerified })} className="p-1 text-xs">{user.isVerified ? 'Unverify' : 'Verify'}</button>
-                                    <button onClick={() => handleDeleteUser(user)} className="p-1 text-xs text-red-500">Delete</button>
+                                <td className="px-4 py-3 text-right">
+                                     <div className="relative inline-block text-left">
+                                        <button onClick={() => setActiveDropdown(activeDropdown === user.id ? null : user.id)} className="p-1">
+                                            <Icon className="w-5 h-5"><path d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></Icon>
+                                        </button>
+                                        {activeDropdown === user.id && (
+                                            <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                                                <div className="py-1" role="menu" aria-orientation="vertical">
+                                                    <a href="#" onClick={() => { handleUpdateUser(user, { status: 'active' }); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-600">Set Active</a>
+                                                    <a href="#" onClick={() => { handleUpdateUser(user, { status: 'suspended' }); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-600">Suspend</a>
+                                                    <a href="#" onClick={() => { handleUpdateUser(user, { status: 'banned' }); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-yellow-400 hover:bg-gray-600">Ban</a>
+                                                     <a href="#" onClick={() => { handleWarnUser(user); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-yellow-400 hover:bg-gray-600">Warn</a>
+                                                    <div className="border-t border-gray-600 my-1"></div>
+                                                    <a href="#" onClick={() => { handleDeleteUser(user); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-red-500 hover:bg-gray-600">Delete User</a>
+                                                </div>
+                                            </div>
+                                        )}
+                                     </div>
                                 </td>
                             </tr>
                         ))}

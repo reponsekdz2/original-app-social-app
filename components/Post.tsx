@@ -1,10 +1,9 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { Post, User, Comment as CommentType } from '../types';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import FollowButton from './FollowButton.tsx';
+import Poll from './Poll.tsx';
 
 interface PostProps {
   post: Post;
@@ -20,10 +19,11 @@ interface PostProps {
   onFollow: (user: User) => void;
   onUnfollow: (user: User) => void;
   onTip: (post: Post) => void;
+  onVote: (optionId: number) => void;
 }
 
 const PostComponent: React.FC<PostProps> = (props) => {
-    const { post, currentUser, onToggleLike, onToggleSave, onComment, onShare, onViewLikes, onViewProfile, onViewPost, onOptions, onFollow, onUnfollow, onTip } = props;
+    const { post, currentUser, onToggleLike, onToggleSave, onComment, onShare, onViewLikes, onViewProfile, onViewPost, onOptions, onFollow, onUnfollow, onTip, onVote } = props;
     const [commentText, setCommentText] = useState('');
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const [showLikeBurst, setShowLikeBurst] = useState(false);
@@ -56,15 +56,23 @@ const PostComponent: React.FC<PostProps> = (props) => {
 
     const nextMedia = () => setCurrentMediaIndex(prev => Math.min(prev + 1, post.media.length - 1));
     const prevMedia = () => setCurrentMediaIndex(prev => Math.max(prev - 1, 0));
+    
+    const collaborators = post.collaborators.filter(c => c.id !== post.user.id);
 
     return (
         <article className="w-full max-w-xl bg-black border border-gray-800 rounded-xl overflow-hidden">
             <header className="flex items-center p-3">
                 <img src={post.user.avatar} alt={post.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(post.user)} />
                 <div className="ml-3 flex-1">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                        <span className="font-semibold text-sm cursor-pointer" onClick={() => onViewProfile(post.user)}>{post.user.username}</span>
                        {post.user.isVerified && <VerifiedBadge />}
+                       {collaborators.length > 0 && (
+                           <span className="text-sm text-gray-400">
+                               with <span className="font-semibold text-white cursor-pointer" onClick={() => onViewProfile(collaborators[0])}>{collaborators[0].username}</span>
+                               {collaborators.length > 1 && ` and ${collaborators.length - 1} other${collaborators.length > 2 ? 's' : ''}`}
+                           </span>
+                       )}
                     </div>
                     {post.location && <p className="text-xs text-gray-400">{post.location}</p>}
                 </div>
@@ -124,6 +132,13 @@ const PostComponent: React.FC<PostProps> = (props) => {
                     </div>
                 </div>
                 {post.likes > 0 && <button onClick={() => onViewLikes(post.likedBy)} className="font-semibold text-sm">{post.likes.toLocaleString()} likes</button>}
+                
+                {post.poll && (
+                    <div className="my-3">
+                        <Poll poll={post.poll} onVote={onVote} />
+                    </div>
+                )}
+
                 <div className="text-sm">
                     <span className="font-semibold cursor-pointer" onClick={() => onViewProfile(post.user)}>{post.user.username}</span> {post.caption}
                 </div>

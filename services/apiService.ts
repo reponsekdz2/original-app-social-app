@@ -1,7 +1,7 @@
 import type { 
     User, Post, Reel, Story, Conversation, Message, Notification, 
     FeedActivity, SponsoredContent, TrendingTopic, Testimonial, 
-    HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report 
+    HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report, Announcement 
 } from '../types';
 
 const API_URL = 'http://localhost:3001/api';
@@ -104,6 +104,7 @@ export const addComment = (postId: string, text: string): Promise<Comment> => ap
 export const toggleReelLike = (reelId: string): Promise<void> => apiFetch(`/reels/${reelId}/like`, { method: 'POST' });
 export const addReelComment = (reelId: string, text: string): Promise<void> => apiFetch(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
 export const getNotifications = (): Promise<Notification[]> => apiFetch('/misc/notifications');
+export const voteOnPoll = (optionId: number): Promise<void> => apiFetch(`/posts/polls/${optionId}/vote`, { method: 'POST' });
 
 // --- Post Management ---
 export const editPost = (postId: string, caption: string, location: string): Promise<void> => apiFetch(`/posts/${postId}`, { method: 'PUT', body: JSON.stringify({ caption, location }) });
@@ -149,6 +150,7 @@ export const getSuggestedUsers = (): Promise<User[]> => apiFetch('/misc/suggesti
 export const getFeedActivity = (): Promise<FeedActivity[]> => apiFetch('/misc/feed-activity');
 export const getSponsoredContent = (): Promise<SponsoredContent[]> => apiFetch('/misc/sponsored');
 export const getStickers = (): Promise<string[]> => apiFetch('/misc/stickers');
+export const getActiveAnnouncement = (): Promise<Announcement | null> => apiFetch('/misc/announcements/active');
 
 // --- Premium & Support ---
 export const subscribeToPremium = (): Promise<void> => apiFetch('/users/subscribe-premium', { method: 'POST' });
@@ -164,6 +166,7 @@ export const getAdminUserGrowthData = (): Promise<AnalyticsData> => apiFetch('/a
 export const getAdminContentTrendsData = (): Promise<{ labels: string[], postValues: number[], reelValues: number[] }> => apiFetch('/admin/analytics/content-trends');
 export const getAdminUsers = (searchTerm: string): Promise<User[]> => apiFetch(`/admin/users?search=${searchTerm}`);
 export const updateAdminUser = (userId: string, updates: any): Promise<void> => apiFetch(`/admin/users/${userId}`, { method: 'PUT', body: JSON.stringify(updates) });
+export const issueUserWarning = (userId: string, reason: string): Promise<void> => apiFetch(`/admin/users/${userId}/warn`, { method: 'POST', body: JSON.stringify({ reason }) });
 export const deleteAdminUser = (userId: string): Promise<void> => apiFetch(`/admin/users/${userId}`, { method: 'DELETE' });
 export const getAdminContent = (type: 'posts' | 'reels'): Promise<({ id: string, username: string, caption: string, media_url: string })[]> => apiFetch(`/admin/content?type=${type}`);
 export const deleteAdminContent = (type: 'post' | 'reel', id: string): Promise<void> => apiFetch(`/admin/content/${type}/${id}`, { method: 'DELETE' });
@@ -179,3 +182,9 @@ export const deleteAdminSponsoredContent = (id: number): Promise<void> => apiFet
 export const getAdminTrendingTopics = (): Promise<TrendingTopic[]> => apiFetch('/admin/trending');
 export const createAdminTrendingTopic = (topic: string, post_count: number): Promise<void> => apiFetch('/admin/trending', { method: 'POST', body: JSON.stringify({ topic, post_count }) });
 export const deleteAdminTrendingTopic = (id: number): Promise<void> => apiFetch(`/admin/trending/${id}`, { method: 'DELETE' });
+export const getAppSettings = (): Promise<Record<string, string>> => apiFetch('/admin/settings');
+export const updateAppSettings = (settings: Record<string, string>): Promise<void> => apiFetch('/admin/settings', { method: 'PUT', body: JSON.stringify(settings) });
+export const getAnnouncements = (): Promise<Announcement[]> => apiFetch('/admin/announcements');
+export const createAnnouncement = (data: Partial<Announcement>): Promise<void> => apiFetch('/admin/announcements', { method: 'POST', body: JSON.stringify(data) });
+export const updateAnnouncement = (id: number, data: Partial<Announcement>): Promise<void> => apiFetch(`/admin/announcements/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteAnnouncement = (id: number): Promise<void> => apiFetch(`/admin/announcements/${id}`, { method: 'DELETE' });

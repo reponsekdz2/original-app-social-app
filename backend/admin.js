@@ -105,7 +105,7 @@ router.get('/analytics/content-trends', async (req, res) => {
 // @access  Admin
 router.get('/users', async (req, res) => {
      try {
-        const [users] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, is_verified, is_admin, created_at FROM users ORDER BY created_at DESC');
+        const [users] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, is_verified, is_admin, created_at, status FROM users ORDER BY created_at DESC');
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
@@ -117,26 +117,50 @@ router.get('/users', async (req, res) => {
 // @access  Admin
 router.put('/users/:id', async (req, res) => {
     const { id } = req.params;
-    const { is_admin, is_verified } = req.body;
+    const { is_admin, is_verified, status } = req.body;
     try {
         let query = 'UPDATE users SET ';
         const params = [];
+        const updates = [];
+        
         if (is_admin !== undefined) {
-            query += 'is_admin = ? ';
+            updates.push('is_admin = ?');
             params.push(is_admin);
         }
         if (is_verified !== undefined) {
-            if (params.length > 0) query += ', ';
-            query += 'is_verified = ? ';
+            updates.push('is_verified = ?');
             params.push(is_verified);
         }
-        query += 'WHERE id = ?';
+        if (status !== undefined && ['active', 'suspended', 'banned'].includes(status)) {
+            updates.push('status = ?');
+            params.push(status);
+        }
+
+        if (updates.length === 0) return res.status(400).json({ message: "No update fields provided." });
+
+        query += updates.join(', ') + ' WHERE id = ?';
         params.push(id);
-        
-        if (params.length === 1) return res.status(400).json({ message: "No update fields provided." });
 
         await pool.query(query, params);
         res.json({ message: 'User updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Issue a warning to a user
+// @route   POST /api/admin/users/:id/warn
+// @access  Admin
+router.post('/users/:id/warn', async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const adminId = req.user.id;
+    try {
+        await pool.query(
+            'INSERT INTO user_warnings (user_id, admin_user_id, reason) VALUES (?, ?, ?)',
+            [id, adminId, reason]
+        );
+        res.status(201).json({ message: 'Warning issued successfully.' });
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
@@ -289,6 +313,104 @@ router.post('/support-tickets/:id/reply', async (req, res) => {
     }
 });
 
-// ... (Sponsored Content and Trending Topics Management routes would go here) ...
+// @desc    Get all announcements
+// @route   GET /api/admin/announcements
+// @access  Admin
+router.get('/announcements', async (req, res) => {
+    try {
+        const [announcements] = await pool.query('SELECT * FROM announcements ORDER BY created_at DESC');
+        res.json(announcements);
+    } catch(error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Create an announcement
+// @route   POST /api/admin/announcements
+// @access  Admin
+router.post('/announcements', async (req, res) => {
+    const { title, content, type, is_active, expires_at } = req.body;
+    try {
+        await pool.query(
+            'INSERT INTO announcements (title, content, type, is_active, expires_at) VALUES (?, ?, ?, ?, ?)',
+            [title, content, type, is_active, expires_at || null]
+        );
+        res.status(201).json({ message: 'Announcement created' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Update an announcement
+// @route   PUT /api/admin/announcements/:id
+// @access  Admin
+router.put('/announcements/:id', async (req, res) => {
+    const { id } = req.params;
+    const { title, content, type, is_active, expires_at } = req.body;
+    try {
+        await pool.query(
+            'UPDATE announcements SET title = ?, content = ?, type = ?, is_active = ?, expires_at = ? WHERE id = ?',
+            [title, content, type, is_active, expires_at || null, id]
+        );
+        res.json({ message: 'Announcement updated' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Delete an announcement
+// @route   DELETE /api/admin/announcements/:id
+// @access  Admin
+router.delete('/announcements/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM announcements WHERE id = ?', [id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get all application settings
+// @route   GET /api/admin/settings
+// @access  Admin
+router.get('/settings', async (req, res) => {
+    try {
+        const [settings] = await pool.query('SELECT * FROM app_settings');
+        const settingsObj = settings.reduce((acc, curr) => {
+            acc[curr.setting_key] = curr.setting_value;
+            return acc;
+        }, {});
+        res.json(settingsObj);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Update application settings
+// @route   PUT /api/admin/settings
+// @access  Admin
+router.put('/settings', async (req, res) => {
+    const settings = req.body;
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        const updatePromises = Object.entries(settings).map(([key, value]) => {
+            return connection.query(
+                'INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
+                [key, value, value]
+            );
+        });
+        await Promise.all(updatePromises);
+        await connection.commit();
+        res.json({ message: 'Settings updated successfully' });
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ message: 'Server Error' });
+    } finally {
+        connection.release();
+    }
+});
+
 
 export default router;

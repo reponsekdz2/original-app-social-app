@@ -115,7 +115,6 @@ router.get('/feed-activity', protect, async (req, res) => {
     }
 });
 
-// Fix: Add a new endpoint to fetch notifications for the current user.
 // @desc    Get user notifications
 // @route   GET /api/misc/notifications
 // @access  Private
@@ -139,6 +138,20 @@ router.get('/notifications', protect, async (req, res) => {
         res.json(notifications);
     } catch (error) {
         console.error('Get Notifications Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get active global announcement
+// @route   GET /api/misc/announcements/active
+// @access  Private
+router.get('/announcements/active', protect, async (req, res) => {
+    try {
+        const [announcements] = await pool.query(
+            "SELECT * FROM announcements WHERE is_active = TRUE AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY created_at DESC LIMIT 1"
+        );
+        res.json(announcements.length > 0 ? announcements[0] : null);
+    } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
 });

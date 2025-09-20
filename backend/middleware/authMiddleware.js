@@ -12,14 +12,21 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
-      // Get user from the token's ID, including the new is_admin flag
+      // Get user from the token's ID, including admin flag and status
       const [rows] = await pool.query(
-        'SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified, is_admin FROM users WHERE id = ?', 
+        'SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified, is_admin, status FROM users WHERE id = ?', 
         [decoded.id]
       );
       
       if (rows.length > 0) {
-        req.user = rows[0]; // Attach user to the request object
+        const user = rows[0];
+
+        // Check user status
+        if (user.status === 'banned' || user.status === 'suspended') {
+          return res.status(403).json({ message: `Your account has been ${user.status}. Please contact support.` });
+        }
+
+        req.user = user; // Attach user to the request object
         next();
       } else {
         res.status(401).json({ message: 'Not authorized, user not found' });

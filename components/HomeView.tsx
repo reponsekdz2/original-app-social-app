@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 // Fix: Corrected import path for types to be relative.
 import type { Post, Story, User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types';
@@ -34,6 +32,7 @@ interface HomeViewProps {
   onFollow: (user: User) => void;
   onUnfollow: (user: User) => void;
   onTip: (post: Post) => void;
+  onVote: (optionId: number) => void;
 }
 
 const HomeView: React.FC<HomeViewProps> = (props) => {
@@ -76,6 +75,7 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
                     onFollow={props.onFollow}
                     onUnfollow={props.onUnfollow}
                     onTip={props.onTip}
+                    onVote={props.onVote}
                 />
             </section>
             ))}
