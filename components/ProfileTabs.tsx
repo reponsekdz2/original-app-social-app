@@ -22,10 +22,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ activeTab, setActiveTab }) =>
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as ProfileTab)}
-            className={`flex-1 md:flex-none md:px-16 py-3 text-sm font-semibold uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === tab.id ? 'text-white border-t-2 border-white' : 'text-gray-500'}`}
+            className={`flex-1 sm:flex-none sm:px-8 md:px-16 py-3 text-sm font-semibold uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === tab.id ? 'text-white border-t-2 border-white' : 'text-gray-500'}`}
           >
             <Icon className="w-5 h-5">{tab.icon}</Icon>
-            <span className="hidden md:inline">{tab.label}</span>
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
       </div>

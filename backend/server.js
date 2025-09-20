@@ -20,6 +20,7 @@ import userRoutes from './users.js';
 import miscRoutes from './misc.js';
 import adminRoutes from './admin.js';
 import livestreamRoutes from './livestreams.js';
+import reportRoutes from './reports.js';
 
 
 dotenv.config();
@@ -58,6 +59,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/misc', miscRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/livestreams', livestreamRoutes);
+app.use('/api/reports', reportRoutes);
 
 
 // Basic route for testing

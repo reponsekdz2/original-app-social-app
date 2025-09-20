@@ -1,6 +1,6 @@
 // This file defines all the shared types used across the application.
 
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'admin' | 'premium' | 'premium-welcome' | 'activity' | 'help' | 'support' | 'live' | 'post';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'admin' | 'premium' | 'premium-welcome' | 'activity' | 'help' | 'support' | 'live' | 'post' | 'blocked';
 
 export interface User {
   id: string;
@@ -231,6 +231,7 @@ export interface Report {
 
 export interface AdminStats {
   totalUsers: number;
+  newUsersToday: number;
   totalPosts: number;
   totalReels: number;
   pendingReports: number;

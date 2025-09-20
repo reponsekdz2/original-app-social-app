@@ -8,7 +8,7 @@ interface ChatSettingsPanelProps {
   conversation: Conversation;
   currentUser: User;
   onClose: () => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'mute' | 'unmute' | 'block' | 'unblock') => void;
+  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock') => void;
   onReport: (user: User) => void;
   onViewProfile: (user: User) => void;
   onUpdateSettings: (settings: Partial<Conversation['settings']>) => void;
@@ -25,7 +25,6 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = (props) => {
     const { conversation, currentUser, onClose, onUpdateUserRelationship, onReport, onViewProfile, onUpdateSettings } = props;
     const otherUser = !conversation.isGroup ? conversation.participants.find(p => p.id !== currentUser.id) : null;
 
-    const isMuted = otherUser ? currentUser.mutedUsers.includes(otherUser.id) : false;
     const isBlocked = otherUser ? currentUser.blockedUsers.includes(otherUser.id) : false;
 
   return (

@@ -105,6 +105,9 @@ export const toggleReelLike = (reelId: string): Promise<void> => apiFetch(`/reel
 export const addReelComment = (reelId: string, text: string): Promise<void> => apiFetch(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
 export const getNotifications = (): Promise<Notification[]> => apiFetch('/misc/notifications');
 export const voteOnPoll = (optionId: number): Promise<void> => apiFetch(`/posts/polls/${optionId}/vote`, { method: 'POST' });
+export const submitReport = (entityId: string, entityType: 'user' | 'post' | 'comment' | 'reel', reason: string, details: string): Promise<void> =>
+    apiFetch('/reports', { method: 'POST', body: JSON.stringify({ entityId, entityType, reason, details }) });
+
 
 // --- Post Management ---
 export const editPost = (postId: string, caption: string, location: string): Promise<void> => apiFetch(`/posts/${postId}`, { method: 'PUT', body: JSON.stringify({ caption, location }) });
@@ -116,6 +119,9 @@ export const unarchivePost = (postId: string): Promise<void> => apiFetch(`/posts
 export const getAllUsers = (): Promise<User[]> => apiFetch('/users');
 export const followUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/follow`, { method: 'POST' });
 export const unfollowUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/unfollow`, { method: 'POST' });
+export const blockUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/block`, { method: 'POST' });
+export const unblockUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/unblock`, { method: 'POST' });
+export const getBlockedUsers = (): Promise<User[]> => apiFetch('/users/blocked');
 export const updateProfile = (data: any): Promise<void> => apiFetch('/users/profile', { method: 'PUT', body: JSON.stringify(data) });
 export const updateUserSettings = (settings: any): Promise<void> => apiFetch('/users/settings', { method: 'PUT', body: JSON.stringify(settings) });
 export const createHighlight = (title: string, storyIds: string[]): Promise<void> => apiFetch('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });

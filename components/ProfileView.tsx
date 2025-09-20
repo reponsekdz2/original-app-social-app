@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 // Fix: Corrected import path for types to be relative.
 import type { User, Post as PostType, Reel as ReelType } from '../types';
@@ -45,11 +43,11 @@ const ProfileView: React.FC<ProfileViewProps> = (props) => {
   }
 
   return (
-    <div className="pb-16 md:pb-0">
+    <div className="pb-16 sm:pb-0">
       <ProfileHeader {...props} />
       <ProfileHighlights user={props.user} isCurrentUser={props.isCurrentUser} onAddNew={props.onOpenCreateHighlightModal} />
       <ProfileTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-      <div className="p-1">
+      <div className="p-0.5 sm:p-1">
         {renderContent()}
       </div>
     </div>

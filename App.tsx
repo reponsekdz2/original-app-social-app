@@ -49,6 +49,7 @@ import TipModal from './components/TipModal.tsx';
 import CallModal from './components/CallModal.tsx';
 import IncomingCallModal from './components/IncomingCallModal.tsx';
 import AnnouncementBanner from './components/AnnouncementBanner.tsx';
+import BlockedUsersView from './components/BlockedUsersView.tsx';
 
 import * as api from './services/apiService.ts';
 import { socketService } from './services/socketService.ts';
@@ -330,6 +331,37 @@ export const App: React.FC = () => {
             setCurrentUser(prev => prev ? { ...prev, following: [...prev.following, userToUnfollow] } : null);
         }
     };
+
+    const handleBlockUser = async (userToBlock: User) => {
+        if (!currentUser) return;
+        setCurrentUser(prev => prev ? { ...prev, blockedUsers: [...prev.blockedUsers, userToBlock.id] } : null);
+        try {
+            await api.blockUser(userToBlock.id);
+            showToast(`Blocked @${userToBlock.username}`);
+        } catch (error) {
+            console.error("Block failed", error);
+            setCurrentUser(prev => prev ? { ...prev, blockedUsers: prev.blockedUsers.filter(id => id !== userToBlock.id) } : null);
+            showToast(`Failed to block @${userToBlock.username}`);
+        }
+    };
+
+    const handleUnblockUser = async (userToUnblock: User) => {
+         if (!currentUser) return;
+        setCurrentUser(prev => prev ? { ...prev, blockedUsers: prev.blockedUsers.filter(id => id !== userToUnblock.id) } : null);
+        try {
+            await api.unblockUser(userToUnblock.id);
+            showToast(`Unblocked @${userToUnblock.username}`);
+        } catch (error) {
+            console.error("Unblock failed", error);
+            setCurrentUser(prev => prev ? { ...prev, blockedUsers: [...prev.blockedUsers, userToUnblock.id] } : null);
+            showToast(`Failed to unblock @${userToUnblock.username}`);
+        }
+    };
+    
+    const handleUpdateUserRelationship = (targetUser: User, action: 'block' | 'unblock') => {
+        if (action === 'block') handleBlockUser(targetUser);
+        else if (action === 'unblock') handleUnblockUser(targetUser);
+    };
     
     const handleUpdateSettings = async (settings: Partial<User['notificationSettings'] & { isPrivate: boolean }>) => {
         if (!currentUser) return;
@@ -483,10 +515,16 @@ export const App: React.FC = () => {
     
     // --- Report ---
     const handleReport = (content: Post | User) => openModal('report', { content });
-    const handleSubmitReport = async (reason: string, details: string) => {
-        // Here you would call api.submitReport(content.id, contentType, reason, details);
-        showToast("Report submitted. Thank you.");
-        closeModal('report');
+    const handleSubmitReport = async (reason: string, details: string, content: Post | User) => {
+        const entity_type = 'username' in content ? 'user' : 'post';
+        try {
+            await api.submitReport(content.id, entity_type, reason, details);
+            showToast("Report submitted. Thank you.");
+            closeModal('report');
+        } catch (error) {
+            console.error("Failed to submit report:", error);
+            showToast("Failed to submit report.");
+        }
     };
     
 
@@ -559,11 +597,12 @@ export const App: React.FC = () => {
             case 'home': return <HomeView posts={feedPosts} stories={stories} currentUser={currentUser} suggestedUsers={sidebarData.suggestions} trendingTopics={sidebarData.trending} feedActivities={sidebarData.activity} sponsoredContent={sidebarData.sponsored} conversations={conversations} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => openModal('share', { content: post })} onViewStory={(story) => setViewedStory(story)} onViewLikes={(users) => openModal('viewLikes', { users })} onViewProfile={(user) => handleNavigate('profile', user)} onViewPost={(post) => openModal('post', { post })} onOptions={(post) => openModal('options', { post })} onShowSuggestions={() => openModal('suggestions')} onShowTrends={() => openModal('trends')} onCreateStory={() => openModal('createStory')} onShowSearch={() => setSearchVisible(true)} onNavigate={handleNavigate} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={(post) => openModal('tip', {post})} onVote={handleVote} />;
             case 'explore': return <ExploreView posts={explorePosts} onViewPost={(post) => openModal('post', { post })} />;
             case 'reels': return <ReelsView reels={reels} currentUser={currentUser} onLikeReel={async (id) => {await api.toggleReelLike(id); await fetchData();}} onCommentOnReel={(reel) => openModal('reelComments', { reel })} onShareReel={(reel) => openModal('share', { content: reel })} />;
-            case 'messages': return <MessagesView conversations={conversations} currentUser={currentUser} allUsers={allUsers} onNavigate={(view, user) => handleNavigate('profile', user)} onInitiateCall={handleInitiateCall} onUpdateConversation={handleUpdateConversation} />;
+            case 'messages': return <MessagesView conversations={conversations} currentUser={currentUser} allUsers={allUsers} onNavigate={(view, user) => handleNavigate('profile', user)} onInitiateCall={handleInitiateCall} onUpdateConversation={handleUpdateConversation} onUpdateUserRelationship={handleUpdateUserRelationship} onReport={handleReport} />;
             case 'profile': return <ProfileView user={viewedUser || currentUser} posts={feedPosts.filter(p => p.user.id === (viewedUser?.id || currentUser.id))} reels={reels.filter(r => r.user.id === (viewedUser?.id || currentUser.id))} isCurrentUser={!viewedUser || viewedUser.id === currentUser.id} currentUser={currentUser} onEditProfile={() => openModal('editProfile')} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={(users) => openModal('followList', { title: 'Followers', users })} onShowFollowing={(users) => openModal('followList', { title: 'Following', users })} onEditPost={handleEditPost} onViewPost={(post) => openModal('post', { post })} onViewReel={(reel) => {}} onOpenCreateHighlightModal={() => openModal('createHighlight')} onMessage={(user) => {}} />;
             case 'settings': return <SettingsView currentUser={currentUser} onNavigate={handleNavigate} onShowHelp={() => handleNavigate('help')} onShowSupport={() => handleNavigate('support')} onChangePassword={() => openModal('changePassword')} onManageAccount={() => openModal('editProfile')} onToggleTwoFactor={() => openModal('twoFactor')} onGetVerified={() => openModal('getVerified')} onUpdateSettings={handleUpdateSettings}/>;
             case 'saved': return <SavedView posts={feedPosts.filter(p => p.isSaved)} onViewPost={(post) => openModal('post', { post })} />;
             case 'archive': return <ArchiveView posts={feedPosts.filter(p => p.isArchived)} onViewPost={(post) => openModal('post', { post })} onUnarchivePost={handleUnarchivePost}/>;
+            case 'blocked': return <BlockedUsersView onUnblockUser={handleUnblockUser} onBack={() => handleNavigate('settings')} />;
             case 'admin': return <AdminView />;
             case 'premium': return <PremiumView onSubscribe={() => openModal('payment')} testimonials={[]}/>;
             case 'premium-welcome': return <PremiumWelcomeView onNavigate={handleNavigate} />;
@@ -589,7 +628,7 @@ export const App: React.FC = () => {
                     onLogout={handleLogout}
                     onGoLive={() => openModal('goLive')}
                 />
-                <div className="flex-1 md:ml-[72px] lg:ml-64 flex flex-col">
+                <div className="flex-1 sm:ml-[72px] lg:ml-64 flex flex-col">
                     <Header 
                         currentUser={currentUser}
                         onNavigate={handleNavigate}
@@ -599,7 +638,11 @@ export const App: React.FC = () => {
                         onLogout={handleLogout}
                     />
                     {activeAnnouncement && <AnnouncementBanner announcement={activeAnnouncement} />}
-                    <main className="flex-1">{mainContent()}</main>
+                    <main className="flex-1">
+                        <div className="container mx-auto px-0 sm:px-4">
+                            {mainContent()}
+                        </div>
+                    </main>
                 </div>
             </div>
             <BottomNav currentUser={currentUser} currentView={currentView} onNavigate={handleNavigate} onCreatePost={() => openModal('createPost')} />
@@ -628,7 +671,7 @@ export const App: React.FC = () => {
             {activeModals.newSupportRequest && <NewSupportRequestModal onClose={() => closeModal('newSupportRequest')} onSubmit={handleNewSupportRequest} />}
             {activeModals.changePassword && <ChangePasswordModal onClose={() => closeModal('changePassword')} onSubmit={handleChangePassword} />}
             {activeModals.twoFactor && <TwoFactorAuthModal onClose={() => closeModal('twoFactor')} onEnable={async () => await api.enableTwoFactor()} />}
-            {activeModals.report && <ReportModal content={activeModals.report.content} onClose={() => closeModal('report')} onSubmitReport={handleSubmitReport} />}
+            {activeModals.report && <ReportModal content={activeModals.report.content} onClose={() => closeModal('report')} onSubmitReport={(reason, details) => handleSubmitReport(reason, details, activeModals.report.content)} />}
             {activeModals.forgotPassword && <ForgotPasswordModal onClose={() => closeModal('forgotPassword')} onSubmit={handleForgotPassword} />}
             {activeModals.resetPassword && <ResetPasswordModal onClose={() => closeModal('resetPassword')} onSubmit={handleResetPassword} />}
             {activeModals.tip && <TipModal post={activeModals.tip.post} onClose={() => closeModal('tip')} onSendTip={async (amount) => await handleSendTip(activeModals.tip.post.id, amount)} />}

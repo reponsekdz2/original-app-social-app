@@ -15,9 +15,12 @@ interface MessagesViewProps {
   onNavigate: (view: 'profile', user: User) => void;
   onInitiateCall: (user: User, type: 'video' | 'audio') => void;
   onUpdateConversation: (updatedConvo: Conversation) => void;
+  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock') => void;
+  // Fix: Add onReport to props to pass to ChatWindow
+  onReport: (user: User) => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall, onUpdateConversation }) => {
+const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall, onUpdateConversation, onUpdateUserRelationship, onReport }) => {
   const [conversations, setConversations] = useState(initialConversations);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(initialConversations[0] || null);
   const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
@@ -194,6 +197,8 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             onViewProfile={(user) => onNavigate('profile', user)}
             onInitiateCall={onInitiateCall}
             onUpdateConversation={onUpdateConversation}
+            onUpdateUserRelationship={onUpdateUserRelationship}
+            onReport={onReport}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 p-4">

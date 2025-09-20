@@ -80,8 +80,8 @@ const UserManagement: React.FC = () => {
                     <thead className="text-xs text-gray-400 uppercase bg-gray-700/50">
                         <tr>
                             <th className="px-4 py-3">User</th>
-                            <th className="px-4 py-3">Email</th>
-                            <th className="px-4 py-3">Joined</th>
+                            <th className="px-4 py-3 hidden sm:table-cell">Email</th>
+                            <th className="px-4 py-3 hidden md:table-cell">Joined</th>
                             <th className="px-4 py-3">Status</th>
                             <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
@@ -93,8 +93,8 @@ const UserManagement: React.FC = () => {
                                     <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full" />
                                     {user.username} {user.isVerified && <VerifiedBadge />}
                                 </td>
-                                <td className="px-4 py-3">{user.email}</td>
-                                <td className="px-4 py-3">{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
+                                <td className="px-4 py-3 hidden sm:table-cell">{user.email}</td>
+                                <td className="px-4 py-3 hidden md:table-cell">{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
                                 <td className="px-4 py-3">
                                     <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded ${getStatusColor(user.status)}`}>
                                         {user.status}

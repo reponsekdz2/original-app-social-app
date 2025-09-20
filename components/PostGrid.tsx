@@ -1,4 +1,3 @@
-
 import React from 'react';
 // Fix: Corrected import path for types to be relative.
 import type { Post } from '../types.ts';
@@ -11,7 +10,7 @@ interface PostGridProps {
 
 const PostGrid: React.FC<PostGridProps> = ({ posts, onViewPost }) => {
   return (
-    <div className="grid grid-cols-3 gap-1 sm:gap-2 lg:grid-cols-4">
+    <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
       {posts.map(post => {
         const firstMedia = post.media[0];
         return (

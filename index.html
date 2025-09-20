@@ -12,25 +12,29 @@
     <style>
       body {
         font-family: 'Roboto', sans-serif;
+        background-color: #0a0a0a;
+        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
       }
       /* Custom Scrollbar for Webkit browsers */
       ::-webkit-scrollbar {
         width: 8px;
+        height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #141414; /* A dark gray */
+        background: #0a0a0a; /* Match body background */
       }
       ::-webkit-scrollbar-thumb {
-        background: #E50914; /* Netflix red */
+        background: #D90429; /* Modern red accent */
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #B20710; /* Darker red on hover */
+        background: #ef233c; /* Brighter red on hover */
       }
        /* For Firefox */
       * {
         scrollbar-width: thin;
-        scrollbar-color: #E50914 #141414;
+        scrollbar-color: #D90429 #0a0a0a;
       }
 
       @keyframes story-progress {

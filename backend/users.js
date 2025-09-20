@@ -66,6 +66,62 @@ router.post('/:id/unfollow', protect, async (req, res) => {
     }
 });
 
+// @desc    Block a user
+// @route   POST /api/users/:id/block
+// @access  Private
+router.post('/:id/block', protect, async (req, res) => {
+    const userId = req.user.id;
+    const blockedUserId = req.params.id;
+    if (userId === blockedUserId) {
+        return res.status(400).json({ message: "You cannot block yourself." });
+    }
+    try {
+        await pool.query('INSERT INTO blocked_users (user_id, blocked_user_id) VALUES (?, ?)', [userId, blockedUserId]);
+        // Also remove any follow relationship
+        await pool.query('DELETE FROM followers WHERE (follower_id = ? AND following_id = ?) OR (follower_id = ? AND following_id = ?)', [userId, blockedUserId, blockedUserId, userId]);
+        res.json({ message: 'User blocked successfully' });
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.json({ message: 'User already blocked' });
+        }
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Unblock a user
+// @route   POST /api/users/:id/unblock
+// @access  Private
+router.post('/:id/unblock', protect, async (req, res) => {
+    const userId = req.user.id;
+    const blockedUserId = req.params.id;
+    try {
+        await pool.query('DELETE FROM blocked_users WHERE user_id = ? AND blocked_user_id = ?', [userId, blockedUserId]);
+        res.json({ message: 'User unblocked successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get blocked users list
+// @route   GET /api/users/blocked
+// @access  Private
+router.get('/blocked', protect, async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const [blockedUsers] = await pool.query(
+            `SELECT u.id, u.username, u.name, u.avatar_url as avatar, u.is_verified 
+             FROM users u 
+             JOIN blocked_users bu ON u.id = bu.blocked_user_id 
+             WHERE bu.user_id = ?`,
+            [userId]
+        );
+        res.json(blockedUsers);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+
 // @desc    Create a story highlight
 // @route   POST /api/users/highlights
 // @access  Private

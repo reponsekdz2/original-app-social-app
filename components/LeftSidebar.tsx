@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 // Fix: Corrected import path for types to be relative.
 import type { View, User } from '../types';
@@ -53,7 +51,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = (props) => {
     }
     
   return (
-    <aside className="fixed top-0 left-0 h-screen bg-black border-r border-gray-800 p-3 z-40 hidden md:flex flex-col">
+    <aside className="fixed top-0 left-0 h-screen bg-black border-r border-gray-800 p-3 z-40 hidden sm:flex flex-col w-[72px] lg:w-64">
        <div className="py-4 px-2 mb-4">
         <h1 onClick={() => onNavigate('home')} className="text-2xl font-serif font-bold text-white hidden lg:block cursor-pointer">talka</h1>
         <h1 onClick={() => onNavigate('home')} className="text-3xl font-serif font-bold text-red-600 block lg:hidden cursor-pointer">t</h1>
@@ -62,14 +60,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = (props) => {
         <ul>
             {navItems.map(item => (
                 <li key={item.label}>
-                    <button onClick={item.action} className={`w-full flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800 transition-colors ${currentView === item.view ? 'font-bold' : ''}`}>
+                    <button onClick={item.action} className={`w-full flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800 transition-colors ${currentView === item.view ? 'font-bold bg-gray-800' : ''}`}>
                         <Icon className="w-7 h-7">{item.icon}</Icon>
                         <span className="text-lg hidden lg:block">{item.label}</span>
                     </button>
                 </li>
             ))}
         </ul>
-        <button onClick={onCreatePost} className="w-full lg:w-5/6 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg">
+        <button onClick={onCreatePost} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg lg:flex items-center justify-center">
             <span className="hidden lg:block">Post</span>
             <Icon className="w-7 h-7 block lg:hidden"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></Icon>
         </button>

@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 // Fix: Corrected import path for types to be relative.
 import type { User, View } from '../types';
@@ -19,7 +17,7 @@ interface SettingsViewProps {
 }
 
 const SettingsView: React.FC<SettingsViewProps> = (props) => {
-  const { currentUser, onUpdateSettings } = props;
+  const { currentUser, onUpdateSettings, onNavigate } = props;
 
   const settingsGroups = [
     {
@@ -32,6 +30,7 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
     {
         title: 'Privacy and Security',
         items: [
+            { label: 'Blocked Accounts', action: () => onNavigate('blocked'), icon: <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /> },
             { label: 'Two-Factor Authentication', action: props.onToggleTwoFactor, icon: <path d="M9 12.75l3 3m0 0l3-3m-3 3v-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
         ]
     },
@@ -49,12 +48,12 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
       <h1 className="text-3xl font-bold mb-8">Settings</h1>
       
       {!currentUser.isVerified && (
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 flex items-center justify-between mb-8">
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
               <div>
                   <h3 className="font-bold text-blue-300">Get Verified</h3>
                   <p className="text-sm text-blue-400">Get a verified badge and show you're the real deal.</p>
               </div>
-              <button onClick={props.onGetVerified} className="bg-blue-500 text-white font-semibold py-1.5 px-4 rounded-md text-sm hover:bg-blue-600">Apply Now</button>
+              <button onClick={props.onGetVerified} className="bg-blue-500 text-white font-semibold py-1.5 px-4 rounded-md text-sm hover:bg-blue-600 w-full sm:w-auto flex-shrink-0">Apply Now</button>
           </div>
       )}
 
@@ -78,7 +77,7 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
        <div className="mb-8">
          <h2 className="text-xl font-semibold mb-3 text-gray-300">Privacy</h2>
          <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div>
                     <p>Private Account</p>
                     <p className="text-xs text-gray-400">When your account is private, only people you approve can see your photos and videos.</p>
@@ -90,16 +89,16 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
 
        <div className="mb-8">
          <h2 className="text-xl font-semibold mb-3 text-gray-300">Notifications</h2>
-         <div className="bg-gray-900 rounded-lg border border-gray-800 p-4 space-y-4">
-            <div className="flex items-center justify-between">
+         <div className="bg-gray-900 rounded-lg border border-gray-800 divide-y divide-gray-800">
+            <div className="flex items-center justify-between p-4">
                 <span>Likes</span>
                 <ToggleSwitch enabled={currentUser.notificationSettings.likes} setEnabled={(val) => onUpdateSettings({ likes: val })} />
             </div>
-             <div className="flex items-center justify-between">
+             <div className="flex items-center justify-between p-4">
                 <span>Comments</span>
                 <ToggleSwitch enabled={currentUser.notificationSettings.comments} setEnabled={(val) => onUpdateSettings({ comments: val })} />
             </div>
-             <div className="flex items-center justify-between">
+             <div className="flex items-center justify-between p-4">
                 <span>New Followers</span>
                 <ToggleSwitch enabled={currentUser.notificationSettings.follows} setEnabled={(val) => onUpdateSettings({ follows: val })} />
             </div>

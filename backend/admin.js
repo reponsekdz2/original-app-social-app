@@ -13,6 +13,7 @@ router.use(protect, adminProtect);
 router.get('/stats', async (req, res) => {
     try {
         const [users] = await pool.query('SELECT COUNT(*) as count FROM users');
+        const [newUsers] = await pool.query('SELECT COUNT(*) as count FROM users WHERE created_at >= CURDATE()');
         const [posts] = await pool.query('SELECT COUNT(*) as count FROM posts');
         const [reels] = await pool.query('SELECT COUNT(*) as count FROM reels');
         const [reports] = await pool.query("SELECT COUNT(*) as count FROM reports WHERE status = 'pending'");
@@ -20,6 +21,7 @@ router.get('/stats', async (req, res) => {
 
         res.json({
             totalUsers: users[0].count,
+            newUsersToday: newUsers[0].count,
             totalPosts: posts[0].count,
             totalReels: reels[0].count,
             pendingReports: reports[0].count,

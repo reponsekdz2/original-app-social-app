@@ -1,7 +1,3 @@
-
-
-
-
 import React from 'react';
 // Fix: Corrected import path for types to be relative.
 import type { Post } from '../types';
@@ -15,8 +11,8 @@ interface ExploreViewProps {
 const ExploreView: React.FC<ExploreViewProps> = ({ posts, onViewPost }) => {
 
   return (
-    <div className="pb-16 md:pb-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 lg:grid-cols-4 2xl:grid-cols-5">
+    <div className="pb-16 sm:pb-4">
+      <div className="grid grid-cols-3 gap-0.5 sm:gap-1 md:grid-cols-4 xl:grid-cols-5">
         {posts.map((post, index) => {
           const firstMedia = post.media[0];
           return (
