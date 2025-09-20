@@ -3,7 +3,6 @@ import Icon from './Icon.tsx';
 import type { Message, User } from '../types';
 import EmojiStickerPanel from './EmojiStickerPanel.tsx';
 import { socketService } from '../services/socketService.ts';
-import MagicComposePanel from './MagicComposePanel.tsx';
 
 interface MessageInputProps {
   onSend: (content: string | File, type: Message['type']) => void;
@@ -16,7 +15,6 @@ interface MessageInputProps {
 const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCancelReply, conversationId, otherUser }) => {
   const [text, setText] = useState('');
   const [isEmojiPanelOpen, setEmojiPanelOpen] = useState(false);
-  const [isMagicComposeOpen, setMagicComposeOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -25,7 +23,6 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
     const handleClickOutside = (event: MouseEvent) => {
         if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
             setEmojiPanelOpen(false);
-            setMagicComposeOpen(false);
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -104,20 +101,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
               />
           </div>
         )}
-        {isMagicComposeOpen && (
-            <MagicComposePanel 
-                originalText={text}
-                onSelectSuggestion={(suggestion) => {
-                    setText(suggestion);
-                    setMagicComposeOpen(false);
-                }}
-                onClose={() => setMagicComposeOpen(false)}
-            />
-        )}
         <div className={`flex items-center gap-1 bg-gray-800 border border-gray-700 ${replyingTo ? 'rounded-b-full' : 'rounded-full'} px-2 py-1.5`}>
-          <button onClick={() => setMagicComposeOpen(p => !p)} className="p-1.5 rounded-full hover:bg-gray-700">
-            <Icon className="w-6 h-6 text-purple-400"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon>
-          </button>
           <button onClick={() => setEmojiPanelOpen(p => !p)} className="p-1.5 rounded-full hover:bg-gray-700">
                 <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 9.75a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75V9.75zm6 0a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V9.75z" /></Icon></button>
           <input 

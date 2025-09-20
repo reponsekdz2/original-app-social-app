@@ -515,10 +515,42 @@ export const App: React.FC = () => {
     
     // --- Calling and WebRTC ---
     const handleInitiateCall = async (user: User, callType: 'video' | 'audio') => {
+        if (!currentUser) return;
         setCallState({ user, status: 'outgoing', callType });
-        const stream = await webRTCManager.getLocalStream();
-        setLocalStream(stream);
-        socketService.emit('outgoing_call', { fromUser: currentUser, toUserId: user.id, callType });
+        try {
+            const stream = await webRTCManager.getLocalStream(callType === 'video', true);
+            setLocalStream(stream);
+            const pc = webRTCManager.createPeerConnection(user.id, (remoteStream) => {
+                setRemoteStream(remoteStream);
+                setCallState(prev => prev ? { ...prev, status: 'active' } : null);
+            });
+            const offer = await webRTCManager.createOffer();
+            socketService.emit('outgoing_call', { fromUser: currentUser, toUserId: user.id, callType, offer });
+        } catch (error) {
+            console.error("Could not start call:", error);
+            showToast("Could not start call. Check camera/microphone permissions.");
+            setCallState(null);
+        }
+    };
+
+    const handleAcceptCall = async () => {
+        if (!callState || !currentUser) return;
+        try {
+            const stream = await webRTCManager.getLocalStream(callState.callType === 'video', true);
+            setLocalStream(stream);
+            const pc = webRTCManager.createPeerConnection(callState.user.id, (remoteStream) => {
+                setRemoteStream(remoteStream);
+            });
+            await webRTCManager.handleOffer(activeModals.incomingCall.offer);
+            const answer = await webRTCManager.createAnswer();
+            socketService.emit('accept_call', { fromUser: currentUser, toUserId: callState.user.id, answer });
+            setCallState(prev => prev ? { ...prev, status: 'active' } : null);
+            closeModal('incomingCall');
+        } catch (error) {
+            console.error("Could not accept call:", error);
+            showToast("Could not accept call.");
+            handleEndCall();
+        }
     };
 
     const handleEndCall = () => {
@@ -529,6 +561,7 @@ export const App: React.FC = () => {
         setCallState(null);
         setLocalStream(null);
         setRemoteStream(null);
+        closeModal('incomingCall');
     };
     
     // --- Report ---
@@ -587,8 +620,9 @@ export const App: React.FC = () => {
             showToast(`New notification from ${notification.user.username}`);
         };
 
-        const handleIncomingCall = ({ fromUser, callType }: { fromUser: User, callType: 'video' | 'audio' }) => {
+        const handleIncomingCall = ({ fromUser, callType, offer }: { fromUser: User, callType: 'video' | 'audio', offer: any }) => {
             setCallState({ user: fromUser, status: 'incoming', callType });
+            openModal('incomingCall', { user: fromUser, callType, offer });
         };
         
         const handleMessageReactionUpdate = ({ conversationId, messageId, reactions }: { conversationId: string; messageId: string; reactions: any[] }) => {
@@ -608,17 +642,39 @@ export const App: React.FC = () => {
             }));
         };
 
+        const handleCallAccepted = async ({ answer }: { answer: any }) => {
+            await webRTCManager.handleAnswer(answer);
+            setCallState(prev => prev ? { ...prev, status: 'active' } : null);
+        };
+        
+        const handleCallEnded = () => {
+            showToast("Call ended.");
+            handleEndCall();
+        };
+
+        const handleWebRTCAnswer = ({ answer }: { answer: any }) => webRTCManager.handleAnswer(answer);
+        const handleWebRTCIceCandidate = ({ candidate }: { candidate: any }) => webRTCManager.handleIceCandidate(candidate);
+
+
         socketService.on('new_notification', handleNewNotification);
         socketService.on('incoming_call', handleIncomingCall);
         socketService.on('message_reaction_update', handleMessageReactionUpdate);
-        // ... add other listeners for messages, etc.
+        socketService.on('call_accepted', handleCallAccepted);
+        socketService.on('call_ended', handleCallEnded);
+        socketService.on('webrtc-answer', handleWebRTCAnswer);
+        socketService.on('webrtc-ice-candidate', handleWebRTCIceCandidate);
+
 
         return () => {
             socketService.off('new_notification', handleNewNotification);
             socketService.off('incoming_call', handleIncomingCall);
             socketService.off('message_reaction_update', handleMessageReactionUpdate);
+            socketService.off('call_accepted', handleCallAccepted);
+            socketService.off('call_ended', handleCallEnded);
+            socketService.off('webrtc-answer', handleWebRTCAnswer);
+            socketService.off('webrtc-ice-candidate', handleWebRTCIceCandidate);
         };
-    }, [currentUser]);
+    }, [currentUser, handleEndCall]);
 
     // --- Render Logic ---
     if (isLoading) {
@@ -731,11 +787,11 @@ export const App: React.FC = () => {
                     onToggleCamera={() => setIsCameraOff(prev => !prev)}
                 />
             )}
-            {callState && callState.status === 'incoming' && (
+            {activeModals.incomingCall && (
                 <IncomingCallModal 
-                    user={callState.user}
-                    callType={callState.callType}
-                    onAccept={() => {}} // This needs WebRTCManager integration
+                    user={activeModals.incomingCall.user}
+                    callType={activeModals.incomingCall.callType}
+                    onAccept={handleAcceptCall}
                     onDecline={handleEndCall}
                 />
             )}

@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import pool from './db.js';
 import { protect } from './middleware/authMiddleware.js';

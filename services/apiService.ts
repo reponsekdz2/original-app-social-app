@@ -2,7 +2,7 @@ import type {
     User, Post, Reel, Story, Conversation, Message, Notification, 
     FeedActivity, SponsoredContent, TrendingTopic, Testimonial, 
     HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report, Announcement 
-} from './types';
+} from '../types';
 
 const API_URL = 'http://localhost:3001/api';
 
@@ -172,19 +172,6 @@ export const createSupportTicket = (subject: string, description: string): Promi
 export const sendTip = (postId: string, amount: number): Promise<void> => apiFetch(`/posts/${postId}/tip`, { method: 'POST', body: JSON.stringify({ amount }) });
 export const startLiveStream = (title: string): Promise<LiveStream> => apiFetch('/livestreams/start', { method: 'POST', body: JSON.stringify({ title }) });
 export const getLiveStreams = (): Promise<LiveStream[]> => apiFetch('/livestreams');
-
-// --- AI Features ---
-export const generateMagicText = (text: string): Promise<{ suggestions: string[] }> => 
-    apiFetch('/ai/compose', {
-        method: 'POST',
-        body: JSON.stringify({ text }),
-    });
-
-export const generateStoryImage = (prompt: string): Promise<{ image: string }> =>
-    apiFetch('/ai/generate-story-image', {
-        method: 'POST',
-        body: JSON.stringify({ prompt }),
-    });
 
 // --- Admin ---
 export const getAdminStats = (): Promise<AdminStats> => apiFetch('/admin/stats');
