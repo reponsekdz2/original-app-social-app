@@ -39,4 +39,31 @@ const FollowListModal: React.FC<FollowListModalProps> = ({ title, users, current
         <div className="overflow-y-auto">
           {users.map(user => {
             const isCurrentUser = user.id === currentUser.id;
-            
+            // Fix: Added return statement to render user list item.
+            return (
+              <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-700">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleViewProfileAndClose(user)}>
+                  <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
+                  <div>
+                    <p className="font-semibold text-sm flex items-center">{user.username} {user.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
+                    <p className="text-xs text-gray-400">{user.name}</p>
+                  </div>
+                </div>
+                {!isCurrentUser && (
+                    <FollowButton 
+                      user={user} 
+                      currentUser={currentUser} 
+                      onFollow={onFollow} 
+                      onUnfollow={onUnfollow} 
+                    />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FollowListModal;

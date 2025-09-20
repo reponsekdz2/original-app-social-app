@@ -1,9 +1,10 @@
 
 
 
+
 import React, { useState } from 'react';
 // Fix: Corrected import path for types.
-import type { Message, User, SharedContent, FileAttachment, Reaction } from './types';
+import type { Message, User, SharedContent, FileAttachment, Reaction } from './types.ts';
 import Icon from './components/Icon.tsx';
 import VoicenoteMessage from './components/VoicenoteMessage.tsx';
 import EmojiPicker from './components/EmojiPicker.tsx';

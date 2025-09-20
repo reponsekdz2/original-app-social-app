@@ -14,12 +14,12 @@ export const initSocket = (io) => {
     io.on('connection', (socket) => {
         console.log(`Socket connected: ${socket.id}`);
 
-        socket.on('register', (userId) => {
-            if (userId) {
-                console.log(`User registered: ${userId} with socket ${socket.id}`);
-                userSocketMap.set(String(userId), socket);
-            }
-        });
+        // Fix: Use socket.handshake.auth instead of query, to match modern socket.io-client standards.
+        const userId = socket.handshake.auth.userId;
+        if (userId) {
+            console.log(`User registered: ${userId} with socket ${socket.id}`);
+            userSocketMap.set(String(userId), socket);
+        }
         
         // --- Messaging ---
         socket.on('typing', ({ conversationId, toUserId }) => {
@@ -100,10 +100,10 @@ export const initSocket = (io) => {
         socket.on('disconnect', () => {
             console.log(`Socket disconnected: ${socket.id}`);
             // Find and remove user from the map on disconnect to prevent memory leaks
-            for (let [userId, userSocket] of userSocketMap.entries()) {
-                if (userSocket.id === socket.id) {
-                    userSocketMap.delete(userId);
-                    console.log(`User unregistered: ${userId}`);
+            for (let [key, value] of userSocketMap.entries()) {
+                if (value.id === socket.id) {
+                    userSocketMap.delete(key);
+                    console.log(`User unregistered: ${key}`);
                     break;
                 }
             }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { User, Conversation } from '../types.ts';
 import Icon from './Icon.tsx';
+// Fix: Corrected import path to be relative to the components directory.
 import * as api from '../services/apiService.ts';
 
 interface CreateGroupModalProps {

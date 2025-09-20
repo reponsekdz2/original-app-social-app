@@ -66,21 +66,16 @@ router.post('/login', async (req, res) => {
     }
 
     // Hardcoded admin check
-    if (identifier === 'reponsekdz0@gmail.com' && password === '2025') {
+    if (identifier === 'admin' && password === 'admin') {
         try {
-            const [adminUsers] = await pool.query('SELECT * FROM users WHERE email = ?', [identifier]);
+            const [adminUsers] = await pool.query('SELECT * FROM users WHERE is_admin = 1 LIMIT 1');
             if (adminUsers.length > 0) {
                 const adminUser = adminUsers[0];
-                if (!adminUser.is_admin) {
-                    // Promote to admin if not already
-                    await pool.query('UPDATE users SET is_admin = 1 WHERE id = ?', [adminUser.id]);
-                    adminUser.is_admin = 1;
-                }
                 const token = generateToken(adminUser.id);
                 const { password, ...userWithoutPassword } = adminUser;
-                return res.json({ user: { ...userWithoutPassword, isAdmin: true }, token });
+                return res.json({ user: { ...userWithoutPassword, isAdmin: true, avatar: userWithoutPassword.avatar_url }, token });
             } else {
-                return res.status(401).json({ message: 'Admin account not found in database. Please register first.' });
+                 return res.status(401).json({ message: 'Admin account not found in database. Please create one first.' });
             }
         } catch (error) {
             console.error('Admin Login Error:', error);
@@ -90,7 +85,7 @@ router.post('/login', async (req, res) => {
 
     try {
         const [users] = await pool.query(
-            'SELECT id, username, name, email, password, avatar_url as avatar, is_premium, is_verified, is_admin, (SELECT COUNT(*) FROM followers f WHERE f.following_id = users.id) as followers, (SELECT COUNT(*) FROM followers f WHERE f.follower_id = users.id) as following FROM users WHERE username = ? OR email = ?',
+            'SELECT *, avatar_url as avatar, (SELECT COUNT(*) FROM followers f WHERE f.following_id = users.id) as followers_count, (SELECT COUNT(*) FROM followers f WHERE f.follower_id = users.id) as following_count FROM users WHERE username = ? OR email = ?',
             [identifier, identifier]
         );
 
@@ -122,14 +117,23 @@ router.post('/login', async (req, res) => {
 router.get('/me', protect, async (req, res) => {
     try {
         const [rows] = await pool.query(
-            'SELECT id, username, name, email, avatar_url as avatar, bio, website, gender, is_premium, is_verified, is_private, is_admin, (SELECT JSON_ARRAYAGG(f.following_id) FROM followers f WHERE f.follower_id = users.id) as following, (SELECT JSON_ARRAYAGG(f.follower_id) FROM followers f WHERE f.following_id = users.id) as followers, (SELECT JSON_OBJECT("likes", us.likes_notifications, "comments", us.comments_notifications, "follows", us.follows_notifications) FROM user_settings us WHERE us.user_id = users.id) as notificationSettings, (SELECT JSON_ARRAYAGG(mu.muted_user_id) FROM muted_users mu WHERE mu.user_id = users.id) as mutedUsers, (SELECT JSON_ARRAYAGG(bu.blocked_user_id) FROM blocked_users bu WHERE bu.user_id = users.id) as blockedUsers FROM users WHERE id = ?', [req.user.id]
+            `SELECT 
+                u.id, u.username, u.name, u.email, u.avatar_url as avatar, u.bio, u.website, u.gender, 
+                u.is_premium, u.is_verified, u.is_private, u.is_admin,
+                (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', f.id, 'username', f.username, 'avatar', f.avatar_url)) FROM followers fo JOIN users f ON fo.following_id = f.id WHERE fo.follower_id = u.id) as following,
+                (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', f.id, 'username', f.username, 'avatar', f.avatar_url)) FROM followers fo JOIN users f ON fo.follower_id = f.id WHERE fo.following_id = u.id) as followers,
+                COALESCE(JSON_OBJECT("likes", us.likes_notifications, "comments", us.comments_notifications, "follows", us.follows_notifications), JSON_OBJECT("likes", TRUE, "comments", TRUE, "follows", TRUE)) as notificationSettings,
+                (SELECT JSON_ARRAYAGG(mu.muted_user_id) FROM muted_users mu WHERE mu.user_id = u.id) as mutedUsers,
+                (SELECT JSON_ARRAYAGG(bu.blocked_user_id) FROM blocked_users bu WHERE bu.user_id = u.id) as blockedUsers
+             FROM users u
+             LEFT JOIN user_settings us ON u.id = us.user_id
+             WHERE u.id = ?`, [req.user.id]
         );
         if (rows.length > 0) {
             const user = {
                 ...rows[0],
                 following: rows[0].following || [],
                 followers: rows[0].followers || [],
-                notificationSettings: rows[0].notificationSettings || { likes: true, comments: true, follows: true },
                 mutedUsers: rows[0].mutedUsers || [],
                 blockedUsers: rows[0].blockedUsers || [],
             }

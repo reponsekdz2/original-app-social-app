@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 // Fix: Corrected import path for types
-import type { User, Post as PostType, Reel as ReelType } from '../types.ts';
-import ProfileHeader from './ProfileHeader.tsx';
-import ProfileHighlights from './ProfileHighlights.tsx';
-import ProfileTabs from './ProfileTabs.tsx';
-import PostGrid from './PostGrid.tsx';
-import ReelGrid from './ReelGrid.tsx';
+import type { User, Post as PostType, Reel as ReelType } from './types.ts';
+import ProfileHeader from './components/ProfileHeader.tsx';
+import ProfileHighlights from './components/ProfileHighlights.tsx';
+import ProfileTabs from './components/ProfileTabs.tsx';
+import PostGrid from './components/PostGrid.tsx';
+import ReelGrid from './components/ReelGrid.tsx';
 
 interface ProfileViewProps {
   user: User;
