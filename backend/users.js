@@ -121,6 +121,32 @@ router.get('/blocked', protect, async (req, res) => {
     }
 });
 
+// @desc    Mute or unmute a user
+// @route   POST /api/users/:id/mute
+// @access  Private
+router.post('/:id/mute', protect, async (req, res) => {
+    const userId = req.user.id;
+    const mutedUserId = req.params.id;
+    if (userId === mutedUserId) {
+        return res.status(400).json({ message: "You cannot mute yourself." });
+    }
+    try {
+        const [existing] = await pool.query('SELECT * FROM muted_users WHERE user_id = ? AND muted_user_id = ?', [userId, mutedUserId]);
+        if (existing.length > 0) {
+            await pool.query('DELETE FROM muted_users WHERE user_id = ? AND muted_user_id = ?', [userId, mutedUserId]);
+            res.json({ message: 'User unmuted successfully' });
+        } else {
+            await pool.query('INSERT INTO muted_users (user_id, muted_user_id) VALUES (?, ?)', [userId, mutedUserId]);
+            res.json({ message: 'User muted successfully' });
+        }
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.json({ message: 'User already muted' });
+        }
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 
 // @desc    Create a story highlight
 // @route   POST /api/users/highlights

@@ -344,6 +344,23 @@ export const App: React.FC = () => {
             showToast(`Failed to block @${userToBlock.username}`);
         }
     };
+    
+    const handleMuteUser = async (userToMute: User) => {
+        if (!currentUser) return;
+        const isMuted = currentUser.mutedUsers.includes(userToMute.id);
+        const optimisticMutedUsers = isMuted 
+            ? currentUser.mutedUsers.filter(id => id !== userToMute.id)
+            : [...currentUser.mutedUsers, userToMute.id];
+
+        setCurrentUser(prev => prev ? { ...prev, mutedUsers: optimisticMutedUsers } : null);
+        try {
+            await api.muteUser(userToMute.id);
+            showToast(isMuted ? `Unmuted @${userToMute.username}` : `Muted @${userToMute.username}`);
+        } catch (error) {
+            console.error("Mute/unmute failed", error);
+            setCurrentUser(currentUser); // Revert on failure
+        }
+    };
 
     const handleUnblockUser = async (userToUnblock: User) => {
          if (!currentUser) return;
@@ -358,9 +375,10 @@ export const App: React.FC = () => {
         }
     };
     
-    const handleUpdateUserRelationship = (targetUser: User, action: 'block' | 'unblock') => {
+    const handleUpdateUserRelationship = (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => {
         if (action === 'block') handleBlockUser(targetUser);
         else if (action === 'unblock') handleUnblockUser(targetUser);
+        else if (action === 'mute' || action === 'unmute') handleMuteUser(targetUser);
     };
     
     const handleUpdateSettings = async (settings: Partial<User['notificationSettings'] & { isPrivate: boolean }>) => {
@@ -572,14 +590,33 @@ export const App: React.FC = () => {
         const handleIncomingCall = ({ fromUser, callType }: { fromUser: User, callType: 'video' | 'audio' }) => {
             setCallState({ user: fromUser, status: 'incoming', callType });
         };
+        
+        const handleMessageReactionUpdate = ({ conversationId, messageId, reactions }: { conversationId: string; messageId: string; reactions: any[] }) => {
+            setConversations(prev => prev.map(convo => {
+                if (convo.id === conversationId) {
+                    return {
+                        ...convo,
+                        messages: convo.messages.map(msg => {
+                            if (msg.id === messageId) {
+                                return { ...msg, reactions };
+                            }
+                            return msg;
+                        })
+                    };
+                }
+                return convo;
+            }));
+        };
 
         socketService.on('new_notification', handleNewNotification);
         socketService.on('incoming_call', handleIncomingCall);
+        socketService.on('message_reaction_update', handleMessageReactionUpdate);
         // ... add other listeners for messages, etc.
 
         return () => {
             socketService.off('new_notification', handleNewNotification);
             socketService.off('incoming_call', handleIncomingCall);
+            socketService.off('message_reaction_update', handleMessageReactionUpdate);
         };
     }, [currentUser]);
 

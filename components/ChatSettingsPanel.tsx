@@ -8,7 +8,7 @@ interface ChatSettingsPanelProps {
   conversation: Conversation;
   currentUser: User;
   onClose: () => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock') => void;
+  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => void;
   onReport: (user: User) => void;
   onViewProfile: (user: User) => void;
   onUpdateSettings: (settings: Partial<Conversation['settings']>) => void;
@@ -26,6 +26,7 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = (props) => {
     const otherUser = !conversation.isGroup ? conversation.participants.find(p => p.id !== currentUser.id) : null;
 
     const isBlocked = otherUser ? currentUser.blockedUsers.includes(otherUser.id) : false;
+    const isMuted = otherUser ? currentUser.mutedUsers.includes(otherUser.id) : false;
 
   return (
     <div className="absolute inset-0 bg-black/50 z-10" onClick={onClose}>
@@ -62,6 +63,14 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = (props) => {
                 </div>
                 <ToggleSwitch enabled={conversation.settings.vanish_mode_enabled} setEnabled={(val) => onUpdateSettings({ vanish_mode_enabled: val })} />
             </div>
+            {!conversation.isGroup && otherUser && (
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="font-semibold text-sm">Mute Notifications</p>
+                    </div>
+                    <ToggleSwitch enabled={isMuted} setEnabled={() => onUpdateUserRelationship(otherUser, isMuted ? 'unmute' : 'mute')} />
+                </div>
+            )}
             <div>
                 <p className="font-semibold text-sm mb-2">Change Theme</p>
                 <div className="flex items-center justify-between">

@@ -15,8 +15,7 @@ interface MessagesViewProps {
   onNavigate: (view: 'profile', user: User) => void;
   onInitiateCall: (user: User, type: 'video' | 'audio') => void;
   onUpdateConversation: (updatedConvo: Conversation) => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock') => void;
-  // Fix: Add onReport to props to pass to ChatWindow
+  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => void;
   onReport: (user: User) => void;
 }
 

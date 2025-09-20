@@ -18,7 +18,7 @@ interface ChatWindowProps {
   onViewProfile: (user: User) => void;
   onInitiateCall: (user: User, type: 'video' | 'audio') => void;
   onUpdateConversation: (updatedConvo: Conversation) => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock') => void;
+  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => void;
   onReport: (user: User) => void;
 }
 
@@ -71,19 +71,39 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
   }, [conversation.id]);
   
   const handleAddReaction = (messageId: string, emoji: string) => {
+    // Optimistic Update
     setMessages(currentMessages => currentMessages.map(msg => {
       if (msg.id === messageId) {
-        const existingReaction = msg.reactions?.find(r => r.user.id === currentUser.id);
-        if (existingReaction && existingReaction.emoji === emoji) {
-          return { ...msg, reactions: msg.reactions?.filter(r => r.user.id !== currentUser.id) };
+        const reactions = msg.reactions || [];
+        const existingReactionIndex = reactions.findIndex(r => r.user.id === currentUser.id);
+        
+        if (existingReactionIndex > -1) {
+            // User is changing or removing their reaction
+            const existingReaction = reactions[existingReactionIndex];
+            if (existingReaction.emoji === emoji) {
+                // Same emoji clicked, remove it
+                return { ...msg, reactions: reactions.filter(r => r.user.id !== currentUser.id) };
+            } else {
+                // Different emoji, update it
+                const updatedReactions = [...reactions];
+                updatedReactions[existingReactionIndex] = { emoji, user: currentUser };
+                return { ...msg, reactions: updatedReactions };
+            }
         } else {
-          const otherReactions = msg.reactions?.filter(r => r.user.id !== currentUser.id) || [];
-          const newReaction = { emoji, user: currentUser };
-          return { ...msg, reactions: [...otherReactions, newReaction] };
+            // New reaction
+            const newReaction = { emoji, user: currentUser };
+            return { ...msg, reactions: [...reactions, newReaction] };
         }
       }
       return msg;
     }));
+    
+    // API Call
+    api.addMessageReaction(messageId, emoji).catch(err => {
+        console.error("Failed to add reaction", err);
+        // Revert optimistic update on failure
+        setMessages(conversation.messages); 
+    });
   };
   
   const handleUpdateSettings = async (settings: Partial<Conversation['settings']>) => {

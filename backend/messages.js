@@ -50,7 +50,10 @@ router.get('/', protect, async (req, res) => {
             const [messages] = await pool.query(
                 `SELECT 
                     m.id, m.sender_id as senderId, m.content, m.created_at as timestamp, m.message_type as type, m.read_at as 'read',
-                    m.shared_content_id, m.shared_content_type, m.file_name, m.file_size, m.file_url, m.file_type
+                    m.shared_content_id, m.shared_content_type, m.file_name, m.file_size, m.file_url, m.file_type,
+                    (SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT('emoji', mr.emoji, 'user', JSON_OBJECT('id', u.id, 'username', u.username))
+                    ) FROM message_reactions mr JOIN users u ON mr.user_id = u.id WHERE mr.message_id = m.id) as reactions
                  FROM messages m WHERE m.conversation_id = ? ORDER BY m.created_at ASC`,
                 [convo.id]
             );
@@ -63,7 +66,7 @@ router.get('/', protect, async (req, res) => {
                 if (msg.type === 'file' || msg.type === 'image') {
                     fileAttachment = { fileName: msg.file_name, fileSize: msg.file_size, fileUrl: msg.file_url, fileType: msg.file_type };
                 }
-                return { ...msg, reactions: [], sharedContent, fileAttachment };
+                return { ...msg, reactions: msg.reactions || [], sharedContent, fileAttachment };
             }));
 
             return {
@@ -169,6 +172,73 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
         connection.release();
     }
 });
+
+// @desc    Add/remove reaction to a message
+// @route   POST /api/messages/:id/react
+// @access  Private
+router.post('/:id/react', protect, async (req, res) => {
+    const messageId = req.params.id;
+    const userId = req.user.id;
+    const { emoji } = req.body;
+    const io = req.app.get('io');
+
+    if (!emoji) {
+        return res.status(400).json({ message: 'Emoji is required.' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [[message]] = await connection.query('SELECT conversation_id FROM messages WHERE id = ?', [messageId]);
+        if (!message) {
+             await connection.rollback();
+             return res.status(404).json({ message: 'Message not found.' });
+        }
+        const conversationId = message.conversation_id;
+
+        const [existing] = await connection.query('SELECT id, emoji FROM message_reactions WHERE message_id = ? AND user_id = ?', [messageId, userId]);
+
+        if (existing.length > 0) {
+            if (existing[0].emoji === emoji) {
+                // User clicked the same emoji again, so remove it
+                 await connection.query('DELETE FROM message_reactions WHERE id = ?', [existing[0].id]);
+            } else {
+                // User changed their reaction
+                await connection.query('UPDATE message_reactions SET emoji = ? WHERE id = ?', [emoji, existing[0].id]);
+            }
+        } else {
+            // New reaction
+            await connection.query('INSERT INTO message_reactions (message_id, user_id, emoji) VALUES (?, ?, ?)', [messageId, userId, emoji]);
+        }
+        
+        await connection.commit();
+        
+        const [participants] = await connection.query('SELECT user_id FROM conversation_participants WHERE conversation_id = ?', [conversationId]);
+        
+        const [reactions] = await connection.query(`
+            SELECT mr.emoji, JSON_OBJECT('id', u.id, 'username', u.username) as user
+            FROM message_reactions mr JOIN users u ON mr.user_id = u.id WHERE mr.message_id = ?
+        `, [messageId]);
+
+        participants.forEach(p => {
+            const socket = getSocketFromUserId(p.user_id);
+            if (socket) {
+                socket.emit('message_reaction_update', { conversationId, messageId, reactions });
+            }
+        });
+        
+        res.status(200).json({ message: 'Reaction updated' });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("Reaction Error:", error);
+        res.status(500).json({ message: 'Server error' });
+    } finally {
+        connection.release();
+    }
+});
+
 
 // @desc    Create a new group chat
 // @route   POST /api/messages/group

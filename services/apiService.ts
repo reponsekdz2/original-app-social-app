@@ -2,7 +2,7 @@ import type {
     User, Post, Reel, Story, Conversation, Message, Notification, 
     FeedActivity, SponsoredContent, TrendingTopic, Testimonial, 
     HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report, Announcement 
-} from '../types';
+} from './types';
 
 const API_URL = 'http://localhost:3001/api';
 
@@ -125,6 +125,7 @@ export const getBlockedUsers = (): Promise<User[]> => apiFetch('/users/blocked')
 export const updateProfile = (data: any): Promise<void> => apiFetch('/users/profile', { method: 'PUT', body: JSON.stringify(data) });
 export const updateUserSettings = (settings: any): Promise<void> => apiFetch('/users/settings', { method: 'PUT', body: JSON.stringify(settings) });
 export const createHighlight = (title: string, storyIds: string[]): Promise<void> => apiFetch('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
+export const muteUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/mute`, { method: 'POST' });
 
 // --- Messaging ---
 export const getConversations = (): Promise<Conversation[]> => apiFetch('/messages');
@@ -149,6 +150,12 @@ export const updateConversationSettings = (conversationId: string, settings: Par
         method: 'PUT',
         body: JSON.stringify(settings)
     });
+export const addMessageReaction = (messageId: string, emoji: string): Promise<void> =>
+    apiFetch(`/messages/${messageId}/react`, {
+        method: 'POST',
+        body: JSON.stringify({ emoji }),
+    });
+
 
 // --- Misc ---
 export const getTrendingTopics = (): Promise<TrendingTopic[]> => apiFetch('/misc/trending');
@@ -171,6 +178,12 @@ export const generateMagicText = (text: string): Promise<{ suggestions: string[]
     apiFetch('/ai/compose', {
         method: 'POST',
         body: JSON.stringify({ text }),
+    });
+
+export const generateStoryImage = (prompt: string): Promise<{ image: string }> =>
+    apiFetch('/ai/generate-story-image', {
+        method: 'POST',
+        body: JSON.stringify({ prompt }),
     });
 
 // --- Admin ---

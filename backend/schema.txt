@@ -223,6 +223,18 @@ CREATE TABLE `messages` (
   FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
+CREATE TABLE `message_reactions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `message_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `emoji` varchar(10) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_reaction` (`message_id`,`user_id`),
+  FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
 CREATE TABLE `conversation_settings` (
   `conversation_id` varchar(36) NOT NULL,
   `theme` varchar(50) NOT NULL DEFAULT 'default',
