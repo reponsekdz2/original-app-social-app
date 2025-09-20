@@ -234,10 +234,10 @@ CREATE TABLE `conversation_settings` (
 -- Notifications Table
 CREATE TABLE `notifications` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(36) NOT NULL,
-  `actor_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL, -- The user who receives the notification
+  `actor_id` varchar(36) NOT NULL, -- The user who performed the action
   `type` enum('like_post','comment_post','follow','like_reel','comment_reel', 'like_comment', 'tip_post', 'collab_invite') NOT NULL,
-  `entity_id` varchar(36) DEFAULT NULL,
+  `entity_id` varchar(36) DEFAULT NULL, -- ID of the post, reel, comment, or user being followed
   `read_at` timestamp NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -385,7 +385,7 @@ CREATE TABLE `poll_votes` (
   `poll_option_id` INT NOT NULL,
   `user_id` VARCHAR(36) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_vote` (`poll_option_id`, `user_id`),
+  UNIQUE KEY `unique_vote_per_poll` (`poll_option_id`, `user_id`),
   FOREIGN KEY (`poll_option_id`) REFERENCES `poll_options`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );

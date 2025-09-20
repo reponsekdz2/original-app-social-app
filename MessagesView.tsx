@@ -6,6 +6,7 @@ import VerifiedBadge from './components/VerifiedBadge.tsx';
 import NewMessageModal from './components/NewMessageModal.tsx';
 import { socketService } from './services/socketService.ts';
 import * as api from './services/apiService';
+import CreateGroupModal from './components/CreateGroupModal.tsx';
 
 interface MessagesViewProps {
   conversations: Conversation[];
@@ -20,6 +21,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
   const [conversations, setConversations] = useState(initialConversations);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(initialConversations[0] || null);
   const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
+  const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
   
   useEffect(() => {
     setConversations(initialConversations);
@@ -30,7 +32,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
         const updatedSelected = initialConversations.find(c => c.id === selectedConversation.id);
         setSelectedConversation(updatedSelected || null);
     }
-  }, [initialConversations]);
+  }, [initialConversations, selectedConversation]);
   
   const updateConversationWithMessage = useCallback((conversationId: string, message: Message, isFinal: boolean = false) => {
     const updateFn = (convo: Conversation) => {
@@ -139,19 +141,28 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     }
   };
 
+   const handleCreateGroup = (newGroup: Conversation) => {
+        setConversations(prev => [newGroup, ...prev]);
+        setSelectedConversation(newGroup);
+    };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] border-t border-gray-800">
       <aside className={`w-full md:w-96 border-r border-gray-800 flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-800 flex justify-between items-center">
           <h1 className="text-xl font-bold">Messages</h1>
-          <button onClick={() => setNewMessageModalOpen(true)} className="p-2 hover:bg-gray-800 rounded-full">
-            <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243c0 .384.128.753.36 1.06l.995 1.493a.75.75 0 01-.26 1.06l-1.636 1.09a.75.75 0 00-.26 1.06l.995 1.493c.232.348.359.726.359 1.112v.243m-13.5-9.75h9" /></Icon>
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setCreateGroupModalOpen(true)} className="p-2 hover:bg-gray-800 rounded-full">
+                <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.962a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zM3.75 18.75a3 3 0 002.72-4.682A9.095 9.095 0 0018 18.72m0 0a9 9 0 00-9-9 9 9 0 00-9 9m18 0h-3.375a9.06 9.06 0 00-1.5-3.375m-1.5 3.375a9.06 9.06 0 01-1.5-3.375m0 0a9 9 0 01-9-9" /></Icon>
+            </button>
+            <button onClick={() => setNewMessageModalOpen(true)} className="p-2 hover:bg-gray-800 rounded-full">
+                <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243c0 .384.128.753.36 1.06l.995 1.493a.75.75 0 01-.26 1.06l-1.636 1.09a.75.75 0 00-.26 1.06l.995 1.493c.232.348.359.726.359 1.112v.243m-13.5-9.75h9" /></Icon>
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           {conversations.map(convo => {
             const otherUser = convo.participants.find(p => p.id !== currentUser.id);
-            if (!otherUser) return null;
             const lastMessage = convo.messages[convo.messages.length - 1];
             return (
               <div
@@ -159,10 +170,10 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
                 onClick={() => handleSelectConversation(convo)}
                 className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-800 ${selectedConversation?.id === convo.id ? 'bg-gray-800' : ''}`}
               >
-                <img src={otherUser.avatar} alt={otherUser.username} className="w-14 h-14 rounded-full object-cover" />
+                <img src={convo.isGroup ? '/uploads/group_avatar.png' : otherUser?.avatar} alt={convo.name || otherUser?.username} className="w-14 h-14 rounded-full object-cover" />
                 <div className="flex-1 overflow-hidden">
                   <div className="flex justify-between">
-                    <p className="font-semibold flex items-center">{otherUser.name} {otherUser.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
+                    <p className="font-semibold flex items-center">{convo.name || otherUser?.name} {otherUser?.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
                     {lastMessage && <p className="text-xs text-gray-500">{new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
                   </div>
                   {lastMessage && <p className="text-sm text-gray-400 truncate">{lastMessage.content || 'Shared content'}</p>}
@@ -198,6 +209,13 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             users={allUsers.filter(u => u.id !== currentUser.id)}
             onClose={() => setNewMessageModalOpen(false)}
             onSelectUser={handleStartNewConversation}
+        />
+      )}
+      {isCreateGroupModalOpen && (
+        <CreateGroupModal
+            followers={currentUser.followers}
+            onClose={() => setCreateGroupModalOpen(false)}
+            onCreateGroup={handleCreateGroup}
         />
       )}
     </div>

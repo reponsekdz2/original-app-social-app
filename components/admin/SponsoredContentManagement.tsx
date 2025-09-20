@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import * as api from '../../services/apiService.ts';
 import type { SponsoredContent } from '../../types.ts';
@@ -35,7 +34,7 @@ const AdFormModal: React.FC<{ ad?: SponsoredContent; onClose: () => void; onSave
                  <h3 className="text-lg font-bold p-4 border-b border-gray-700">{ad ? 'Edit' : 'Create'} Sponsored Content</h3>
                  <div className="p-4 space-y-3">
                      {Object.keys(formData).map(key => (
-                         <input key={key} name={key} placeholder={key.replace('_', ' ')} value={(formData as any)[key]} onChange={handleChange} className="w-full bg-gray-700 p-2 rounded-md text-sm" />
+                         <input key={key} name={key} placeholder={key.replace(/_/g, ' ')} value={(formData as any)[key]} onChange={handleChange} className="w-full bg-gray-700 p-2 rounded-md text-sm" />
                      ))}
                  </div>
                  <div className="p-4 border-t border-gray-700 flex justify-end gap-2">
@@ -81,7 +80,7 @@ const SponsoredContentManagement: React.FC = () => {
                 {ads.map(ad => (
                     <div key={ad.id} className="p-2 bg-gray-700/50 rounded-lg flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <img src={ad.logo_url} className="w-10 h-10 rounded-full" />
+                            <img src={ad.logo_url} className="w-10 h-10 rounded-full" alt={ad.company} />
                             <p className="font-semibold">{ad.company}</p>
                         </div>
                         <div className="space-x-2">

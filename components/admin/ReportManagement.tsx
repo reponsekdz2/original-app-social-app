@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../services/apiService.ts';
 import type { Report } from '../../types.ts';
-import Icon from '../Icon.tsx';
 
 const ReportManagement: React.FC = () => {
     const [reports, setReports] = useState<Report[]>([]);
@@ -71,8 +70,8 @@ const ReportManagement: React.FC = () => {
                                 <td className="px-4 py-3 text-right space-x-1">
                                     {report.status === 'pending' && (
                                         <>
-                                            <button onClick={() => handleUpdateStatus(report.id, 'resolved')} className="p-1 text-xs">Resolve</button>
-                                            <button onClick={() => handleUpdateStatus(report.id, 'dismissed')} className="p-1 text-xs">Dismiss</button>
+                                            <button onClick={() => handleUpdateStatus(report.id, 'resolved')} className="px-2 py-1 text-xs bg-green-500/20 text-green-300 rounded">Resolve</button>
+                                            <button onClick={() => handleUpdateStatus(report.id, 'dismissed')} className="px-2 py-1 text-xs bg-gray-500/20 text-gray-300 rounded">Dismiss</button>
                                         </>
                                     )}
                                 </td>

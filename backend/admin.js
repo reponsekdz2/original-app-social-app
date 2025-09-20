@@ -187,7 +187,7 @@ router.get('/content', async (req, res) => {
     const { type } = req.query; // 'posts' or 'reels'
     try {
         if (type === 'posts') {
-            const [posts] = await pool.query("SELECT p.id, u.username, p.caption, pm.media_url FROM posts p JOIN users u ON p.user_id = u.id JOIN post_media pm ON p.id = pm.post_id WHERE pm.sort_order = 0 ORDER BY p.created_at DESC LIMIT 50");
+            const [posts] = await pool.query("SELECT p.id, u.username, p.caption, (SELECT pm.media_url FROM post_media pm WHERE pm.post_id = p.id ORDER BY pm.sort_order ASC LIMIT 1) as media_url FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT 50");
             res.json(posts);
         } else if (type === 'reels') {
              const [reels] = await pool.query("SELECT r.id, u.username, r.caption, r.video_url as media_url FROM reels r JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC LIMIT 50");
@@ -288,7 +288,7 @@ router.get('/support-tickets/:id', async (req, res) => {
 
         if (tickets.length === 0) return res.status(404).json({ message: 'Ticket not found' });
         
-        const [replies] = await pool.query('SELECT * FROM support_ticket_replies WHERE ticket_id = ? ORDER BY created_at ASC', [req.params.id]);
+        const [replies] = await pool.query('SELECT str.*, u.username as admin_username FROM support_ticket_replies str JOIN users u ON str.admin_user_id = u.id WHERE ticket_id = ? ORDER BY created_at ASC', [req.params.id]);
         
         const ticket = { ...tickets[0], replies };
         res.json(ticket);
@@ -309,6 +309,102 @@ router.post('/support-tickets/:id/reply', async (req, res) => {
         await pool.query("UPDATE support_tickets SET status = 'Pending' WHERE id = ?", [ticketId]);
         res.status(201).json({ message: 'Reply sent' });
     } catch(error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get all sponsored content
+// @route   GET /api/admin/sponsored
+// @access  Admin
+router.get('/sponsored', async (req, res) => {
+    try {
+        const [content] = await pool.query('SELECT * FROM sponsored_content ORDER BY id DESC');
+        res.json(content);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Create sponsored content
+// @route   POST /api/admin/sponsored
+// @access  Admin
+router.post('/sponsored', async (req, res) => {
+    const { company, logo_url, media_url, tagline, call_to_action, link } = req.body;
+    try {
+        await pool.query(
+            'INSERT INTO sponsored_content (company, logo_url, media_url, tagline, call_to_action, link) VALUES (?, ?, ?, ?, ?, ?)',
+            [company, logo_url, media_url, tagline, call_to_action, link]
+        );
+        res.status(201).json({ message: 'Sponsored content created' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Update sponsored content
+// @route   PUT /api/admin/sponsored/:id
+// @access  Admin
+router.put('/sponsored/:id', async (req, res) => {
+    const { id } = req.params;
+    const { company, logo_url, media_url, tagline, call_to_action, link } = req.body;
+    try {
+        await pool.query(
+            'UPDATE sponsored_content SET company = ?, logo_url = ?, media_url = ?, tagline = ?, call_to_action = ?, link = ? WHERE id = ?',
+            [company, logo_url, media_url, tagline, call_to_action, link, id]
+        );
+        res.json({ message: 'Sponsored content updated' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Delete sponsored content
+// @route   DELETE /api/admin/sponsored/:id
+// @access  Admin
+router.delete('/sponsored/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM sponsored_content WHERE id = ?', [id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get all trending topics
+// @route   GET /api/admin/trending
+// @access  Admin
+router.get('/trending', async (req, res) => {
+    try {
+        const [topics] = await pool.query('SELECT * FROM trending_topics ORDER BY post_count DESC');
+        res.json(topics);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Create a trending topic
+// @route   POST /api/admin/trending
+// @access  Admin
+router.post('/trending', async (req, res) => {
+    const { topic, post_count } = req.body;
+    try {
+        await pool.query('INSERT INTO trending_topics (topic, post_count) VALUES (?, ?)', [topic, post_count]);
+        res.status(201).json({ message: 'Trending topic created' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Delete a trending topic
+// @route   DELETE /api/admin/trending/:id
+// @access  Admin
+router.delete('/trending/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM trending_topics WHERE id = ?', [id]);
+        res.status(204).send();
+    } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
 });

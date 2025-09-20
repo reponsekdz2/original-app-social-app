@@ -1,4 +1,3 @@
-
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -19,7 +18,9 @@ import storyRoutes from './stories.js';
 import messageRoutes from './messages.js';
 import userRoutes from './users.js';
 import miscRoutes from './misc.js';
-import adminRoutes from './admin.js'; // New admin routes
+import adminRoutes from './admin.js';
+import livestreamRoutes from './livestreams.js';
+
 
 dotenv.config();
 
@@ -31,7 +32,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*", // Allow all origins for simplicity, restrict in production
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
 app.set('io', io); // Make io accessible in request handlers
@@ -55,7 +56,9 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/misc', miscRoutes);
-app.use('/api/admin', adminRoutes); // Use admin routes
+app.use('/api/admin', adminRoutes);
+app.use('/api/livestreams', livestreamRoutes);
+
 
 // Basic route for testing
 app.get('/', (req, res) => {

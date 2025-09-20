@@ -49,7 +49,7 @@ router.get('/', protect, async (req, res) => {
             
             const [messages] = await pool.query(
                 `SELECT 
-                    m.id, m.sender_id as senderId, m.content, m.created_at as timestamp, m.message_type as type, m.read_status as 'read',
+                    m.id, m.sender_id as senderId, m.content, m.created_at as timestamp, m.message_type as type, m.read_at as 'read',
                     m.shared_content_id, m.shared_content_type, m.file_name, m.file_size, m.file_url, m.file_type
                  FROM messages m WHERE m.conversation_id = ? ORDER BY m.created_at ASC`,
                 [convo.id]
@@ -58,7 +58,7 @@ router.get('/', protect, async (req, res) => {
             const processedMessages = await Promise.all(messages.map(async (msg) => {
                 let sharedContent = null, fileAttachment = null;
                 if ((msg.type === 'share_post' || msg.type === 'share_reel') && msg.shared_content_id) {
-                     // ... existing shared content logic
+                     // In a real app, you'd fetch the details of the shared post/reel here
                 }
                 if (msg.type === 'file' || msg.type === 'image') {
                     fileAttachment = { fileName: msg.file_name, fileSize: msg.file_size, fileUrl: msg.file_url, fileType: msg.file_type };
@@ -94,8 +94,8 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
     const senderId = req.user.id;
     const io = req.app.get('io');
 
-    if (!recipientId && !existingConvoId) {
-        return res.status(400).json({ message: 'Recipient or Conversation ID is required.' });
+    if ((!recipientId && !existingConvoId) || !type) {
+        return res.status(400).json({ message: 'Recipient/Conversation ID and message type are required.' });
     }
 
     const connection = await pool.getConnection();
@@ -104,7 +104,6 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
         
         let conversationId = existingConvoId;
         
-        // Find or create conversation for 1-on-1 chats
         if (!conversationId && recipientId) {
             const [convos] = await connection.query(
                 `SELECT cp1.conversation_id FROM conversation_participants cp1
@@ -116,7 +115,7 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
             if (convos.length > 0) {
                 conversationId = convos[0].conversation_id;
             } else {
-                const [newConvo] = await connection.query('INSERT INTO conversations (is_group) VALUES (FALSE)');
+                const [newConvo] = await connection.query('INSERT INTO conversations (is_group, created_by) VALUES (FALSE, ?)', [senderId]);
                 conversationId = newConvo.insertId;
                 await connection.query('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?), (?, ?)', [conversationId, senderId, conversationId, recipientId]);
             }
@@ -135,13 +134,13 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
 
         const [msgResult] = await connection.query(
             'INSERT INTO messages (conversation_id, sender_id, content, message_type, shared_content_id, shared_content_type, file_name, file_size, file_url, file_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [conversationId, senderId, messageContent, type, sharedContentId, contentType, file_name, file_size, file_url, file_type]
+            [conversationId, senderId, messageContent, type, sharedContentId || null, contentType || null, file_name, file_size, file_url, file_type]
         );
         const messageId = msgResult.insertId;
         
         await connection.commit();
         
-        const [msgRows] = await connection.query('SELECT *, sender_id as senderId FROM messages WHERE id = ?', [messageId]);
+        const [msgRows] = await connection.query('SELECT *, sender_id as senderId, read_at as `read` FROM messages WHERE id = ?', [messageId]);
         const dbMessage = msgRows[0];
         
         const messageToEmit = {

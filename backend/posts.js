@@ -24,7 +24,7 @@ const POST_QUERY = `
         JSON_OBJECT('id', u.id, 'username', u.username, 'avatar', u.avatar_url, 'is_verified', u.is_verified) AS user,
         (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pm.id, 'url', pm.media_url, 'type', pm.media_type)) FROM post_media pm WHERE pm.post_id = p.id) AS media,
         (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) AS likes,
-        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', lu.id, 'username', lu.username)) FROM post_likes pl JOIN users lu ON pl.user_id = lu.id WHERE pl.post_id = p.id) as likedBy,
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', lu.id, 'username', lu.username, 'avatar', lu.avatar_url)) FROM post_likes pl JOIN users lu ON pl.user_id = lu.id WHERE pl.post_id = p.id) as likedBy,
         (SELECT JSON_ARRAYAGG(
             JSON_OBJECT('id', col.id, 'username', col.username, 'avatar', col.avatar_url)
         ) FROM post_collaborators pc JOIN users col ON pc.user_id = col.id WHERE pc.post_id = p.id AND pc.status = 'accepted') as collaborators,
@@ -38,7 +38,7 @@ const POST_QUERY = `
                                 'votes', (SELECT COUNT(*) FROM poll_votes pv WHERE pv.poll_option_id = po.id)
                             )
                         ) FROM poll_options po WHERE po.poll_id = poll.id),
-            'userVote', (SELECT pov.poll_option_id FROM poll_votes pv JOIN poll_options po ON pv.poll_option_id = po.id JOIN poll_votes pov ON po.id = pov.poll_option_id WHERE po.poll_id = poll.id AND pov.user_id = ?)
+            'userVote', (SELECT pv.poll_option_id FROM poll_votes pv JOIN poll_options po ON pv.poll_option_id = po.id WHERE po.poll_id = poll.id AND pv.user_id = ?)
         ) FROM polls poll WHERE poll.post_id = p.id) as poll,
         (SELECT JSON_ARRAYAGG(
              JSON_OBJECT('id', c.id, 'text', c.text, 'timestamp', c.created_at, 'user', 
@@ -62,7 +62,7 @@ router.get('/feed', protect, async (req, res) => {
              ORDER BY p.created_at DESC LIMIT 20`,
             [userId, userId, userId]
         );
-        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], collaborators: p.collaborators || []})) });
+        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], collaborators: p.collaborators || [], isSaved: p.is_saved_by_user === 1})) });
     } catch (error) {
         console.error('Get Feed Error:', error);
         res.status(500).json({ message: 'Server Error' });
@@ -81,7 +81,7 @@ router.get('/explore', protect, async (req, res) => {
              ORDER BY RAND() LIMIT 30`,
              [userId]
         );
-        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], collaborators: p.collaborators || []})) });
+        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], collaborators: p.collaborators || [], isSaved: p.is_saved_by_user === 1})) });
     } catch (error) {
         console.error('Get Explore Error:', error);
         res.status(500).json({ message: 'Server Error' });
@@ -175,24 +175,36 @@ router.post('/polls/:optionId/vote', protect, async (req, res) => {
     const { optionId } = req.params;
     const userId = req.user.id;
     
+    const connection = await pool.getConnection();
     try {
-        // Simple check to prevent duplicate votes (unique key on DB does the real work)
-        const [[option]] = await pool.query('SELECT poll_id FROM poll_options WHERE id = ?', [optionId]);
-        if (!option) return res.status(404).json({ message: 'Poll option not found.' });
+        await connection.beginTransaction();
 
-        const [existingVotes] = await pool.query(
-            `SELECT pv.id FROM poll_votes pv JOIN poll_options po ON pv.poll_option_id = po.id WHERE po.poll_id = ? AND pv.user_id = ?`,
+        const [[option]] = await connection.query('SELECT poll_id FROM poll_options WHERE id = ?', [optionId]);
+        if (!option) {
+            await connection.rollback();
+            return res.status(404).json({ message: 'Poll option not found.' });
+        }
+
+        const [existingVotes] = await connection.query(
+            `SELECT pv.id FROM poll_votes pv
+             JOIN poll_options po ON pv.poll_option_id = po.id
+             WHERE po.poll_id = ? AND pv.user_id = ?`,
             [option.poll_id, userId]
         );
         if (existingVotes.length > 0) {
+            await connection.rollback();
             return res.status(409).json({ message: 'User has already voted on this poll.' });
         }
         
-        await pool.query('INSERT INTO poll_votes (poll_option_id, user_id) VALUES (?, ?)', [optionId, userId]);
+        await connection.query('INSERT INTO poll_votes (poll_option_id, user_id) VALUES (?, ?)', [optionId, userId]);
+        await connection.commit();
         res.status(201).json({ message: 'Vote recorded.' });
     } catch (error) {
+        await connection.rollback();
         console.error('Poll Vote Error:', error);
         res.status(500).json({ message: 'Server error' });
+    } finally {
+        connection.release();
     }
 });
 
@@ -388,20 +400,19 @@ router.post('/:id/tip', protect, async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        const [senders] = await connection.query('SELECT wallet_balance FROM users WHERE id = ?', [senderId]);
-        const sender = senders[0];
+        const [[sender]] = await connection.query('SELECT wallet_balance FROM users WHERE id = ?', [senderId]);
 
         if (!sender || sender.wallet_balance < amount) {
             await connection.rollback();
             return res.status(400).json({ message: 'Insufficient funds.' });
         }
 
-        const [posts] = await connection.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
-        if (posts.length === 0) {
+        const [[post]] = await connection.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
+        if (!post) {
             await connection.rollback();
             return res.status(404).json({ message: 'Post not found.' });
         }
-        const receiverId = posts[0].user_id;
+        const receiverId = post.user_id;
 
         if (senderId === receiverId) {
             await connection.rollback();

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { User, Conversation } from '../types.ts';
 import Icon from './Icon.tsx';
-// Fix: Corrected import path to be relative to the components directory.
 import * as api from '../services/apiService.ts';
 
 interface CreateGroupModalProps {
@@ -49,8 +48,8 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ followers, onClose,
       >
         <div className="p-3 border-b border-gray-700 text-center relative">
           <h2 className="text-lg font-semibold">New Group Chat</h2>
-          <button className="absolute top-2 left-3" onClick={onClose}>Cancel</button>
-          <button onClick={handleCreate} disabled={isLoading || !groupName.trim() || selectedUserIds.length === 0} className="absolute top-2 right-3 text-red-500 font-semibold disabled:text-gray-500">Create</button>
+          <button className="absolute top-3 left-3 text-sm" onClick={onClose}>Cancel</button>
+          <button onClick={handleCreate} disabled={isLoading || !groupName.trim() || selectedUserIds.length === 0} className="absolute top-3 right-3 text-red-500 font-semibold disabled:text-gray-500 text-sm">Create</button>
         </div>
         <div className="p-4 border-b border-gray-700">
           <input
@@ -79,8 +78,8 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ followers, onClose,
                   <img src={user.avatar} alt={user.username} className="w-10 h-10 rounded-full" />
                   <p>{user.username}</p>
                 </div>
-                <div className={`w-6 h-6 rounded-full border-2 ${isSelected ? 'bg-red-500 border-red-500' : 'border-gray-500'}`}>
-                    {isSelected && <Icon className="w-5 h-5 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></Icon>}
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-red-500 border-red-500' : 'border-gray-500'}`}>
+                    {isSelected && <Icon className="w-4 h-4 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></Icon>}
                 </div>
               </div>
             );

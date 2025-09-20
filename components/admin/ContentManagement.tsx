@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '../../services/apiService.ts';
-import type { Post, Reel } from '../../types.ts';
 import Icon from '../Icon.tsx';
 
 const ContentManagement: React.FC = () => {
     const [contentType, setContentType] = useState<'posts' | 'reels'>('posts');
-    // Fix: Correct the state type to match the actual structure of data returned by the admin API.
     const [content, setContent] = useState<({ id: string, username: string, caption: string, media_url: string })[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -25,7 +23,6 @@ const ContentManagement: React.FC = () => {
         fetchContent();
     }, [fetchContent]);
 
-    // Fix: Update the parameter type and logic to correctly handle the content type.
     const handleDelete = async (item: { id: string, username: string }) => {
         const type = contentType === 'reels' ? 'reel' : 'post';
         if (!window.confirm(`Are you sure you want to delete this ${type} by ${item.username}?`)) return;
@@ -50,15 +47,14 @@ const ContentManagement: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
                 {content.map(item => (
                     <div key={item.id} className="relative aspect-square group bg-black">
-                         {contentType === 'posts' ? (
-                            // Fix: Access 'media_url' which now correctly exists on the item type.
+                         {contentType === 'posts' && item.media_url && item.media_url.endsWith('.mp4') ? (
+                            <video src={item.media_url} className="w-full h-full object-cover rounded" />
+                         ) : contentType === 'posts' ? (
                             <img src={item.media_url} alt="Post" className="w-full h-full object-cover rounded" />
                          ) : (
-                            // Fix: Access 'media_url' which now correctly exists on the item type.
                             <video src={item.media_url} className="w-full h-full object-cover rounded" />
                          )}
                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 text-white text-xs">
-                            {/* Fix: Access 'username' which now correctly exists on the item type. */}
                             <p>by <span className="font-bold">{item.username}</span></p>
                              <button onClick={() => handleDelete(item)} className="self-end p-2 bg-red-600/80 rounded-full">
                                 <Icon className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></Icon>

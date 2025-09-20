@@ -55,6 +55,7 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Dashboard Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 <StatCard title="Total Users" value={stats.totalUsers} icon={<path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.663l.001.109m-11.964-4.663c0-1.113.285-2.16.786-3.07M3.75 9.128v.003c0 1.113.285 2.16.786-3.07M3.75 9.128v-.109a12.318 12.318 0 018.624-8.043 12.318 12.318 0 018.624 8.043l-.001.109c0 1.113-.285-2.16-.786-3.07m-11.964-4.663l.001-.109a6.375 6.375 0 0111.964 4.663l-.001.109" />} />
                 <StatCard title="Total Posts" value={stats.totalPosts} icon={<path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />} />
@@ -70,7 +71,6 @@ const Dashboard: React.FC = () => {
                 </div>
                  <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
                     <h3 className="font-bold mb-4">Content Trends (Last 30 Days)</h3>
-                    {/* Fix: Add labels to the data2 prop to match the ChartData type. */}
                     {contentTrends && <BarChart data={{ labels: contentTrends.labels, values: contentTrends.postValues }} data2={{ labels: contentTrends.labels, values: contentTrends.reelValues }} />}
                 </div>
             </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import * as api from '../../services/apiService.ts';
 import type { SupportTicket, AdminReply } from '../../types.ts';
@@ -39,12 +38,12 @@ const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({ ticket, onClose
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/20">
                     <div className="p-3 bg-gray-700/50 rounded-lg">
                         <p className="font-semibold text-sm">{ticket.user_username} said:</p>
-                        <p className="text-sm mt-1">{ticket.description}</p>
+                        <p className="text-sm mt-1 whitespace-pre-line">{ticket.description}</p>
                     </div>
                      {ticket.replies.map(r => (
                         <div key={r.id} className="p-3 bg-red-500/10 rounded-lg text-right">
                             <p className="font-semibold text-sm">You replied:</p>
-                            <p className="text-sm mt-1">{r.message}</p>
+                            <p className="text-sm mt-1 whitespace-pre-line">{r.message}</p>
                         </div>
                     ))}
                 </div>
