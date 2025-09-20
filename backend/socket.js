@@ -42,6 +42,22 @@ export const initSocket = (io) => {
             }
         });
 
+        // --- Live Streaming ---
+        socket.on('join_stream', (streamId) => {
+            socket.join(`stream_${streamId}`);
+            console.log(`Socket ${socket.id} joined stream ${streamId}`);
+        });
+
+        socket.on('leave_stream', (streamId) => {
+            socket.leave(`stream_${streamId}`);
+            console.log(`Socket ${socket.id} left stream ${streamId}`);
+        });
+        
+        socket.on('live_comment', ({ streamId, comment }) => {
+            io.to(`stream_${streamId}`).emit('new_live_comment', comment);
+        });
+
+
         // --- Video Calling & WebRTC Signaling ---
         socket.on('outgoing_call', ({ fromUser, toUserId, callType, offer }) => {
             const recipientSocket = getSocketFromUserId(toUserId);

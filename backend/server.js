@@ -21,6 +21,7 @@ import miscRoutes from './misc.js';
 import adminRoutes from './admin.js';
 import livestreamRoutes from './livestreams.js';
 import reportRoutes from './reports.js';
+import aiRoutes from './ai.js';
 
 
 dotenv.config();
@@ -60,6 +61,7 @@ app.use('/api/misc', miscRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/livestreams', livestreamRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/ai', aiRoutes);
 
 
 // Basic route for testing

@@ -16,7 +16,12 @@ router.post('/start', protect, async (req, res) => {
             [userId, title]
         );
         const streamId = result.insertId;
-        const [streamRows] = await pool.query('SELECT * FROM live_streams WHERE id = ?', [streamId]);
+        const [streamRows] = await pool.query(`
+            SELECT ls.*, JSON_OBJECT('id', u.id, 'username', u.username, 'avatar', u.avatar_url) as user 
+            FROM live_streams ls 
+            JOIN users u ON ls.user_id = u.id
+            WHERE ls.id = ?
+        `, [streamId]);
         res.status(201).json(streamRows[0]);
     } catch (error) {
         console.error('Start Stream Error:', error);

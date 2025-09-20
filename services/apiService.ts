@@ -166,6 +166,13 @@ export const sendTip = (postId: string, amount: number): Promise<void> => apiFet
 export const startLiveStream = (title: string): Promise<LiveStream> => apiFetch('/livestreams/start', { method: 'POST', body: JSON.stringify({ title }) });
 export const getLiveStreams = (): Promise<LiveStream[]> => apiFetch('/livestreams');
 
+// --- AI Features ---
+export const generateMagicText = (text: string): Promise<{ suggestions: string[] }> => 
+    apiFetch('/ai/compose', {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+    });
+
 // --- Admin ---
 export const getAdminStats = (): Promise<AdminStats> => apiFetch('/admin/stats');
 export const getAdminUserGrowthData = (): Promise<AnalyticsData> => apiFetch('/admin/analytics/user-growth');
