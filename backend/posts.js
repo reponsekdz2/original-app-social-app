@@ -41,8 +41,11 @@ const POST_QUERY = `
             'userVote', (SELECT pv.poll_option_id FROM poll_votes pv JOIN poll_options po ON pv.poll_option_id = po.id WHERE po.poll_id = poll.id AND pv.user_id = ?)
         ) FROM polls poll WHERE poll.post_id = p.id) as poll,
         COALESCE((SELECT JSON_ARRAYAGG(
-             JSON_OBJECT('id', c.id, 'text', c.text, 'timestamp', c.created_at, 'user', 
-                JSON_OBJECT('id', cu.id, 'username', cu.username, 'avatar', cu.avatar_url)
+             JSON_OBJECT(
+                'id', c.id, 'text', c.text, 'timestamp', c.created_at, 
+                'user', JSON_OBJECT('id', cu.id, 'username', cu.username, 'avatar', cu.avatar_url),
+                'likes', (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id),
+                'likedBy', COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', lu.id, 'username', lu.username)) FROM comment_likes cl JOIN users lu ON cl.user_id = lu.id WHERE cl.comment_id = c.id), JSON_ARRAY())
              )
         ) FROM (SELECT * FROM comments WHERE post_id = p.id ORDER BY created_at DESC) c JOIN users cu ON c.user_id = cu.id), JSON_ARRAY()) AS comments,
         EXISTS(SELECT 1 FROM post_saves ps WHERE ps.post_id = p.id AND ps.user_id = ?) as isSaved

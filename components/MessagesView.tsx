@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Conversation, User, Message } from '../types';
-import Icon from './Icon.tsx';
-import ChatWindow from './ChatWindow.tsx';
-import VerifiedBadge from './VerifiedBadge.tsx';
-import NewMessageModal from './NewMessageModal.tsx';
-import { socketService } from '../services/socketService.ts';
-import * as api from '../services/apiService';
-import CreateGroupModal from './CreateGroupModal.tsx';
+import Icon from './components/Icon.tsx';
+import ChatWindow from './components/ChatWindow.tsx';
+import VerifiedBadge from './components/VerifiedBadge.tsx';
+import NewMessageModal from './components/NewMessageModal.tsx';
+import { socketService } from './services/socketService.ts';
+import * as api from './services/apiService';
+import CreateGroupModal from './components/CreateGroupModal.tsx';
 
 interface MessagesViewProps {
   conversations: Conversation[];
@@ -17,9 +17,10 @@ interface MessagesViewProps {
   onUpdateConversation: (updatedConvo: Conversation) => void;
   onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => void;
   onReport: (user: User) => void;
+  onViewMedia: (media: { url: string, type: 'image' | 'video' }) => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall, onUpdateConversation, onUpdateUserRelationship, onReport }) => {
+const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall, onUpdateConversation, onUpdateUserRelationship, onReport, onViewMedia }) => {
   const [conversations, setConversations] = useState(initialConversations);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(initialConversations[0] || null);
   const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
@@ -198,6 +199,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             onUpdateConversation={onUpdateConversation}
             onUpdateUserRelationship={onUpdateUserRelationship}
             onReport={onReport}
+            onViewMedia={onViewMedia}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 p-4">

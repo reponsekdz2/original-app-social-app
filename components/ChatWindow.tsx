@@ -20,6 +20,7 @@ interface ChatWindowProps {
   onUpdateConversation: (updatedConvo: Conversation) => void;
   onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => void;
   onReport: (user: User) => void;
+  onViewMedia: (media: { url: string, type: 'image' | 'video' }) => void;
 }
 
 const getThemeClass = (theme: string) => {
@@ -33,7 +34,7 @@ const getThemeClass = (theme: string) => {
 
 
 const ChatWindow: React.FC<ChatWindowProps> = (props) => {
-  const { conversation, currentUser, onSendMessage, onBack, onViewProfile, onInitiateCall, onUpdateConversation, onUpdateUserRelationship, onReport } = props;
+  const { conversation, currentUser, onSendMessage, onBack, onViewProfile, onInitiateCall, onUpdateConversation, onUpdateUserRelationship, onReport, onViewMedia } = props;
   const otherUser = conversation.participants.find(p => p.id !== currentUser.id);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
@@ -180,6 +181,7 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
               onReply={() => setReplyingTo(message)}
               onAddReaction={(emoji) => handleAddReaction(message.id, emoji)}
               isVanishMode={conversation.settings.vanish_mode_enabled}
+              onViewMedia={onViewMedia}
             />
           );
         })}

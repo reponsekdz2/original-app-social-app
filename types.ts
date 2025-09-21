@@ -53,6 +53,8 @@ export interface Comment {
   text: string;
   user: User;
   timestamp: string;
+  likes: number;
+  likedBy: User[];
 }
 
 export interface Post {

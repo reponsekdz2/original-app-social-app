@@ -13,6 +13,7 @@ interface MessageProps {
   onReply: () => void;
   onAddReaction: (emoji: string) => void;
   isVanishMode: boolean;
+  onViewMedia: (media: { url: string, type: 'image' | 'video' }) => void;
 }
 
 const SharedContentMessage: React.FC<{ content: SharedContent }> = ({ content }) => {
@@ -51,7 +52,7 @@ const FileAttachmentMessage: React.FC<{ file: FileAttachment }> = ({ file }) => 
 }
 
 
-const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction, isVanishMode }) => {
+const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction, isVanishMode, onViewMedia }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const messageAlignment = isCurrentUser ? 'justify-end' : 'justify-start';
@@ -73,7 +74,7 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGrou
       case 'text':
         return <p className="py-2 px-3">{message.content}</p>;
       case 'image':
-        return <img src={message.content} alt="sent" className="rounded-lg max-w-xs" />;
+        return <button onClick={() => onViewMedia({url: message.content, type: 'image'})}><img src={message.content} alt="sent" className="rounded-lg max-w-xs" /></button>;
       case 'sticker':
         return <img src={message.content} alt="sticker" className="w-32 h-32" />;
       case 'voicenote':

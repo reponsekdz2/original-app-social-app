@@ -3,6 +3,7 @@ import type { Post, User, Comment as CommentType } from '../types';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import FollowButton from './FollowButton.tsx';
+import MagicComposePanel from './MagicComposePanel.tsx';
 
 interface PostModalProps {
   post: Post;
@@ -18,12 +19,14 @@ interface PostModalProps {
   onFollow: (user: User) => void;
   onUnfollow: (user: User) => void;
   onTip: (post: Post) => void;
+  onToggleCommentLike: (commentId: string) => void;
 }
 
 const PostModal: React.FC<PostModalProps> = (props) => {
-    const { post, currentUser, onClose, onToggleLike, onToggleSave, onComment, onShare, onViewLikes, onViewProfile, onOptions, onFollow, onUnfollow, onTip } = props;
+    const { post, currentUser, onClose, onToggleLike, onToggleSave, onComment, onShare, onViewLikes, onViewProfile, onOptions, onFollow, onUnfollow, onTip, onToggleCommentLike } = props;
     const [commentText, setCommentText] = useState('');
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+    const [isComposePanelOpen, setComposePanelOpen] = useState(false);
     
     const isLiked = post.likedBy.some(u => u.id === currentUser.id);
     const isSaved = post.isSaved;
@@ -33,6 +36,7 @@ const PostModal: React.FC<PostModalProps> = (props) => {
         if (commentText.trim()) {
             onComment(post.id, commentText);
             setCommentText('');
+            setComposePanelOpen(false);
         }
     };
     
@@ -69,15 +73,27 @@ const PostModal: React.FC<PostModalProps> = (props) => {
                             <img src={post.user.avatar} alt={post.user.username} className="w-9 h-9 rounded-full" />
                             <p className="text-sm"><span className="font-semibold">{post.user.username}</span> {post.caption}</p>
                         </div>
-                        {post.comments.map(comment => (
-                            <div key={comment.id} className="flex items-start gap-3">
-                                <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full" />
-                                <div>
-                                    <p className="text-sm"><span className="font-semibold">{comment.user.username}</span> {comment.text}</p>
-                                    <span className="text-xs text-gray-500">{comment.timestamp}</span>
+                        {post.comments.map(comment => {
+                            const isCommentLiked = comment.likedBy.some(u => u.id === currentUser.id);
+                            return (
+                                <div key={comment.id} className="flex items-start gap-3 group">
+                                    <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full" />
+                                    <div className="flex-1">
+                                        <p className="text-sm"><span className="font-semibold">{comment.user.username}</span> {comment.text}</p>
+                                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                                            <span>{comment.timestamp}</span>
+                                            {comment.likes > 0 && <span>{comment.likes} likes</span>}
+                                            <button>Reply</button>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => onToggleCommentLike(comment.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Icon className={`w-4 h-4 ${isCommentLiked ? 'text-red-500' : 'text-gray-400'}`} fill={isCommentLiked ? 'currentColor' : 'none'}>
+                                            <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                                        </Icon>
+                                    </button>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                     <footer className="border-t border-gray-800 p-2">
                         <div className="p-2">
@@ -96,12 +112,24 @@ const PostModal: React.FC<PostModalProps> = (props) => {
                             {post.likes > 0 && <button onClick={() => onViewLikes(post.likedBy)} className="font-semibold text-sm">{post.likes.toLocaleString()} likes</button>}
                             <p className="text-gray-500 text-xs uppercase mt-2">{new Date(post.timestamp).toDateString()}</p>
                         </div>
-                         <form onSubmit={handlePostComment} className="border-t border-gray-800 p-3 flex items-center gap-2">
-                            <input type="text" placeholder="Add a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} className="w-full bg-transparent text-sm focus:outline-none" />
-                            {commentText.trim().length > 0 && (
-                              <button type="submit" className="text-red-500 font-semibold text-sm">Post</button>
+                         <div className="relative">
+                            {isComposePanelOpen && (
+                                <div className="absolute bottom-full left-0 right-0 p-2">
+                                    <MagicComposePanel text={commentText} onComposeSelect={(newText) => { setCommentText(newText); setComposePanelOpen(false); }} />
+                                </div>
                             )}
-                        </form>
+                             <form onSubmit={handlePostComment} className="border-t border-gray-800 p-3 flex items-center gap-2">
+                                <input type="text" placeholder="Add a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} className="w-full bg-transparent text-sm focus:outline-none" />
+                                {currentUser.isPremium && (
+                                    <button type="button" onClick={() => setComposePanelOpen(prev => !prev)} className="p-1 text-yellow-400 hover:text-yellow-300">
+                                        <Icon className="w-5 h-5" fill="currentColor"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon>
+                                    </button>
+                                )}
+                                {commentText.trim().length > 0 && (
+                                  <button type="submit" className="text-red-500 font-semibold text-sm">Post</button>
+                                )}
+                            </form>
+                        </div>
                     </footer>
                 </div>
             </div>

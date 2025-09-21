@@ -10,9 +10,10 @@ interface ReelCommentsModalProps {
   onClose: () => void;
   onPostComment: (reelId: string, text: string) => void;
   onViewProfile: (user: User) => void;
+  onToggleCommentLike: (commentId: string) => void;
 }
 
-const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser, onClose, onPostComment, onViewProfile }) => {
+const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser, onClose, onPostComment, onViewProfile, onToggleCommentLike }) => {
   const [commentText, setCommentText] = useState('');
 
   const handlePostComment = () => {
@@ -45,17 +46,29 @@ const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser
             <hr className="border-gray-700" />
 
             {/* Comments */}
-            {reel.comments.map(comment => (
-                <div key={comment.id} className="flex items-start gap-3">
-                    <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(comment.user)} />
-                    <div>
-                        <p className="text-sm">
-                            <span className="font-semibold cursor-pointer" onClick={() => onViewProfile(comment.user)}>{comment.user.username}</span> {comment.text}
-                        </p>
-                        <span className="text-xs text-gray-500">{comment.timestamp}</span>
+            {reel.comments.map(comment => {
+                const isCommentLiked = comment.likedBy.some(u => u.id === currentUser.id);
+                return (
+                    <div key={comment.id} className="flex items-start gap-3 group">
+                        <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(comment.user)} />
+                        <div className="flex-1">
+                            <p className="text-sm">
+                                <span className="font-semibold cursor-pointer" onClick={() => onViewProfile(comment.user)}>{comment.user.username}</span> {comment.text}
+                            </p>
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                                <span>{comment.timestamp}</span>
+                                {comment.likes > 0 && <span>{comment.likes} likes</span>}
+                                <button>Reply</button>
+                            </div>
+                        </div>
+                        <button onClick={() => onToggleCommentLike(comment.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Icon className={`w-4 h-4 ${isCommentLiked ? 'text-red-500' : 'text-gray-400'}`} fill={isCommentLiked ? 'currentColor' : 'none'}>
+                                <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                            </Icon>
+                        </button>
                     </div>
-                </div>
-             ))}
+                );
+             })}
              {reel.comments.length === 0 && (
                 <p className="text-center text-gray-500 pt-16">No comments yet. Be the first!</p>
              )}

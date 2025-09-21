@@ -22,7 +22,12 @@ router.get('/', protect, async (req, res) => {
                     JSON_OBJECT('id', lu.id, 'username', lu.username)
                 ) FROM reel_likes rl JOIN users lu ON rl.user_id = lu.id WHERE rl.reel_id = r.id), JSON_ARRAY()) as likedBy,
                 COALESCE((SELECT JSON_ARRAYAGG(
-                    JSON_OBJECT('id', c.id, 'text', c.text, 'timestamp', c.created_at, 'user', JSON_OBJECT('id', cu.id, 'username', cu.username, 'avatar', cu.avatar_url))
+                    JSON_OBJECT(
+                        'id', c.id, 'text', c.text, 'timestamp', c.created_at, 
+                        'user', JSON_OBJECT('id', cu.id, 'username', cu.username, 'avatar', cu.avatar_url),
+                        'likes', (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id),
+                        'likedBy', COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', lu.id, 'username', lu.username)) FROM comment_likes cl JOIN users lu ON cl.user_id = lu.id WHERE cl.comment_id = c.id), JSON_ARRAY())
+                    )
                 ) FROM comments c JOIN users cu ON c.user_id = cu.id WHERE c.reel_id = r.id), JSON_ARRAY()) as comments,
                 (SELECT COUNT(*) FROM comments WHERE reel_id = r.id) as shares
             FROM reels r

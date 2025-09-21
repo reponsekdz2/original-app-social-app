@@ -17,9 +17,10 @@ interface MessagesViewProps {
   onUpdateConversation: (updatedConvo: Conversation) => void;
   onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => void;
   onReport: (user: User) => void;
+  onViewMedia: (media: { url: string, type: 'image' | 'video' }) => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall, onUpdateConversation, onUpdateUserRelationship, onReport }) => {
+const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall, onUpdateConversation, onUpdateUserRelationship, onReport, onViewMedia }) => {
   const [conversations, setConversations] = useState(initialConversations);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(initialConversations[0] || null);
   const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
@@ -198,6 +199,8 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             onUpdateConversation={onUpdateConversation}
             onUpdateUserRelationship={onUpdateUserRelationship}
             onReport={onReport}
+            // Fix: Pass the 'onViewMedia' prop to the ChatWindow component.
+            onViewMedia={onViewMedia}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 p-4">

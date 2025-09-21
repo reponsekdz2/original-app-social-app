@@ -58,6 +58,7 @@ import { webRTCManager } from './services/WebRTCManager.ts';
 import CreateStoryModal from './components/CreateStoryModal.tsx';
 import ActivityView from './components/ActivityView.tsx';
 import EditProfileModal from './components/EditProfileModal.tsx';
+import MediaViewerModal from './components/MediaViewerModal.tsx';
 
 
 export const App: React.FC = () => {
@@ -98,6 +99,7 @@ export const App: React.FC = () => {
     const [viewedStory, setViewedStory] = useState<Story | null>(null);
     const [viewedReel, setViewedReel] = useState<Reel | null>(null);
     const [viewedLiveStream, setViewedLiveStream] = useState<LiveStream | null>(null);
+    const [viewedMedia, setViewedMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
     
     // --- WebRTC & Calling State ---
     const [callState, setCallState] = useState<{ user: User, status: 'outgoing' | 'incoming' | 'active' | 'connecting', callType: 'video' | 'audio' } | null>(null);
@@ -182,7 +184,7 @@ export const App: React.FC = () => {
         setCurrentUser(refreshedUser);
         socketService.connect(refreshedUser.id);
         setIsLoading(false);
-        handleNavigate('profile');
+        handleNavigate('home');
     };
 
     const handleLogout = async () => {
@@ -308,6 +310,32 @@ export const App: React.FC = () => {
             await fetchData();
         } catch (error) {
             console.error("Failed to unarchive post:", error);
+        }
+    };
+
+    const handleToggleCommentLike = async (commentId: string) => {
+        if (!currentUser) return;
+        
+        // Optimistic update
+        const originalPosts = [...feedPosts];
+        const newPosts = feedPosts.map(post => ({
+            ...post,
+            comments: post.comments.map(comment => {
+                if (comment.id === commentId) {
+                    const isLiked = comment.likedBy.some(u => u.id === currentUser.id);
+                    const newLikedBy = isLiked ? comment.likedBy.filter(u => u.id !== currentUser.id) : [...comment.likedBy, currentUser];
+                    return { ...comment, likedBy: newLikedBy, likes: newLikedBy.length };
+                }
+                return comment;
+            })
+        }));
+        setFeedPosts(newPosts);
+
+        try {
+            await api.toggleCommentLike(commentId);
+        } catch (error) {
+            console.error("Failed to toggle comment like:", error);
+            setFeedPosts(originalPosts); // Revert on failure
         }
     };
 
@@ -712,7 +740,7 @@ export const App: React.FC = () => {
             case 'home': return <HomeView posts={feedPosts} stories={stories} currentUser={currentUser} suggestedUsers={sidebarData.suggestions} trendingTopics={sidebarData.trending} feedActivities={sidebarData.activity} sponsoredContent={sidebarData.sponsored} conversations={conversations} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => openModal('share', { content: post })} onViewStory={(story) => setViewedStory(story)} onViewLikes={(users) => openModal('viewLikes', { users })} onViewProfile={(user) => handleNavigate('profile', user)} onViewPost={(post) => openModal('post', { post })} onOptions={(post) => openModal('options', { post })} onShowSuggestions={() => openModal('suggestions')} onShowTrends={() => openModal('trends')} onCreateStory={() => openModal('createStory')} onShowSearch={() => setSearchVisible(true)} onNavigate={handleNavigate} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={(post) => openModal('tip', {post})} onVote={handleVote} />;
             case 'explore': return <ExploreView posts={explorePosts} onViewPost={(post) => openModal('post', { post })} />;
             case 'reels': return <ReelsView reels={reels} currentUser={currentUser} onLikeReel={async (id) => {await api.toggleReelLike(id); await fetchData();}} onCommentOnReel={(reel) => openModal('reelComments', { reel })} onShareReel={(reel) => openModal('share', { content: reel })} />;
-            case 'messages': return <MessagesView conversations={conversations} currentUser={currentUser} allUsers={allUsers} onNavigate={(view, user) => handleNavigate('profile', user)} onInitiateCall={handleInitiateCall} onUpdateConversation={handleUpdateConversation} onUpdateUserRelationship={handleUpdateUserRelationship} onReport={handleReport} />;
+            case 'messages': return <MessagesView conversations={conversations} currentUser={currentUser} allUsers={allUsers} onNavigate={(view, user) => handleNavigate('profile', user)} onInitiateCall={handleInitiateCall} onUpdateConversation={handleUpdateConversation} onUpdateUserRelationship={handleUpdateUserRelationship} onReport={handleReport} onViewMedia={(media) => setViewedMedia(media)} />;
             case 'profile': return <ProfileView user={viewedUser || currentUser} posts={feedPosts.filter(p => p.user.id === (viewedUser?.id || currentUser.id))} reels={reels.filter(r => r.user.id === (viewedUser?.id || currentUser.id))} isCurrentUser={!viewedUser || viewedUser.id === currentUser.id} currentUser={currentUser} onEditProfile={() => openModal('editProfile')} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={(users) => openModal('followList', { title: 'Followers', users })} onShowFollowing={(users) => openModal('followList', { title: 'Following', users })} onEditPost={handleEditPost} onViewPost={(post) => openModal('post', { post })} onViewReel={(reel) => setViewedReel(reel)} onOpenCreateHighlightModal={() => openModal('createHighlight')} onMessage={handleMessageUser} />;
             case 'settings': return <SettingsView currentUser={currentUser} onNavigate={handleNavigate} onShowHelp={() => handleNavigate('help')} onShowSupport={() => handleNavigate('support')} onChangePassword={() => openModal('changePassword')} onManageAccount={() => openModal('editProfile')} onToggleTwoFactor={() => openModal('twoFactor')} onGetVerified={() => openModal('getVerified')} onUpdateSettings={handleUpdateSettings}/>;
             case 'saved': return <SavedView posts={feedPosts.filter(p => p.isSaved)} onViewPost={(post) => openModal('post', { post })} />;
@@ -766,8 +794,9 @@ export const App: React.FC = () => {
             {viewedStory && <StoryViewer stories={stories} initialStoryIndex={stories.findIndex(s => s.id === viewedStory.id)} onClose={() => setViewedStory(null)} onNextUser={() => {}} onPrevUser={() => {}}/>}
             {viewedReel && <ReelViewerModal reel={viewedReel} currentUser={currentUser} onClose={() => setViewedReel(null)} onLikeReel={async (id) => {await api.toggleReelLike(id); await fetchData();}} onCommentOnReel={(reel) => openModal('reelComments', { reel })} onShareReel={(reel) => openModal('share', { content: reel })} />}
             {viewedLiveStream && <LiveStreamView stream={viewedLiveStream} currentUser={currentUser} onClose={() => setViewedLiveStream(null)}/>}
+            {viewedMedia && <MediaViewerModal mediaUrl={viewedMedia.url} mediaType={viewedMedia.type} onClose={() => setViewedMedia(null)} />}
             
-            {activeModals.post && <PostModal post={activeModals.post.post} currentUser={currentUser} onClose={() => closeModal('post')} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => openModal('share', { content: post })} onViewLikes={(users) => openModal('viewLikes', { users })} onViewProfile={(user) => handleNavigate('profile', user)} onOptions={(post) => openModal('options', { post })} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={(post) => openModal('tip', {post})}/>}
+            {activeModals.post && <PostModal post={activeModals.post.post} currentUser={currentUser} onClose={() => closeModal('post')} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => openModal('share', { content: post })} onViewLikes={(users) => openModal('viewLikes', { users })} onViewProfile={(user) => handleNavigate('profile', user)} onOptions={(post) => openModal('options', { post })} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={(post) => openModal('tip', {post})} onToggleCommentLike={handleToggleCommentLike} />}
             {activeModals.createPost && <CreatePostModal onClose={() => closeModal('createPost')} onCreatePost={handleCreatePost} allUsers={allUsers} currentUser={currentUser} />}
             {activeModals.createStory && <CreateStoryModal onClose={() => closeModal('createStory')} onCreateStory={handleCreateStory} />}
             {activeModals.accountSwitcher && <AccountSwitcherModal accounts={[currentUser]} currentUser={currentUser} onClose={() => closeModal('accountSwitcher')} onSwitchAccount={() => {}} onAddAccount={handleLogout} />}
@@ -777,7 +806,7 @@ export const App: React.FC = () => {
             {activeModals.options && <PostWithOptionsModal post={activeModals.options.post} currentUser={currentUser} onClose={() => closeModal('options')} onUnfollow={(user) => handleUnfollow(user)} onFollow={handleFollow} onEdit={handleEditPost} onDelete={handleDeletePost} onArchive={handleArchivePost} onUnarchive={handleUnarchivePost} onReport={handleReport} onShare={(post) => openModal('share', { content: post })} onCopyLink={() => { navigator.clipboard.writeText(`${window.location.origin}/p/${activeModals.options.post.id}`); showToast("Link copied!"); }} onGoToPost={() => {}} onViewProfile={(user) => handleNavigate('profile', user)} />}
             {activeModals.unfollow && <UnfollowModal user={activeModals.unfollow.user} onCancel={() => closeModal('unfollow')} onConfirm={() => handleConfirmUnfollow(activeModals.unfollow.user)} />}
             {activeModals.editPost && <EditPostModal post={activeModals.editPost.post} onClose={() => closeModal('editPost')} onSave={handleUpdatePost} />}
-            {activeModals.reelComments && <ReelCommentsModal reel={activeModals.reelComments.reel} currentUser={currentUser} onClose={() => closeModal('reelComments')} onPostComment={async (id, text) => {await api.addReelComment(id, text); await fetchData();}} onViewProfile={(user) => handleNavigate('profile', user)} />}
+            {activeModals.reelComments && <ReelCommentsModal reel={activeModals.reelComments.reel} currentUser={currentUser} onClose={() => closeModal('reelComments')} onPostComment={async (id, text) => {await api.addReelComment(id, text); await fetchData();}} onViewProfile={(user) => handleNavigate('profile', user)} onToggleCommentLike={handleToggleCommentLike} />}
             {activeModals.createHighlight && <CreateHighlightModal userStories={stories.find(s => s.user.id === currentUser.id)?.stories || []} onClose={() => closeModal('createHighlight')} onCreate={handleCreateHighlight} />}
             {activeModals.trends && <TrendsModal topics={sidebarData.trending} onClose={() => closeModal('trends')} />}
             {activeModals.suggestions && <SuggestionsModal users={sidebarData.suggestions} currentUser={currentUser} onClose={() => closeModal('suggestions')} onViewProfile={(user) => handleNavigate('profile', user)} onFollow={handleFollow} onUnfollow={handleUnfollow} />}

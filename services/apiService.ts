@@ -76,6 +76,13 @@ export const resetPassword = (token: string, password: string): Promise<void> =>
 
 export const enableTwoFactor = (): Promise<void> => apiFetch('/auth/enable-2fa', { method: 'POST' });
 
+// --- AI ---
+export const magicCompose = (text: string, style: string): Promise<{ composedText: string }> =>
+    apiFetch('/ai/compose', {
+        method: 'POST',
+        body: JSON.stringify({ text, style }),
+    });
+
 // --- Content ---
 export const getFeedPosts = (): Promise<{ posts: Post[] }> => apiFetch('/posts/feed');
 export const getExplorePosts = (): Promise<{ posts: Post[] }> => apiFetch('/posts/explore');
@@ -89,6 +96,7 @@ export const createStory = (formData: FormData): Promise<void> => apiFetch('/sto
 export const toggleLike = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/like`, { method: 'POST' });
 export const toggleSave = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/save`, { method: 'POST' });
 export const addComment = (postId: string, text: string): Promise<Comment> => apiFetch(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+export const toggleCommentLike = (commentId: string): Promise<void> => apiFetch(`/comments/${commentId}/like`, { method: 'POST' });
 export const toggleReelLike = (reelId: string): Promise<void> => apiFetch(`/reels/${reelId}/like`, { method: 'POST' });
 export const addReelComment = (reelId: string, text: string): Promise<void> => apiFetch(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
 export const getNotifications = (): Promise<Notification[]> => apiFetch('/misc/notifications');
