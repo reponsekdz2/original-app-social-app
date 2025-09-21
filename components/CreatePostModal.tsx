@@ -99,12 +99,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
 
           <div className="w-full md:w-1/2 p-4 flex flex-col border-t md:border-t-0 md:border-l border-gray-700">
              {activeTool === 'caption' && (
-                <textarea 
-                    placeholder="Write a caption..." 
-                    value={caption}
-                    onChange={e => setCaption(e.target.value)}
-                    className="w-full bg-transparent text-sm focus:outline-none flex-1 resize-none min-h-[100px]"
-                />
+                <div className="relative flex-1">
+                    <textarea 
+                        placeholder="Write a caption..." 
+                        value={caption}
+                        onChange={e => setCaption(e.target.value)}
+                        className="w-full h-full bg-transparent text-sm focus:outline-none resize-none"
+                    />
+                </div>
              )}
              {activeTool === 'poll' && (
                  <div className="space-y-2">

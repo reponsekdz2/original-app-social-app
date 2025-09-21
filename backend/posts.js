@@ -22,12 +22,12 @@ const POST_QUERY = `
     SELECT
         p.id, p.caption, p.location, p.is_archived, p.created_at as timestamp,
         JSON_OBJECT('id', u.id, 'username', u.username, 'avatar', u.avatar_url, 'is_verified', u.is_verified) AS user,
-        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pm.id, 'url', pm.media_url, 'type', pm.media_type)) FROM post_media pm WHERE pm.post_id = p.id) AS media,
+        COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pm.id, 'url', pm.media_url, 'type', pm.media_type)) FROM post_media pm WHERE pm.post_id = p.id), JSON_ARRAY()) AS media,
         (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) AS likes,
-        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', lu.id, 'username', lu.username, 'avatar', lu.avatar_url)) FROM post_likes pl JOIN users lu ON pl.user_id = lu.id WHERE pl.post_id = p.id) as likedBy,
-        (SELECT JSON_ARRAYAGG(
+        COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', lu.id, 'username', lu.username, 'avatar', lu.avatar_url)) FROM post_likes pl JOIN users lu ON pl.user_id = lu.id WHERE pl.post_id = p.id), JSON_ARRAY()) as likedBy,
+        COALESCE((SELECT JSON_ARRAYAGG(
             JSON_OBJECT('id', col.id, 'username', col.username, 'avatar', col.avatar_url)
-        ) FROM post_collaborators pc JOIN users col ON pc.user_id = col.id WHERE pc.post_id = p.id AND pc.status = 'accepted') as collaborators,
+        ) FROM post_collaborators pc JOIN users col ON pc.user_id = col.id WHERE pc.post_id = p.id AND pc.status = 'accepted'), JSON_ARRAY()) as collaborators,
         (SELECT JSON_OBJECT(
             'id', poll.id, 
             'question', poll.question,
@@ -40,11 +40,11 @@ const POST_QUERY = `
                         ) FROM poll_options po WHERE po.poll_id = poll.id),
             'userVote', (SELECT pv.poll_option_id FROM poll_votes pv JOIN poll_options po ON pv.poll_option_id = po.id WHERE po.poll_id = poll.id AND pv.user_id = ?)
         ) FROM polls poll WHERE poll.post_id = p.id) as poll,
-        (SELECT JSON_ARRAYAGG(
+        COALESCE((SELECT JSON_ARRAYAGG(
              JSON_OBJECT('id', c.id, 'text', c.text, 'timestamp', c.created_at, 'user', 
                 JSON_OBJECT('id', cu.id, 'username', cu.username, 'avatar', cu.avatar_url)
              )
-        ) FROM (SELECT * FROM comments WHERE post_id = p.id ORDER BY created_at DESC) c JOIN users cu ON c.user_id = cu.id) AS comments
+        ) FROM (SELECT * FROM comments WHERE post_id = p.id ORDER BY created_at DESC) c JOIN users cu ON c.user_id = cu.id), JSON_ARRAY()) AS comments
     FROM posts p
     JOIN users u ON p.user_id = u.id
 `;
@@ -62,7 +62,7 @@ router.get('/feed', protect, async (req, res) => {
              ORDER BY p.created_at DESC LIMIT 20`,
             [userId, userId, userId]
         );
-        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], collaborators: p.collaborators || [], isSaved: p.is_saved_by_user === 1})) });
+        res.json({ posts: posts.map(p => ({...p, isSaved: p.is_saved_by_user === 1})) });
     } catch (error) {
         console.error('Get Feed Error:', error);
         res.status(500).json({ message: 'Server Error' });
@@ -81,7 +81,7 @@ router.get('/explore', protect, async (req, res) => {
              ORDER BY RAND() LIMIT 30`,
              [userId]
         );
-        res.json({ posts: posts.map(p => ({...p, comments: p.comments || [], likedBy: p.likedBy || [], collaborators: p.collaborators || [], isSaved: p.is_saved_by_user === 1})) });
+        res.json({ posts: posts.map(p => ({...p, isSaved: p.is_saved_by_user === 1})) });
     } catch (error) {
         console.error('Get Explore Error:', error);
         res.status(500).json({ message: 'Server Error' });

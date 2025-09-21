@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { Post, User, Comment as CommentType } from '../types';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
@@ -98,7 +98,9 @@ const PostModal: React.FC<PostModalProps> = (props) => {
                         </div>
                          <form onSubmit={handlePostComment} className="border-t border-gray-800 p-3 flex items-center gap-2">
                             <input type="text" placeholder="Add a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} className="w-full bg-transparent text-sm focus:outline-none" />
-                            {commentText && <button type="submit" className="text-red-500 font-semibold text-sm">Post</button>}
+                            {commentText.trim().length > 0 && (
+                              <button type="submit" className="text-red-500 font-semibold text-sm">Post</button>
+                            )}
                         </form>
                     </footer>
                 </div>

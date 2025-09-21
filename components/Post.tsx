@@ -158,7 +158,9 @@ const PostComponent: React.FC<PostProps> = (props) => {
                     onChange={(e) => setCommentText(e.target.value)}
                     className="w-full bg-transparent text-sm focus:outline-none"
                 />
-                {commentText && <button type="submit" className="text-red-500 font-semibold text-sm">Post</button>}
+                {commentText.trim().length > 0 && (
+                  <button type="submit" className="text-red-500 font-semibold text-sm">Post</button>
+                )}
             </form>
         </article>
     );

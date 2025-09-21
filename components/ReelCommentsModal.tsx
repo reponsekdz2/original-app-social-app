@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 // Fix: Corrected import path for types to be relative.
 import type { Reel, User, Comment } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -62,7 +61,7 @@ const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser
              )}
         </div>
 
-        <div className="p-3 border-t border-gray-700">
+        <div className="relative p-3 border-t border-gray-700">
             <div className="flex items-center gap-2">
                 <img src={currentUser.avatar} alt="current user" className="w-9 h-9 rounded-full" />
                 <input 
@@ -73,7 +72,9 @@ const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser
                     onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
                     className="w-full bg-transparent text-sm focus:outline-none"
                 />
-                {commentText && <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm">Post</button>}
+                {commentText.trim().length > 0 && (
+                  <button onClick={handlePostComment} className="text-red-500 font-semibold text-sm">Post</button>
+                )}
             </div>
         </div>
       </div>
