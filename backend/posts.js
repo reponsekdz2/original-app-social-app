@@ -44,7 +44,8 @@ const POST_QUERY = `
              JSON_OBJECT('id', c.id, 'text', c.text, 'timestamp', c.created_at, 'user', 
                 JSON_OBJECT('id', cu.id, 'username', cu.username, 'avatar', cu.avatar_url)
              )
-        ) FROM (SELECT * FROM comments WHERE post_id = p.id ORDER BY created_at DESC) c JOIN users cu ON c.user_id = cu.id), JSON_ARRAY()) AS comments
+        ) FROM (SELECT * FROM comments WHERE post_id = p.id ORDER BY created_at DESC) c JOIN users cu ON c.user_id = cu.id), JSON_ARRAY()) AS comments,
+        EXISTS(SELECT 1 FROM post_saves ps WHERE ps.post_id = p.id AND ps.user_id = ?) as isSaved
     FROM posts p
     JOIN users u ON p.user_id = u.id
 `;
@@ -60,9 +61,9 @@ router.get('/feed', protect, async (req, res) => {
              WHERE (p.user_id IN (SELECT following_id FROM followers WHERE follower_id = ?) OR p.user_id = ?)
              AND p.is_archived = FALSE
              ORDER BY p.created_at DESC LIMIT 20`,
-            [userId, userId, userId]
+            [userId, userId, userId, userId]
         );
-        res.json({ posts: posts.map(p => ({...p, isSaved: p.is_saved_by_user === 1})) });
+        res.json({ posts });
     } catch (error) {
         console.error('Get Feed Error:', error);
         res.status(500).json({ message: 'Server Error' });
@@ -79,9 +80,9 @@ router.get('/explore', protect, async (req, res) => {
             `${POST_QUERY}
              WHERE p.is_archived = FALSE
              ORDER BY RAND() LIMIT 30`,
-             [userId]
+             [userId, userId]
         );
-        res.json({ posts: posts.map(p => ({...p, isSaved: p.is_saved_by_user === 1})) });
+        res.json({ posts });
     } catch (error) {
         console.error('Get Explore Error:', error);
         res.status(500).json({ message: 'Server Error' });

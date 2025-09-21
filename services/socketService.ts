@@ -9,17 +9,14 @@ class SocketService {
         if (this.socket) {
             this.socket.disconnect();
         }
-        // Fix: Use 'auth' instead of 'query' for passing data on connection, which is the correct way for socket.io-client v3+.
         this.socket = io(SOCKET_URL, {
             auth: { userId }
         });
 
-        // Fix: Add optional chaining to prevent errors if the socket is not yet initialized.
         this.socket?.on('connect', () => {
             console.log('Socket connected:', this.socket?.id);
         });
 
-        // Fix: Add optional chaining to prevent errors if the socket is not yet initialized.
         this.socket?.on('disconnect', () => {
             console.log('Socket disconnected');
         });

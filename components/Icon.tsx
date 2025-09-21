@@ -1,4 +1,3 @@
-// Fix: Create the Icon component.
 import React from 'react';
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
@@ -11,7 +10,7 @@ const Icon: React.FC<IconProps> = ({ children, className = 'w-6 h-6', ...props }
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
       fill="none" 
-      viewBox="0 0 24 24" 
+      viewBox="0 0 24" 
       strokeWidth={1.5} 
       stroke="currentColor" 
       className={className}

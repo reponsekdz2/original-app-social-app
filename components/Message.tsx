@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Message, User, SharedContent, FileAttachment } from '../types.ts';
+import type { Message, User, SharedContent, FileAttachment, Reaction } from '../types.ts';
 import Icon from './Icon.tsx';
 import VoicenoteMessage from './VoicenoteMessage.tsx';
 import EmojiPicker from './EmojiPicker.tsx';
@@ -50,8 +50,8 @@ const FileAttachmentMessage: React.FC<{ file: FileAttachment }> = ({ file }) => 
     )
 }
 
-const Message: React.FC<MessageProps> = (props) => {
-  const { message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction, isVanishMode } = props;
+
+const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction, isVanishMode }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const messageAlignment = isCurrentUser ? 'justify-end' : 'justify-start';
@@ -65,6 +65,8 @@ const Message: React.FC<MessageProps> = (props) => {
   const roundingClasses = isCurrentUser
     ? `${isFirstInGroup ? 'rounded-tr-2xl' : 'rounded-tr-md'} ${isLastInGroup ? 'rounded-br-none' : 'rounded-br-lg'}`
     : `${isFirstInGroup ? 'rounded-tl-2xl' : 'rounded-tl-md'} ${isLastInGroup ? 'rounded-bl-none' : 'rounded-bl-lg'}`;
+    
+  const vanishModeClasses = isVanishMode ? 'border-2 border-dashed border-gray-500 bg-transparent opacity-80' : bubbleStyles;
 
   const renderContent = () => {
     switch (message.type) {
@@ -88,7 +90,6 @@ const Message: React.FC<MessageProps> = (props) => {
   
   const uniqueReactions = message.reactions ? [...new Map(message.reactions.map(item => [item.emoji, item])).values()] : [];
 
-  const vanishModeClasses = isVanishMode ? 'border-2 border-dashed border-gray-500 bg-transparent opacity-80' : bubbleStyles;
 
   return (
     <div className={`flex items-end gap-2 group ${messageAlignment} ${groupMargin}`}>
@@ -105,7 +106,7 @@ const Message: React.FC<MessageProps> = (props) => {
           </div>
           {uniqueReactions.length > 0 && (
             <div className={`absolute -bottom-3 flex items-center bg-gray-900 border border-gray-700 rounded-full px-1 py-0.5 text-xs ${isCurrentUser ? 'right-2' : 'left-2'}`}>
-                {uniqueReactions.slice(0, 3).map(r => <span key={r.emoji}>{r.emoji}</span>)}
+                {uniqueReactions.slice(0, 3).map((r: Reaction) => <span key={r.emoji}>{r.emoji}</span>)}
                 {uniqueReactions.length > 0 && <span className="ml-1 font-semibold">{message.reactions?.length}</span>}
             </div>
            )}

@@ -19,7 +19,7 @@ import ReelCommentsModal from './components/ReelCommentsModal.tsx';
 import CreateHighlightModal from './components/CreateHighlightModal.tsx';
 import ExploreView from './components/ExploreView.tsx';
 import ReelsView from './components/ReelsView.tsx';
-import MessagesView from './MessagesView.tsx';
+import MessagesView from './components/MessagesView.tsx';
 import ProfileView from './components/ProfileView.tsx';
 import SettingsView from './components/SettingsView.tsx';
 import SavedView from './components/SavedView.tsx';
@@ -50,6 +50,7 @@ import CallModal from './components/CallModal.tsx';
 import IncomingCallModal from './components/IncomingCallModal.tsx';
 import AnnouncementBanner from './components/AnnouncementBanner.tsx';
 import BlockedUsersView from './components/BlockedUsersView.tsx';
+import ReelViewerModal from './components/ReelViewerModal.tsx';
 
 import * as api from './services/apiService.ts';
 import { socketService } from './services/socketService.ts';
@@ -95,6 +96,7 @@ export const App: React.FC = () => {
     const [viewedUser, setViewedUser] = useState<User | null>(null);
     const [viewedPost, setViewedPost] = useState<Post | null>(null);
     const [viewedStory, setViewedStory] = useState<Story | null>(null);
+    const [viewedReel, setViewedReel] = useState<Reel | null>(null);
     const [viewedLiveStream, setViewedLiveStream] = useState<LiveStream | null>(null);
     
     // --- WebRTC & Calling State ---
@@ -432,6 +434,26 @@ export const App: React.FC = () => {
             prevConvos.map(c => (c.id === updatedConvo.id ? updatedConvo : c))
         );
     };
+    
+    const handleMessageUser = (user: User) => {
+        if (!currentUser) return;
+        const existingConvo = conversations.find(c => !c.isGroup && c.participants.length === 2 && c.participants.some(p => p.id === user.id));
+        if (existingConvo) {
+            // This assumes MessagesView will see the change in conversations prop and select it.
+            // A more robust way would be to pass the selected conversation ID to MessagesView.
+            // For now, we'll just navigate.
+        } else {
+             const tempConvo: Conversation = {
+                id: `temp-convo-${Date.now()}`,
+                participants: [currentUser, user],
+                messages: [],
+                isGroup: false,
+                settings: { theme: 'default', vanish_mode_enabled: false },
+            };
+            setConversations(prev => [tempConvo, ...prev]);
+        }
+        handleNavigate('messages');
+    };
 
     // --- Premium & Verification ---
     const handleSubscribeToPremium = async () => {
@@ -691,7 +713,7 @@ export const App: React.FC = () => {
             case 'explore': return <ExploreView posts={explorePosts} onViewPost={(post) => openModal('post', { post })} />;
             case 'reels': return <ReelsView reels={reels} currentUser={currentUser} onLikeReel={async (id) => {await api.toggleReelLike(id); await fetchData();}} onCommentOnReel={(reel) => openModal('reelComments', { reel })} onShareReel={(reel) => openModal('share', { content: reel })} />;
             case 'messages': return <MessagesView conversations={conversations} currentUser={currentUser} allUsers={allUsers} onNavigate={(view, user) => handleNavigate('profile', user)} onInitiateCall={handleInitiateCall} onUpdateConversation={handleUpdateConversation} onUpdateUserRelationship={handleUpdateUserRelationship} onReport={handleReport} />;
-            case 'profile': return <ProfileView user={viewedUser || currentUser} posts={feedPosts.filter(p => p.user.id === (viewedUser?.id || currentUser.id))} reels={reels.filter(r => r.user.id === (viewedUser?.id || currentUser.id))} isCurrentUser={!viewedUser || viewedUser.id === currentUser.id} currentUser={currentUser} onEditProfile={() => openModal('editProfile')} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={(users) => openModal('followList', { title: 'Followers', users })} onShowFollowing={(users) => openModal('followList', { title: 'Following', users })} onEditPost={handleEditPost} onViewPost={(post) => openModal('post', { post })} onViewReel={(reel) => {}} onOpenCreateHighlightModal={() => openModal('createHighlight')} onMessage={(user) => {}} />;
+            case 'profile': return <ProfileView user={viewedUser || currentUser} posts={feedPosts.filter(p => p.user.id === (viewedUser?.id || currentUser.id))} reels={reels.filter(r => r.user.id === (viewedUser?.id || currentUser.id))} isCurrentUser={!viewedUser || viewedUser.id === currentUser.id} currentUser={currentUser} onEditProfile={() => openModal('editProfile')} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={(users) => openModal('followList', { title: 'Followers', users })} onShowFollowing={(users) => openModal('followList', { title: 'Following', users })} onEditPost={handleEditPost} onViewPost={(post) => openModal('post', { post })} onViewReel={(reel) => setViewedReel(reel)} onOpenCreateHighlightModal={() => openModal('createHighlight')} onMessage={handleMessageUser} />;
             case 'settings': return <SettingsView currentUser={currentUser} onNavigate={handleNavigate} onShowHelp={() => handleNavigate('help')} onShowSupport={() => handleNavigate('support')} onChangePassword={() => openModal('changePassword')} onManageAccount={() => openModal('editProfile')} onToggleTwoFactor={() => openModal('twoFactor')} onGetVerified={() => openModal('getVerified')} onUpdateSettings={handleUpdateSettings}/>;
             case 'saved': return <SavedView posts={feedPosts.filter(p => p.isSaved)} onViewPost={(post) => openModal('post', { post })} />;
             case 'archive': return <ArchiveView posts={feedPosts.filter(p => p.isArchived)} onViewPost={(post) => openModal('post', { post })} onUnarchivePost={handleUnarchivePost}/>;
@@ -742,12 +764,13 @@ export const App: React.FC = () => {
             
             {/* --- Global Modals & Panels --- */}
             {viewedStory && <StoryViewer stories={stories} initialStoryIndex={stories.findIndex(s => s.id === viewedStory.id)} onClose={() => setViewedStory(null)} onNextUser={() => {}} onPrevUser={() => {}}/>}
+            {viewedReel && <ReelViewerModal reel={viewedReel} currentUser={currentUser} onClose={() => setViewedReel(null)} onLikeReel={async (id) => {await api.toggleReelLike(id); await fetchData();}} onCommentOnReel={(reel) => openModal('reelComments', { reel })} onShareReel={(reel) => openModal('share', { content: reel })} />}
             {viewedLiveStream && <LiveStreamView stream={viewedLiveStream} currentUser={currentUser} onClose={() => setViewedLiveStream(null)}/>}
             
             {activeModals.post && <PostModal post={activeModals.post.post} currentUser={currentUser} onClose={() => closeModal('post')} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => openModal('share', { content: post })} onViewLikes={(users) => openModal('viewLikes', { users })} onViewProfile={(user) => handleNavigate('profile', user)} onOptions={(post) => openModal('options', { post })} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={(post) => openModal('tip', {post})}/>}
             {activeModals.createPost && <CreatePostModal onClose={() => closeModal('createPost')} onCreatePost={handleCreatePost} allUsers={allUsers} currentUser={currentUser} />}
             {activeModals.createStory && <CreateStoryModal onClose={() => closeModal('createStory')} onCreateStory={handleCreateStory} />}
-            {activeModals.accountSwitcher && <AccountSwitcherModal accounts={[currentUser]} currentUser={currentUser} onClose={() => closeModal('accountSwitcher')} onSwitchAccount={() => {}} onAddAccount={() => {}} />}
+            {activeModals.accountSwitcher && <AccountSwitcherModal accounts={[currentUser]} currentUser={currentUser} onClose={() => closeModal('accountSwitcher')} onSwitchAccount={() => {}} onAddAccount={handleLogout} />}
             {activeModals.share && <ShareModal content={activeModals.share.content} currentUser={currentUser} conversations={conversations} onClose={() => closeModal('share')} onShareSuccess={() => showToast("Shared successfully!")} />}
             {activeModals.viewLikes && <ViewLikesModal users={activeModals.viewLikes.users} currentUser={currentUser} onClose={() => closeModal('viewLikes')} onViewProfile={(user) => handleNavigate('profile', user)} onFollow={handleFollow} onUnfollow={handleUnfollow} />}
             {activeModals.followList && <FollowListModal title={activeModals.followList.title} users={activeModals.followList.users} currentUser={currentUser} onClose={() => closeModal('followList')} onViewProfile={(user) => handleNavigate('profile', user)} onFollow={handleFollow} onUnfollow={handleUnfollow} />}

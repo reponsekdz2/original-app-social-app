@@ -1,12 +1,4 @@
-
-
-
-
-
-
-
 import React from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { User, View, FeedActivity, SponsoredContent, Conversation, TrendingTopic } from '../types';
 import Icon from './Icon.tsx';
 import FollowButton from './FollowButton.tsx';
@@ -104,7 +96,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Icon className="w-5 h-5 text-gray-500"><path d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></Icon>
               </div>
               <p className="font-bold">{topic.topic}</p>
-              {/* Fix: Property 'postCount' does not exist on type 'TrendingTopic'. Did you mean 'post_count'? */}
               <p className="text-xs text-gray-500">{topic.post_count > 1000 ? `${(topic.post_count / 1000).toFixed(1)}k` : topic.post_count} posts</p>
             </div>
           ))}
@@ -156,9 +147,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div key={convo.id} className="px-4 py-3 hover:bg-gray-800/50 cursor-pointer transition-colors" onClick={() => onNavigate('messages')}>
                   <div className="flex justify-between items-center mb-1">
                       <p className="font-bold text-sm">{otherUser.name}</p>
-                      <p className="text-xs text-gray-500">{lastMessage.timestamp}</p>
+                      {lastMessage && <p className="text-xs text-gray-500">{new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
                   </div>
-                  <p className="text-sm text-gray-400 truncate">{lastMessage.content}</p>
+                  {lastMessage && <p className="text-sm text-gray-400 truncate">{lastMessage.content}</p>}
                 </div>
               );
             })}
@@ -177,11 +168,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             {sponsoredContent.map(ad => (
               <a key={ad.id} href={ad.link} target="_blank" rel="noopener noreferrer" className="block group">
                 <div className="flex items-center gap-3">
-                  {/* Fix: Property 'media' does not exist on type 'SponsoredContent'. */}
                   <img src={ad.media_url} alt={ad.company} className="w-16 h-16 rounded-lg object-cover" />
                   <div>
                       <p className="font-semibold group-hover:underline text-sm">{ad.company}</p>
-                      {/* Fix: Property 'callToAction' does not exist on type 'SponsoredContent'. Did you mean 'call_to_action'? */}
                       <p className="text-xs text-gray-400">{ad.call_to_action}</p>
                   </div>
                 </div>
@@ -199,7 +188,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <a href="#" className="hover:underline">Accessibility</a>
         <a href="#" className="hover:underline">Ads info</a>
         <a href="#" className="hover:underline">More...</a>
-        <span>© {new Date().getFullYear()} Netflixgram, Inc.</span>
+        <span>© {new Date().getFullYear()} talka, Inc.</span>
       </footer>
     </aside>
   );

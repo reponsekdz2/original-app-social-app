@@ -1,8 +1,4 @@
-
-
-
 import React from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { User } from '../types';
 import Icon from './Icon.tsx';
 

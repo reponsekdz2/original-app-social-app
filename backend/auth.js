@@ -120,24 +120,17 @@ router.get('/me', protect, async (req, res) => {
             `SELECT 
                 u.id, u.username, u.name, u.email, u.avatar_url as avatar, u.bio, u.website, u.gender, 
                 u.is_premium, u.is_verified, u.is_private, u.is_admin,
-                (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', f.id, 'username', f.username, 'avatar', f.avatar_url)) FROM followers fo JOIN users f ON fo.following_id = f.id WHERE fo.follower_id = u.id) as following,
-                (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', f.id, 'username', f.username, 'avatar', f.avatar_url)) FROM followers fo JOIN users f ON fo.follower_id = f.id WHERE fo.following_id = u.id) as followers,
+                COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', f.id, 'username', f.username, 'avatar', f.avatar_url)) FROM followers fo JOIN users f ON fo.following_id = f.id WHERE fo.follower_id = u.id), JSON_ARRAY()) as following,
+                COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', f.id, 'username', f.username, 'avatar', f.avatar_url)) FROM followers fo JOIN users f ON fo.follower_id = f.id WHERE fo.following_id = u.id), JSON_ARRAY()) as followers,
                 COALESCE(JSON_OBJECT("likes", us.likes_notifications, "comments", us.comments_notifications, "follows", us.follows_notifications), JSON_OBJECT("likes", TRUE, "comments", TRUE, "follows", TRUE)) as notificationSettings,
-                (SELECT JSON_ARRAYAGG(mu.muted_user_id) FROM muted_users mu WHERE mu.user_id = u.id) as mutedUsers,
-                (SELECT JSON_ARRAYAGG(bu.blocked_user_id) FROM blocked_users bu WHERE bu.user_id = u.id) as blockedUsers
+                COALESCE((SELECT JSON_ARRAYAGG(mu.muted_user_id) FROM muted_users mu WHERE mu.user_id = u.id), JSON_ARRAY()) as mutedUsers,
+                COALESCE((SELECT JSON_ARRAYAGG(bu.blocked_user_id) FROM blocked_users bu WHERE bu.user_id = u.id), JSON_ARRAY()) as blockedUsers
              FROM users u
              LEFT JOIN user_settings us ON u.id = us.user_id
              WHERE u.id = ?`, [req.user.id]
         );
         if (rows.length > 0) {
-            const user = {
-                ...rows[0],
-                following: rows[0].following || [],
-                followers: rows[0].followers || [],
-                mutedUsers: rows[0].mutedUsers || [],
-                blockedUsers: rows[0].blockedUsers || [],
-            }
-            res.json({ user });
+            res.json({ user: rows[0] });
         } else {
             res.status(404).json({ message: 'User not found' });
         }

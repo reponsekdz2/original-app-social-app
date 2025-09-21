@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { View, User } from '../types';
 import Icon from './Icon.tsx';
 

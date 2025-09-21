@@ -1,9 +1,5 @@
-
-
-
 import React from 'react';
 import Icon from './Icon.tsx';
-// Fix: Corrected import path for types to be relative.
 import type { TrendingTopic } from '../types.ts';
 
 interface TrendsModalProps {
@@ -29,7 +25,6 @@ const TrendsModal: React.FC<TrendsModalProps> = ({ topics, onClose }) => {
             <div key={index} className="p-3 hover:bg-gray-700 cursor-pointer">
               <p className="text-xs text-gray-500">Trending in your location</p>
               <p className="font-semibold">{topic.topic}</p>
-              {/* Fix: Property 'postCount' does not exist on type 'TrendingTopic'. Did you mean 'post_count'? */}
               <p className="text-xs text-gray-500">{topic.post_count > 1000 ? `${(topic.post_count / 1000).toFixed(1)}k` : topic.post_count} posts</p>
             </div>
           ))}

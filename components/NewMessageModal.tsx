@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// Fix: Add .ts extension to types import
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';

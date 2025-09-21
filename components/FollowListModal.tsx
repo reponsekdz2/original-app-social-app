@@ -1,7 +1,4 @@
-
-
 import React from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { User } from '../types';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
@@ -39,7 +36,6 @@ const FollowListModal: React.FC<FollowListModalProps> = ({ title, users, current
         <div className="overflow-y-auto">
           {users.map(user => {
             const isCurrentUser = user.id === currentUser.id;
-            // Fix: Added return statement to render user list item.
             return (
               <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-700">
                 <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleViewProfileAndClose(user)}>

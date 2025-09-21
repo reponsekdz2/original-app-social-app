@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Conversation, User, Message } from '../types';
 import Icon from './Icon.tsx';
-import MessageComponent from '../Message.tsx';
+import MessageComponent from './Message.tsx';
 import MessageInput from './MessageInput.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import TypingIndicator from './TypingIndicator.tsx';

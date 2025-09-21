@@ -1,7 +1,4 @@
-// Fix: Create Reel component.
-// Fix: Add useEffect to the import from React.
 import React, { useRef, useState, useEffect } from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { Reel as ReelType, User } from '../types';
 import Icon from './Icon.tsx';
 

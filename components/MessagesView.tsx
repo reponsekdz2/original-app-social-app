@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Conversation, User, Message } from './types';
-import Icon from './components/Icon.tsx';
-import ChatWindow from './components/ChatWindow.tsx';
-import VerifiedBadge from './components/VerifiedBadge.tsx';
-import NewMessageModal from './components/NewMessageModal.tsx';
-import { socketService } from './services/socketService.ts';
-import * as api from './services/apiService';
-import CreateGroupModal from './components/CreateGroupModal.tsx';
+import type { Conversation, User, Message } from '../types';
+import Icon from './Icon.tsx';
+import ChatWindow from './ChatWindow.tsx';
+import VerifiedBadge from './VerifiedBadge.tsx';
+import NewMessageModal from './NewMessageModal.tsx';
+import { socketService } from '../services/socketService.ts';
+import * as api from '../services/apiService';
+import CreateGroupModal from './CreateGroupModal.tsx';
 
 interface MessagesViewProps {
   conversations: Conversation[];
@@ -15,8 +15,7 @@ interface MessagesViewProps {
   onNavigate: (view: 'profile', user: User) => void;
   onInitiateCall: (user: User, type: 'video' | 'audio') => void;
   onUpdateConversation: (updatedConvo: Conversation) => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock') => void;
-  // Fix: Add onReport to props to pass to ChatWindow
+  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => void;
   onReport: (user: User) => void;
 }
 
@@ -150,8 +149,8 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     };
 
   return (
-    <div className="flex h-full sm:h-[calc(100vh-4rem)] sm:border-t border-gray-800">
-      <aside className={`w-full sm:w-80 md:w-96 border-r border-gray-800 flex-col ${selectedConversation ? 'hidden sm:flex' : 'flex'}`}>
+    <div className="flex h-[calc(100vh-4rem)] border-t border-gray-800">
+      <aside className={`w-full md:w-96 border-r border-gray-800 flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-800 flex justify-between items-center">
           <h1 className="text-xl font-bold">Messages</h1>
           <div className="flex items-center gap-2">
@@ -171,7 +170,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
               <div
                 key={convo.id}
                 onClick={() => handleSelectConversation(convo)}
-                className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-800 ${selectedConversation?.id === convo.id ? 'bg-gray-800' : ''}`}
+                className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-800 ${selectedConversation?.id === convo.id ? 'bg-gray-800' : ''}`}
               >
                 <img src={convo.isGroup ? '/uploads/group_avatar.png' : otherUser?.avatar} alt={convo.name || otherUser?.username} className="w-14 h-14 rounded-full object-cover" />
                 <div className="flex-1 overflow-hidden">
@@ -187,7 +186,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
         </div>
       </aside>
 
-      <main className={`flex-1 flex-col ${selectedConversation ? 'flex' : 'hidden sm:flex'}`}>
+      <main className={`flex-1 flex-col ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
         {selectedConversation ? (
           <ChatWindow
             conversation={selectedConversation}

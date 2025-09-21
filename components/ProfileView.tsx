@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { User, Post as PostType, Reel as ReelType } from '../types';
 import ProfileHeader from './ProfileHeader.tsx';
 import ProfileHighlights from './ProfileHighlights.tsx';

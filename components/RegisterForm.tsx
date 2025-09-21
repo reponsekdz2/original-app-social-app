@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import type { User } from '../types.ts';
-// Fix: Corrected import path to be relative to the components directory.
 import * as api from '../services/apiService.ts';
 import Icon from './Icon.tsx';
 

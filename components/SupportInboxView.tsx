@@ -1,7 +1,4 @@
-
-
 import React from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { SupportTicket } from '../types.ts';
 import Icon from './Icon.tsx';
 
@@ -42,7 +39,6 @@ const SupportInboxView: React.FC<SupportInboxViewProps> = ({ tickets, onBack, on
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-semibold">{ticket.subject}</h3>
-                  {/* Fix: Property 'lastUpdated' does not exist on type 'SupportTicket'. */}
                   <p className="text-sm text-gray-400 mt-1">Last updated: {ticket.updated_at}</p>
                 </div>
                 <div className={`flex items-center gap-2 text-xs font-bold px-2 py-1 rounded-full text-white ${getStatusColor(ticket.status)}`}>
