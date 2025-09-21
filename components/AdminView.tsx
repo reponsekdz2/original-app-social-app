@@ -9,8 +9,9 @@ import TrendingManagement from './admin/TrendingManagement.tsx';
 import AnnouncementsManagement from './admin/AnnouncementsManagement.tsx';
 import AppSettings from './admin/AppSettings.tsx';
 import Icon from './Icon.tsx';
+import CarouselManagement from './admin/CarouselManagement.tsx';
 
-type AdminTab = 'dashboard' | 'users' | 'content' | 'reports' | 'support' | 'ads' | 'trends' | 'announcements' | 'settings';
+type AdminTab = 'dashboard' | 'users' | 'content' | 'reports' | 'support' | 'ads' | 'trends' | 'announcements' | 'settings' | 'carousel';
 
 const AdminView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
@@ -24,7 +25,8 @@ const AdminView: React.FC = () => {
         { id: 'ads', label: 'Sponsored', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 11.21 12.77 10.5 12 10.5s-1.536.71-2.121 1.359c-1.172.879-1.172 2.303 0 3.182z" /> },
         { id: 'trends', label: 'Trends', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-3.182-3.182m3.182 3.182v4.995A2.25 2.25 0 0119.5 19.5h-4.995" /> },
         { id: 'announcements', label: 'Announcements', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.33-.423-.586-.908-.753-1.425m.753 1.425c.33.423.586.908.753 1.425m-1.506-2.85a.75.75 0 100-1.5.75.75 0 000 1.5m1.506 2.85a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5m-3.75 0h7.5m-7.5 0c-.33-.423-.586-.908-.753-1.425m.753 1.425c.33.423.586.908.753 1.425" /> },
-        { id: 'settings', label: 'App Settings', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-1.002 1.11-1.212l1.173-.42c.328-.118.665-.118.993 0l1.173.42c.55.198 1.02.67 1.11 1.212l.245 1.488a8.13 8.13 0 01.702.308l1.357-.549c.42-.17.905-.025 1.15.35l.805 1.393c.246.426.11 1.004-.265 1.32l-1.095.845a7.51 7.51 0 010 1.344l1.095.845c.375.29.51.865.265 1.32l-.805 1.393c-.245.426-.73.52-1.15.35l-1.357-.549a8.13 8.13 0 01-.702.308l-.245 1.488c-.09.542-.56-1.002-1.11-1.212l-1.173.42c-.328-.118-.665-.118-.993 0l-1.173-.42c-.55-.198-1.02-.67-1.11-1.212l-.245-1.488a8.13 8.13 0 01-.702-.308l-1.357.549c-.42.17-.905-.025-1.15-.35l-.805-1.393c-.246.426-.11-1.004.265-1.32l1.095-.845a7.51 7.51 0 010 1.344l-1.095-.845c-.375-.29-.51-.865-.265-1.32l.805 1.393c.245.426.73.52 1.15.35l1.357.549a8.13 8.13 0 01.702.308l.245-1.488zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" /> },
+        { id: 'carousel', label: 'Carousel', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25z" /> },
+        { id: 'settings', label: 'App Settings', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-1.002 1.11-1.212l1.173-.42c.328-.118.665-.118.993 0l1.173.42c.55.198 1.02.67 1.11 1.212l.245 1.488a8.13 8.13 0 01.702.308l1.357-.549c.42-.17.905-.025 1.15.35l.805 1.393c.246.426-.11 1.004-.265 1.32l-1.095.845a7.51 7.51 0 010 1.344l1.095.845c.375.29.51.865.265 1.32l-.805 1.393c-.245.426-.73.52-1.15.35l-1.357-.549a8.13 8.13 0 01-.702.308l-.245 1.488c-.09.542-.56-1.002-1.11-1.212l-1.173.42c-.328-.118-.665-.118-.993 0l-1.173-.42c-.55-.198-1.02-.67-1.11-1.212l-.245-1.488a8.13 8.13 0 01-.702-.308l-1.357.549c-.42.17-.905-.025-1.15-.35l-.805-1.393c-.246.426-.11-1.004.265-1.32l1.095-.845a7.51 7.51 0 010 1.344l-1.095-.845c-.375-.29-.51-.865-.265-1.32l.805 1.393c.245.426.73.52 1.15.35l1.357.549a8.13 8.13 0 01.702.308l.245-1.488zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" /> },
     ];
 
     const renderContent = () => {
@@ -38,6 +40,7 @@ const AdminView: React.FC = () => {
             case 'settings': return <AppSettings />;
             case 'ads': return <SponsoredContentManagement />;
             case 'trends': return <TrendingManagement />;
+            case 'carousel': return <CarouselManagement />;
             default: return null;
         }
     };

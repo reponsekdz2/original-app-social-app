@@ -1,21 +1,15 @@
 import type { 
     User, Post, Reel, Story, Conversation, Message, Notification, 
     FeedActivity, SponsoredContent, TrendingTopic, Testimonial, 
-    HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report, Announcement 
+    HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report, Announcement, AuthCarouselImage 
 } from '../types';
 
 const API_URL = 'http://localhost:3001/api';
-
-let authToken: string | null = localStorage.getItem('token');
 
 const apiFetch = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
     const headers: HeadersInit = {
         ...options.headers,
     };
-
-    if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-    }
     
     // Do not set Content-Type for FormData
     if (!(options.body instanceof FormData)) {
@@ -25,6 +19,7 @@ const apiFetch = async <T>(endpoint: string, options: RequestInit = {}): Promise
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
             ...options,
+            credentials: 'include', // Automatically send session cookies
             headers,
         });
 
@@ -44,27 +39,20 @@ const apiFetch = async <T>(endpoint: string, options: RequestInit = {}): Promise
     }
 };
 
-export const setAuthToken = (token: string | null) => {
-    authToken = token;
-    if (token) {
-        localStorage.setItem('token', token);
-    } else {
-        localStorage.removeItem('token');
-    }
-};
-
 // --- Auth ---
-export const login = (identifier: string, password: string): Promise<{ user: User, token: string }> => 
+export const login = (identifier: string, password: string): Promise<{ user: User }> => 
     apiFetch('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ identifier, password }),
     });
 
-export const register = (data: any): Promise<{ user: User, token: string }> => 
+export const register = (data: any): Promise<{ user: User }> => 
     apiFetch('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
     });
+    
+export const logout = (): Promise<void> => apiFetch('/auth/logout', { method: 'POST' });
 
 export const getMe = (): Promise<{ user: User }> => apiFetch('/auth/me');
 
@@ -164,6 +152,8 @@ export const getFeedActivity = (): Promise<FeedActivity[]> => apiFetch('/misc/fe
 export const getSponsoredContent = (): Promise<SponsoredContent[]> => apiFetch('/misc/sponsored');
 export const getStickers = (): Promise<string[]> => apiFetch('/misc/stickers');
 export const getActiveAnnouncement = (): Promise<Announcement | null> => apiFetch('/misc/announcements/active');
+export const getAuthCarouselImages = (): Promise<AuthCarouselImage[]> => apiFetch('/misc/carousel-images');
+
 
 // --- Premium & Support ---
 export const subscribeToPremium = (): Promise<void> => apiFetch('/users/subscribe-premium', { method: 'POST' });
@@ -201,3 +191,6 @@ export const getAnnouncements = (): Promise<Announcement[]> => apiFetch('/admin/
 export const createAnnouncement = (data: Partial<Announcement>): Promise<void> => apiFetch('/admin/announcements', { method: 'POST', body: JSON.stringify(data) });
 export const updateAnnouncement = (id: number, data: Partial<Announcement>): Promise<void> => apiFetch(`/admin/announcements/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteAnnouncement = (id: number): Promise<void> => apiFetch(`/admin/announcements/${id}`, { method: 'DELETE' });
+export const adminGetCarouselImages = (): Promise<AuthCarouselImage[]> => apiFetch('/admin/carousel');
+export const adminAddCarouselImage = (formData: FormData): Promise<void> => apiFetch('/admin/carousel', { method: 'POST', body: formData });
+export const adminDeleteCarouselImage = (id: number): Promise<void> => apiFetch(`/admin/carousel/${id}`, { method: 'DELETE' });

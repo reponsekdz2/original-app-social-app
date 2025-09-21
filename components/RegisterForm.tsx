@@ -4,7 +4,7 @@ import * as api from '../services/apiService.ts';
 import Icon from './Icon.tsx';
 
 interface RegisterFormProps {
-  onRegisterSuccess: (data: { user: User, token: string }) => void;
+  onRegisterSuccess: (data: { user: User }) => void;
 }
 
 const PasswordStrengthIndicator: React.FC<{ password?: string, error?: string }> = ({ password, error }) => {

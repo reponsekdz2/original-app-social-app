@@ -1,8 +1,21 @@
 import { Router } from 'express';
 import pool from './db.js';
 import { protect, adminProtect } from './middleware/authMiddleware.js';
+import multer from 'multer';
+import path from 'path';
 
 const router = Router();
+
+// --- Multer Setup for Carousel Image Uploads ---
+const carouselStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'backend/uploads/carousel/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, `carousel-${Date.now()}${path.extname(file.originalname)}`);
+    }
+});
+const carouselUpload = multer({ storage: carouselStorage });
 
 // All routes in this file are protected and require admin privileges
 router.use(protect, adminProtect);
@@ -510,5 +523,47 @@ router.put('/settings', async (req, res) => {
     }
 });
 
+// @desc    Get all auth carousel images
+// @route   GET /api/admin/carousel
+// @access  Admin
+router.get('/carousel', async (req, res) => {
+    try {
+        const [images] = await pool.query('SELECT * FROM auth_carousel_images ORDER BY sort_order ASC');
+        res.json(images);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Add a new carousel image by uploading a file
+// @route   POST /api/admin/carousel
+// @access  Admin
+router.post('/carousel', carouselUpload.single('image'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: 'Image file is required.' });
+    }
+    try {
+        const imageUrl = `/uploads/carousel/${req.file.filename}`;
+        await pool.query('INSERT INTO auth_carousel_images (image_url) VALUES (?)', [imageUrl]);
+        res.status(201).json({ message: 'Image uploaded successfully' });
+    } catch (error) {
+        console.error('Carousel Image Upload Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+
+// @desc    Delete a carousel image
+// @route   DELETE /api/admin/carousel/:id
+// @access  Admin
+router.delete('/carousel/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM auth_carousel_images WHERE id = ?', [id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
 
 export default router;

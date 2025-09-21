@@ -1,21 +1,12 @@
-import jwt from 'jsonwebtoken';
 import pool from '../db.js';
 
 const protect = async (req, res, next) => {
-  let token;
-
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  if (req.session.user && req.session.user.id) {
     try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
-
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // Get user from the token's ID, including admin flag and status
+      // Get user from the session's ID
       const [rows] = await pool.query(
         'SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified, is_admin, status FROM users WHERE id = ?', 
-        [decoded.id]
+        [req.session.user.id]
       );
       
       if (rows.length > 0) {
@@ -23,6 +14,7 @@ const protect = async (req, res, next) => {
 
         // Check user status
         if (user.status === 'banned' || user.status === 'suspended') {
+          req.session.destroy(); // Log out the suspended/banned user
           return res.status(403).json({ message: `Your account has been ${user.status}. Please contact support.` });
         }
 
@@ -32,13 +24,11 @@ const protect = async (req, res, next) => {
         res.status(401).json({ message: 'Not authorized, user not found' });
       }
     } catch (error) {
-      console.error('JWT Error:', error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      console.error('Auth Middleware Error:', error);
+      res.status(401).json({ message: 'Not authorized, server error' });
     }
-  }
-
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+  } else {
+    res.status(401).json({ message: 'Not authorized, no session' });
   }
 };
 

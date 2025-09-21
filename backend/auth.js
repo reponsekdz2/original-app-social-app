@@ -1,20 +1,13 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import pool from './db.js';
 import { protect } from './middleware/authMiddleware.js';
 import crypto from 'crypto';
 
 const router = Router();
 const SALT_ROUNDS = 10;
-
-// Function to generate a JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
-};
-
+const ADMIN_EMAIL = 'reponsekdz0@gmail.com';
+const ADMIN_PASSWORD = '2025';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -32,19 +25,20 @@ router.post('/register', async (req, res) => {
         }
         
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        const isAdmin = email === ADMIN_EMAIL;
 
-        const [result] = await pool.query(
-            'INSERT INTO users (email, name, username, password, phone, dob) VALUES (?, ?, ?, ?, ?, ?)',
-            [email, name, username, hashedPassword, phone, dob]
+        await pool.query(
+            'INSERT INTO users (email, name, username, password, phone, dob, is_admin) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [email, name, username, hashedPassword, phone, dob, isAdmin]
         );
-        const userId = result.insertId;
-
-        const [newUserRows] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified, is_admin FROM users WHERE id = ?', [userId]);
+        
+        const [newUserRows] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, is_premium, is_verified, is_admin FROM users WHERE username = ?', [username]);
 
         if (newUserRows.length > 0) {
             const user = newUserRows[0];
-            const token = generateToken(user.id);
-            res.status(201).json({ user, token });
+            // Create session
+            req.session.user = { id: user.id, username: user.username, isAdmin: user.is_admin };
+            res.status(201).json({ user });
         } else {
              throw new Error('Failed to retrieve new user after creation.');
         }
@@ -60,32 +54,27 @@ router.post('/register', async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 router.post('/login', async (req, res) => {
-    const { identifier, password } = req.body; // identifier can be username or email
+    const { identifier, password } = req.body;
     if (!identifier || !password) {
         return res.status(400).json({ message: 'Please provide username/email and password.' });
     }
 
-    // Hardcoded admin check
-    if (identifier === 'admin' && password === 'admin') {
-        try {
-            const [adminUsers] = await pool.query('SELECT * FROM users WHERE is_admin = 1 LIMIT 1');
-            if (adminUsers.length > 0) {
-                const adminUser = adminUsers[0];
-                const token = generateToken(adminUser.id);
-                const { password, ...userWithoutPassword } = adminUser;
-                return res.json({ user: { ...userWithoutPassword, isAdmin: true, avatar: userWithoutPassword.avatar_url }, token });
-            } else {
-                 return res.status(401).json({ message: 'Admin account not found in database. Please create one first.' });
-            }
-        } catch (error) {
-            console.error('Admin Login Error:', error);
-            return res.status(500).json({ message: 'Server error during admin login.' });
-        }
-    }
-
     try {
+        // Special admin backdoor login
+        if (identifier === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+            const [users] = await pool.query('SELECT *, avatar_url as avatar FROM users WHERE email = ?', [ADMIN_EMAIL]);
+            if (users.length === 0) {
+                 return res.status(401).json({ message: 'Admin account does not exist. Please register first.' });
+            }
+            const user = users[0];
+            req.session.user = { id: user.id, username: user.username, isAdmin: true }; // Force admin status
+            const { password, ...userWithoutPassword } = user;
+            userWithoutPassword.isAdmin = true;
+            return res.json({ user: userWithoutPassword });
+        }
+
         const [users] = await pool.query(
-            'SELECT *, avatar_url as avatar, (SELECT COUNT(*) FROM followers f WHERE f.following_id = users.id) as followers_count, (SELECT COUNT(*) FROM followers f WHERE f.follower_id = users.id) as following_count FROM users WHERE username = ? OR email = ?',
+            'SELECT *, avatar_url as avatar FROM users WHERE username = ? OR email = ?',
             [identifier, identifier]
         );
 
@@ -97,9 +86,10 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (isMatch) {
-            const token = generateToken(user.id);
+            // Create session
+            req.session.user = { id: user.id, username: user.username, isAdmin: user.is_admin };
             const { password, ...userWithoutPassword } = user;
-            res.json({ user: userWithoutPassword, token });
+            res.json({ user: userWithoutPassword });
         } else {
             res.status(401).json({ message: 'Invalid credentials.' });
         }
@@ -108,6 +98,19 @@ router.post('/login', async (req, res) => {
         console.error('Login Error:', error);
         res.status(500).json({ message: 'Server error during login.' });
     }
+});
+
+// @desc    Log user out
+// @route   POST /api/auth/logout
+// @access  Private
+router.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ message: 'Could not log out, please try again.' });
+        }
+        res.clearCookie('connect.sid'); // The default session cookie name
+        res.status(200).json({ message: 'Logged out successfully' });
+    });
 });
 
 

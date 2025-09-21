@@ -177,25 +177,28 @@ export const App: React.FC = () => {
     }, [currentUser]);
     
     // --- Authentication ---
-    const handleLoginSuccess = async (data: { user: User, token: string }) => {
-        localStorage.setItem('token', data.token);
-        api.setAuthToken(data.token);
+    const handleLoginSuccess = async (data: { user: User }) => {
         const { user: refreshedUser } = await api.getMe();
         setCurrentUser(refreshedUser);
         socketService.connect(refreshedUser.id);
         setIsLoading(false);
+        handleNavigate('profile');
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        api.setAuthToken(null);
-        setCurrentUser(null);
-        socketService.disconnect();
-        // Reset all state
-        setCurrentView('home');
-        setFeedPosts([]);
-        setExplorePosts([]);
-        // ... reset all other state variables
+    const handleLogout = async () => {
+        try {
+            await api.logout();
+        } catch (error) {
+            console.error("Logout failed on server, proceeding on client.", error);
+        } finally {
+            setCurrentUser(null);
+            socketService.disconnect();
+            // Reset all state
+            setCurrentView('home');
+            setFeedPosts([]);
+            setExplorePosts([]);
+            // ... reset all other state variables
+        }
     };
 
     // --- Navigation ---
@@ -604,19 +607,16 @@ export const App: React.FC = () => {
     // --- Effect for Initial Load & Auth Check ---
     useEffect(() => {
         const checkAuth = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                api.setAuthToken(token);
-                try {
-                    const { user } = await api.getMe();
-                    setCurrentUser(user);
-                    socketService.connect(user.id);
-                } catch (error) {
-                    console.error("Session expired:", error);
-                    handleLogout();
-                }
+            try {
+                const { user } = await api.getMe();
+                setCurrentUser(user);
+                socketService.connect(user.id);
+            } catch (error) {
+                console.error("No active session:", error);
+                setCurrentUser(null);
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
         checkAuth();
         
@@ -700,7 +700,7 @@ export const App: React.FC = () => {
 
     // --- Render Logic ---
     if (isLoading) {
-        return <div className="min-h-screen bg-black flex items-center justify-center">Loading...</div>;
+        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     }
 
     if (!currentUser) {
@@ -730,7 +730,7 @@ export const App: React.FC = () => {
     };
     
     return (
-        <div className="bg-black text-white min-h-screen">
+        <div className="min-h-screen">
             <div className="flex">
                 <LeftSidebar 
                     currentUser={currentUser} 
@@ -753,7 +753,7 @@ export const App: React.FC = () => {
                         onLogout={handleLogout}
                     />
                     {activeAnnouncement && <AnnouncementBanner announcement={activeAnnouncement} />}
-                    <main className="flex-1">
+                    <main className="flex-1" style={{ overflowY: 'auto', height: '100vh' }}>
                         <div className="container mx-auto px-0 sm:px-4">
                             {mainContent()}
                         </div>

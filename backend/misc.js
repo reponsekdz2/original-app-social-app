@@ -156,5 +156,18 @@ router.get('/announcements/active', protect, async (req, res) => {
     }
 });
 
+// @desc    Get images for the auth screen carousel
+// @route   GET /api/misc/carousel-images
+// @access  Public
+router.get('/carousel-images', async (req, res) => {
+    try {
+        const [images] = await pool.query('SELECT id, image_url, sort_order FROM auth_carousel_images ORDER BY sort_order ASC');
+        res.json(images);
+    } catch (error) {
+        console.error('Get Carousel Images Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 
 export default router;

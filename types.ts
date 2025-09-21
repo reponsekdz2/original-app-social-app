@@ -251,3 +251,9 @@ export interface Announcement {
     is_active: boolean;
     expires_at?: string;
 }
+
+export interface AuthCarouselImage {
+    id: number;
+    image_url: string;
+    sort_order: number;
+}

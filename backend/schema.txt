@@ -1,3 +1,5 @@
+--- START OF FILE backend/schema.txt ---
+
 -- Users Table: Core of the application
 CREATE TABLE `users` (
   `id` varchar(36) NOT NULL DEFAULT (uuid()),
@@ -373,8 +375,6 @@ CREATE TABLE `live_streams` (
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
 );
 
--- NEW TABLES FOR ADVANCED FEATURES
-
 -- Polls for Posts
 CREATE TABLE `polls` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -432,3 +432,27 @@ CREATE TABLE `user_warnings` (
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`admin_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
+
+-- Session Storage Table
+CREATE TABLE `sessions` (
+  `session_id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `expires` int unsigned NOT NULL,
+  `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  PRIMARY KEY (`session_id`)
+);
+
+-- Auth Screen Carousel Images (Managed by Admin)
+CREATE TABLE `auth_carousel_images` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `image_url` VARCHAR(255) NOT NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+-- Insert default images for the carousel
+INSERT INTO `auth_carousel_images` (`image_url`, `sort_order`) VALUES
+('https://images.unsplash.com/photo-1528732263494-242a3536015c?q=80&w=800&auto=format&fit=crop', 1),
+('https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800&auto=format&fit=crop', 2),
+('https://images.unsplash.com/photo-1542435503-956c469947f6?q=80&w=800&auto=format&fit=crop', 3),
+('https://images.unsplash.com/photo-1501504905252-473c47e087f8?q=80&w=800&auto=format&fit=crop', 4);

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User } from '../types.ts';
 import * as api from '../services/apiService.ts';
 import Icon from './Icon.tsx';
 
 interface LoginFormProps {
-  onLoginSuccess: (data: { user: User, token: string }) => void;
+  onLoginSuccess: (data: { user: User }) => void;
   onForgotPassword: () => void;
 }
 
@@ -15,6 +15,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onForgotPassword 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    const lastUser = localStorage.getItem('lastLoggedInUser');
+    if (lastUser) {
+      setIdentifier(lastUser);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -22,6 +29,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onForgotPassword 
 
     try {
       const data = await api.login(identifier, password);
+      localStorage.setItem('lastLoggedInUser', identifier);
       onLoginSuccess(data);
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');

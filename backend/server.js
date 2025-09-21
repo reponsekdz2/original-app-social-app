@@ -6,6 +6,9 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import session from 'express-session';
+import MySQLStoreFactory from 'connect-mysql2';
+import pool from './db.js';
 
 // Socket.io setup
 import { initSocket } from './socket.js';
@@ -32,8 +35,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins for simplicity, restrict in production
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    origin: true, // Allow any origin for Socket.IO
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true // Allow cookies to be sent
   }
 });
 app.set('io', io); // Make io accessible in request handlers
@@ -42,9 +46,29 @@ app.set('io', io); // Make io accessible in request handlers
 initSocket(io);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: true, // Allow any origin for Express API
+    credentials: true
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Session Middleware
+const MySQLStore = MySQLStoreFactory(session);
+const sessionStore = new MySQLStore({}, pool);
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'a_very_strong_secret_key_for_sessions',
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        httpOnly: true, // Prevent client-side JS from accessing the cookie
+        maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
+    }
+}));
+
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

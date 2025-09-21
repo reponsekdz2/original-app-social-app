@@ -1,22 +1,45 @@
 import React, { useState, useEffect } from 'react';
-
-const images = [
-  'https://images.unsplash.com/photo-1528732263494-242a3536015c?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  'https://images.unsplash.com/photo-1542435503-956c469947f6?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  'https://images.unsplash.com/photo-1501504905252-473c47e087f8?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-];
+import * as api from '../services/apiService.ts';
 
 const AuthImageCarousel: React.FC = () => {
+  const [images, setImages] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const carouselImages = await api.getAuthCarouselImages();
+        if (carouselImages.length > 0) {
+          setImages(carouselImages.map(img => img.image_url));
+        }
+      } catch (error) {
+        console.error("Failed to fetch carousel images:", error);
+        // Fallback to default images if API fails
+        setImages([
+          'https://images.unsplash.com/photo-1528732263494-242a3536015c?q=80&w=800&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800&auto=format&fit=crop',
+        ]);
+      }
+    };
+    fetchImages();
+  }, []);
+
+  useEffect(() => {
+    if (images.length === 0) return;
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 4000); // Change image every 4 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [images]);
+
+  if (images.length === 0) {
+      return (
+        <div className="relative w-full max-w-[280px] h-[540px] bg-black rounded-3xl border-8 border-gray-800 flex items-center justify-center">
+            <p className="text-gray-500 text-sm">Loading images...</p>
+        </div>
+      );
+  }
 
   return (
     <div className="relative w-full max-w-[280px] h-[540px] bg-black rounded-3xl border-8 border-gray-800 overflow-hidden shadow-2xl shadow-red-900/10">
