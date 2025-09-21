@@ -76,13 +76,6 @@ export const resetPassword = (token: string, password: string): Promise<void> =>
 
 export const enableTwoFactor = (): Promise<void> => apiFetch('/auth/enable-2fa', { method: 'POST' });
 
-// --- AI ---
-export const magicCompose = (text: string, style: string): Promise<{ composedText: string }> =>
-    apiFetch('/ai/compose', {
-        method: 'POST',
-        body: JSON.stringify({ text, style }),
-    });
-
 // --- Content ---
 export const getFeedPosts = (): Promise<{ posts: Post[] }> => apiFetch('/posts/feed');
 export const getExplorePosts = (): Promise<{ posts: Post[] }> => apiFetch('/posts/explore');
@@ -170,6 +163,14 @@ export const createSupportTicket = (subject: string, description: string): Promi
 export const sendTip = (postId: string, amount: number): Promise<void> => apiFetch(`/posts/${postId}/tip`, { method: 'POST', body: JSON.stringify({ amount }) });
 export const startLiveStream = (title: string): Promise<LiveStream> => apiFetch('/livestreams/start', { method: 'POST', body: JSON.stringify({ title }) });
 export const getLiveStreams = (): Promise<LiveStream[]> => apiFetch('/livestreams');
+
+// Fix: Add magicCompose function to call the AI backend service.
+// --- AI Features ---
+export const magicCompose = (text: string, style: string): Promise<{ composedText: string }> =>
+    apiFetch('/ai/compose', {
+        method: 'POST',
+        body: JSON.stringify({ text, style }),
+    });
 
 // --- Admin ---
 export const getAdminStats = (): Promise<AdminStats> => apiFetch('/admin/stats');

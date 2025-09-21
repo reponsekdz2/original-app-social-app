@@ -3,7 +3,6 @@ import type { Post, User, Comment as CommentType } from '../types';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import FollowButton from './FollowButton.tsx';
-import MagicComposePanel from './MagicComposePanel.tsx';
 
 interface PostModalProps {
   post: Post;
@@ -26,7 +25,6 @@ const PostModal: React.FC<PostModalProps> = (props) => {
     const { post, currentUser, onClose, onToggleLike, onToggleSave, onComment, onShare, onViewLikes, onViewProfile, onOptions, onFollow, onUnfollow, onTip, onToggleCommentLike } = props;
     const [commentText, setCommentText] = useState('');
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
-    const [isComposePanelOpen, setComposePanelOpen] = useState(false);
     
     const isLiked = post.likedBy.some(u => u.id === currentUser.id);
     const isSaved = post.isSaved;
@@ -36,7 +34,6 @@ const PostModal: React.FC<PostModalProps> = (props) => {
         if (commentText.trim()) {
             onComment(post.id, commentText);
             setCommentText('');
-            setComposePanelOpen(false);
         }
     };
     
@@ -112,24 +109,12 @@ const PostModal: React.FC<PostModalProps> = (props) => {
                             {post.likes > 0 && <button onClick={() => onViewLikes(post.likedBy)} className="font-semibold text-sm">{post.likes.toLocaleString()} likes</button>}
                             <p className="text-gray-500 text-xs uppercase mt-2">{new Date(post.timestamp).toDateString()}</p>
                         </div>
-                         <div className="relative">
-                            {isComposePanelOpen && (
-                                <div className="absolute bottom-full left-0 right-0 p-2">
-                                    <MagicComposePanel text={commentText} onComposeSelect={(newText) => { setCommentText(newText); setComposePanelOpen(false); }} />
-                                </div>
+                        <form onSubmit={handlePostComment} className="border-t border-gray-800 p-3 flex items-center gap-2">
+                            <input type="text" placeholder="Add a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} className="w-full bg-transparent text-sm focus:outline-none" />
+                            {commentText.trim().length > 0 && (
+                                <button type="submit" className="text-red-500 font-semibold text-sm">Post</button>
                             )}
-                             <form onSubmit={handlePostComment} className="border-t border-gray-800 p-3 flex items-center gap-2">
-                                <input type="text" placeholder="Add a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} className="w-full bg-transparent text-sm focus:outline-none" />
-                                {currentUser.isPremium && (
-                                    <button type="button" onClick={() => setComposePanelOpen(prev => !prev)} className="p-1 text-yellow-400 hover:text-yellow-300">
-                                        <Icon className="w-5 h-5" fill="currentColor"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon>
-                                    </button>
-                                )}
-                                {commentText.trim().length > 0 && (
-                                  <button type="submit" className="text-red-500 font-semibold text-sm">Post</button>
-                                )}
-                            </form>
-                        </div>
+                        </form>
                     </footer>
                 </div>
             </div>
