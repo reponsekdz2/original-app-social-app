@@ -20,6 +20,7 @@ const CallModal: React.FC<CallModalProps> = (props) => {
   const [duration, setDuration] = useState(0);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (localVideoRef.current && localStream) {
@@ -45,6 +46,24 @@ const CallModal: React.FC<CallModalProps> = (props) => {
       if (timer) clearInterval(timer);
     };
   }, [status]);
+  
+  // Effect for handling outgoing call sound
+  useEffect(() => {
+    if (status === 'outgoing') {
+      audioRef.current = new Audio('/assets/ringtone.mp3'); // Assuming this file exists
+      audioRef.current.loop = true;
+      audioRef.current.play().catch(e => console.error("Outgoing ringtone autoplay failed:", e));
+    }
+
+    // Cleanup: stop the sound if status changes or component unmounts
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [status]);
+
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
