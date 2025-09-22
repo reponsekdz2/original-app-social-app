@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Conversation, User, Message } from '../types';
 import Icon from './Icon.tsx';
@@ -6,7 +5,7 @@ import ChatWindow from './ChatWindow.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import NewMessageModal from './NewMessageModal.tsx';
 import { socketService } from '../services/socketService.ts';
-import * as api from '../services/apiService';
+import * as api from '../services/apiService.ts';
 import CreateGroupModal from './CreateGroupModal.tsx';
 
 interface MessagesViewProps {

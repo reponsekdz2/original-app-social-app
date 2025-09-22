@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Post, Reel, User, Conversation } from '../types';
 import Icon from './Icon.tsx';
-import * as api from '../services/apiService';
+import * as api from '../services/apiService.ts';
 
 interface ShareModalProps {
   content: Post | Reel;

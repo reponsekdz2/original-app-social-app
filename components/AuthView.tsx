@@ -28,21 +28,29 @@ const welcomeMessages = {
 }
 
 const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, onForgotPassword }) => {
-  const [isLoginView, setIsLoginView] = useState(true);
-  const [isSwitching, setIsSwitching] = useState(false);
+  const [view, setView] = useState<'login' | 'register'>('login');
+  const [animation, setAnimation] = useState('');
   const [welcome, setWelcome] = useState('');
 
   useEffect(() => {
-    const messages = isLoginView ? welcomeMessages.login : welcomeMessages.register;
+    const messages = view === 'login' ? welcomeMessages.login : welcomeMessages.register;
     setWelcome(messages[Math.floor(Math.random() * messages.length)]);
-  }, [isLoginView]);
+  }, [view]);
 
   const handleSwitchView = () => {
-      setIsSwitching(true);
-      setTimeout(() => {
-          setIsLoginView(prev => !prev);
-          setIsSwitching(false);
-      }, 300);
+      if (view === 'login') {
+          setAnimation('slide-out-left');
+          setTimeout(() => {
+              setView('register');
+              setAnimation('slide-in-right');
+          }, 300);
+      } else {
+          setAnimation('slide-out-right');
+          setTimeout(() => {
+              setView('login');
+              setAnimation('slide-in-left');
+          }, 300);
+      }
   }
 
   return (
@@ -57,18 +65,18 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, onForgotPassword })
              <AuthImageCarousel />
         </div>
 
-        <div className="w-full max-w-md mx-auto lg:mx-0 md:col-start-2 lg:col-start-3 animate-auth-card">
+        <div className="w-full max-w-md mx-auto lg:mx-0 md:col-start-1 md:col-span-2 lg:col-start-3 lg:col-span-1 animate-auth-card">
           <div className="bg-black/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white">
-            <div className="p-8">
+            <div className="p-6 sm:p-8 overflow-hidden">
               <div className="text-center mb-8">
                 <h1 className="text-4xl font-serif font-bold text-red-600">talka</h1>
-                <p className="text-gray-300 mt-2 animate-fade-in">
+                <p className="text-gray-300 mt-2 animate-fade-in h-5">
                   {welcome}
                 </p>
               </div>
               
-              <div className={`transition-opacity duration-300 ${isSwitching ? 'opacity-0' : 'opacity-100'}`}>
-                {isLoginView ? (
+              <div className={animation}>
+                {view === 'login' ? (
                   <LoginForm onLoginSuccess={onLoginSuccess} onForgotPassword={onForgotPassword} />
                 ) : (
                   <RegisterForm onRegisterSuccess={onLoginSuccess} />
@@ -78,7 +86,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, onForgotPassword })
             
              <div className="py-6 text-center text-sm bg-black/20 rounded-b-2xl border-t border-white/10">
                 <button onClick={handleSwitchView} className="text-gray-400 hover:text-white transition-colors">
-                  {isLoginView ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
+                  {view === 'login' ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
                 </button>
               </div>
           </div>

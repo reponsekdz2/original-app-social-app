@@ -60,7 +60,7 @@ const PostComponent: React.FC<PostProps> = (props) => {
     const collaborators = post.collaborators.filter(c => c.id !== post.user.id);
 
     return (
-        <article className="w-full max-w-2xl bg-black/50 backdrop-blur-sm sm:border border-gray-800 sm:rounded-2xl overflow-hidden shadow-lg shadow-black/20">
+        <article className="w-full bg-black/50 backdrop-blur-sm sm:border border-gray-800 sm:rounded-2xl overflow-hidden shadow-lg shadow-black/20">
             <header className="flex items-center p-3 sm:p-4">
                 <img src={post.user.avatar} alt={post.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(post.user)} />
                 <div className="ml-3 flex-1">

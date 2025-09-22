@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
 import type { User } from '../types';
-import * as api from '../services/apiService';
+import * as api from '../services/apiService.ts';
 
 interface CreatePostModalProps {
   onClose: () => void;
