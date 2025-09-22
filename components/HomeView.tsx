@@ -37,7 +37,7 @@ interface HomeViewProps {
 const HomeView: React.FC<HomeViewProps> = (props) => {
   return (
     <div className="flex justify-center container mx-auto gap-8 lg:gap-16 xl:gap-24">
-       <div className="w-full max-w-xl md:max-w-2xl flex flex-col h-[calc(100vh-4rem)]">
+       <div className="w-full max-w-xl md:max-w-2xl xl:max-w-3xl flex flex-col h-[calc(100vh-4rem)]">
         {/* Stories Section */}
         <div className="py-4 border-b border-gray-800">
           <div className="flex items-center space-x-4 overflow-x-auto pb-2 scrollbar-hide px-2 sm:px-4">
@@ -57,7 +57,7 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
           </div>
         </div>
 
-        <main className="flex-1 w-full snap-y snap-mandatory overflow-y-auto scrollbar-hide">
+        <main className="flex-1 w-full snap-y snap-mandatory overflow-y-auto scrollbar-hide pb-16 sm:pb-0">
             {props.posts.map(post => (
             <section key={post.id} className="h-full w-full snap-start flex items-center justify-center py-2 md:py-4">
                 <PostComponent 

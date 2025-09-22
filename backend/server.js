@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import session from 'express-session';
-import MySQLStoreImport from 'express-mysql-session';
+import MySQLStoreFactory from 'connect-mysql2';
 import pool from './db.js';
 
 // Socket.io setup
@@ -26,6 +26,7 @@ import livestreamRoutes from './livestreams.js';
 import reportRoutes from './reports.js';
 import commentRoutes from './comments.js';
 
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -36,7 +37,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: true, // Allow any origin for Socket.IO
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true // Allow cookies to be sent
   }
 });
@@ -47,35 +48,30 @@ initSocket(io);
 
 // Middleware
 app.use(cors({
-  origin: true, // Allow any origin for Express API
-  credentials: true
+    origin: true, // Allow any origin for Express API
+    credentials: true
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// ---- Session Middleware ----
-const MySQLStore = MySQLStoreImport(session);
-
-const sessionStore = new MySQLStore({
-  clearExpired: true,
-  checkExpirationInterval: 900000, // Clear expired sessions every 15 minutes
-  expiration: 1000 * 60 * 60 * 24 * 30 // 30 days
-}, pool);
+// Session Middleware
+const MySQLStore = MySQLStoreFactory(session);
+const sessionStore = new MySQLStore({}, pool);
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'a_very_strong_secret_key_for_sessions',
-  store: sessionStore,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-    httpOnly: true, // Prevent client-side JS from accessing the cookie
-    maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
-  }
+    secret: process.env.SESSION_SECRET || 'a_very_strong_secret_key_for_sessions',
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        httpOnly: true, // Prevent client-side JS from accessing the cookie
+        maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
+    }
 }));
-// -----------------------------
 
-// Serve static files
+
+// Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/assets', express.static(path.join(__dirname, 'uploads/assets')));
 
@@ -92,6 +88,7 @@ app.use('/api/livestreams', livestreamRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/comments', commentRoutes);
 
+
 // Basic route for testing
 app.get('/', (req, res) => {
   res.send('Talka backend is running.');
@@ -102,6 +99,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
+
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

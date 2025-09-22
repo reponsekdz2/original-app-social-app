@@ -130,6 +130,7 @@ export const App: React.FC = () => {
 
     const fetchData = useCallback(async () => {
         if (!currentUser) return;
+        setIsLoading(true);
         try {
             const [
                 feedData,
@@ -183,16 +184,28 @@ export const App: React.FC = () => {
                 showToast(error.message);
                 setTimeout(handleLogout, 3000);
             }
+        } finally {
+            setIsLoading(false);
         }
     }, [currentUser]);
     
     // --- Authentication ---
     const handleLoginSuccess = async (data: { user: User }) => {
-        const { user: refreshedUser } = await api.getMe();
-        setCurrentUser(refreshedUser);
-        socketService.connect(refreshedUser.id);
-        setIsLoading(false);
-        handleNavigate('home');
+        setIsLoading(true); // Show a loading screen during the transition
+        try {
+            // The session is already set by the login/register call, so getMe will work
+            const { user: refreshedUser } = await api.getMe();
+            setCurrentUser(refreshedUser);
+            socketService.connect(refreshedUser.id);
+            handleNavigate('home');
+            // The useEffect watching currentUser will trigger fetchData, which will handle the loading state
+        } catch (error) {
+            console.error("Failed to finalize login:", error);
+            // If getMe fails, the session is likely invalid. Log out.
+            await handleLogout();
+            showToast("An error occurred during login. Please try again.");
+            setIsLoading(false); // Ensure loading is off if we error out here
+        }
     };
 
     const handleLogout = async () => {
@@ -736,7 +749,11 @@ export const App: React.FC = () => {
 
     // --- Render Logic ---
     if (isLoading) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-500"></div>
+            </div>
+        );
     }
 
     if (!currentUser) {
@@ -789,7 +806,7 @@ export const App: React.FC = () => {
                         onLogout={handleLogout}
                     />
                     {activeAnnouncement && <AnnouncementBanner announcement={activeAnnouncement} />}
-                    <main className="flex-1" style={{ overflowY: 'auto', height: '100vh' }}>
+                    <main className="flex-1">
                         <div className="container mx-auto px-0 sm:px-4">
                             {mainContent()}
                         </div>
