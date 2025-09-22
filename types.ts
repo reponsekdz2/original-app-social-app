@@ -27,6 +27,8 @@ export interface User {
   mutedUsers: string[];
   blockedUsers: string[];
   created_at?: string;
+  last_login?: string;
+  wallet_balance?: number;
 }
 
 export interface PollOption {

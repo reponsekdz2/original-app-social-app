@@ -164,14 +164,6 @@ export const sendTip = (postId: string, amount: number): Promise<void> => apiFet
 export const startLiveStream = (title: string): Promise<LiveStream> => apiFetch('/livestreams/start', { method: 'POST', body: JSON.stringify({ title }) });
 export const getLiveStreams = (): Promise<LiveStream[]> => apiFetch('/livestreams');
 
-// Fix: Add magicCompose function to call the AI backend service.
-// --- AI Features ---
-export const magicCompose = (text: string, style: string): Promise<{ composedText: string }> =>
-    apiFetch('/ai/compose', {
-        method: 'POST',
-        body: JSON.stringify({ text, style }),
-    });
-
 // --- Admin ---
 export const getAdminStats = (): Promise<AdminStats> => apiFetch('/admin/stats');
 export const getAdminUserGrowthData = (): Promise<AnalyticsData> => apiFetch('/admin/analytics/user-growth');

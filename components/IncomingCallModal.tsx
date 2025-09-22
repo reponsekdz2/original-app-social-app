@@ -11,7 +11,7 @@ interface IncomingCallModalProps {
 
 const IncomingCallModal: React.FC<IncomingCallModalProps> = ({ user, callType, onAccept, onDecline }) => {
   useEffect(() => {
-    const audio = new Audio('/assets/ringtone.mp3');
+    const audio = new Audio('/uploads/assets/ringtone.mp3');
     audio.loop = true;
     audio.play().catch(e => console.error("Ringtone autoplay failed:", e));;
     return () => {

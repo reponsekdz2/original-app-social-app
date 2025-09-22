@@ -25,8 +25,6 @@ import adminRoutes from './admin.js';
 import livestreamRoutes from './livestreams.js';
 import reportRoutes from './reports.js';
 import commentRoutes from './comments.js';
-// Fix: Import AI routes to make them available to the application.
-import aiRoutes from './ai.js';
 
 
 dotenv.config();
@@ -75,6 +73,7 @@ app.use(session({
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads/assets', express.static(path.join(__dirname, 'uploads/assets')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -88,8 +87,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/livestreams', livestreamRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/comments', commentRoutes);
-// Fix: Register AI routes.
-app.use('/api/ai', aiRoutes);
 
 
 // Basic route for testing

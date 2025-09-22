@@ -120,7 +120,7 @@ router.get('/analytics/content-trends', async (req, res) => {
 // @access  Admin
 router.get('/users', async (req, res) => {
      try {
-        const [users] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, is_verified, is_admin, created_at, status FROM users ORDER BY created_at DESC');
+        const [users] = await pool.query('SELECT id, username, name, email, avatar_url as avatar, is_verified, is_admin, created_at, status, last_login, wallet_balance FROM users ORDER BY created_at DESC');
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });

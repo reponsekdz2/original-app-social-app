@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { View, User, Post, Reel, Story, Conversation, Message, Notification, FeedActivity, SponsoredContent, TrendingTopic, Testimonial, HelpArticle, SupportTicket, LiveStream, StoryItem, StoryHighlight, Report, AdminStats, AnalyticsData, Announcement } from './types';
 import AuthView from './components/AuthView.tsx';
 import HomeView from './components/HomeView.tsx';
@@ -108,9 +108,17 @@ export const App: React.FC = () => {
     const [isMuted, setIsMuted] = useState(false);
     const [isCameraOff, setIsCameraOff] = useState(false);
 
+    // --- Audio Refs ---
+    const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        notificationAudioRef.current = new Audio('/uploads/assets/notification.mp3');
+    }, []);
+
 
     const showToast = (message: string) => {
         setToastMessage(message);
+        notificationAudioRef.current?.play().catch(e => console.error("Notification sound play failed", e));
     };
 
     const openModal = (name: string, props: any = {}) => setActiveModals(prev => ({ ...prev, [name]: props }));

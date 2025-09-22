@@ -19,7 +19,7 @@ You can access a live, interactive version of this application here:
 This application is more than a simple clone; it's a feature-rich platform with a wide array of capabilities, including:
 
 **👤 User & Profile Management:**
-*   **Authentication:** Secure JWT-based login, registration, and session management.
+*   **Authentication:** Secure session-based login, registration, and session management.
 *   **Profiles:** Customizable user profiles with avatars, bios, highlights, and follower/following counts.
 *   **Relationships:** Full follow/unfollow, block/unblock, and mute/unmute functionality.
 *   **Privacy:** Option for users to set their accounts to private.
@@ -64,7 +64,7 @@ This application is more than a simple clone; it's a feature-rich platform with 
 *   **Backend:** Node.js, Express.js
 *   **Database:** MySQL 8
 *   **Real-Time:** Socket.IO 4
-*   **Authentication:** JSON Web Tokens (JWT), bcrypt
+*   **Authentication:** Express Sessions, bcrypt
 *   **File Storage:** Multer for handling file uploads
 *   **Live Calling:** WebRTC for peer-to-peer connections
 
@@ -90,7 +90,11 @@ npm install
 
 # 4. Create upload directories
 #  - Inside the `backend/` directory, create an `uploads` folder.
-#  - Inside `uploads`, create the following subfolders: `attachments`, `carousel`, `stickers`, `audio`. This is where user and admin uploaded content will be stored.
+#  - Inside `uploads`, create the following subfolders: `assets`, `attachments`, `carousel`, `stickers`.
+#  - Place your audio files inside `backend/uploads/assets/`:
+#    - ringtone.mp3 (for calls)
+#    - notification.mp3 (for toast notifications)
+#    - message.mp3 (for new messages)
 
 # 5. Configure environment variables
 #  - Create a file named `.env` in the `backend/` directory.
@@ -148,8 +152,8 @@ DB_USER=your_mysql_username
 DB_PASSWORD=your_mysql_password
 DB_NAME=talka
 
-# JWT Secret for Authentication
-JWT_SECRET=your_super_secret_jwt_string_that_is_long_and_random
+# Session Secret for Authentication
+SESSION_SECRET=your_super_secret_string_that_is_long_and_random
 
 # Server Port
 PORT=3001

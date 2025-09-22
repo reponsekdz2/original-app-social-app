@@ -81,7 +81,8 @@ const UserManagement: React.FC = () => {
                         <tr>
                             <th className="px-4 py-3">User</th>
                             <th className="px-4 py-3 hidden sm:table-cell">Email</th>
-                            <th className="px-4 py-3 hidden md:table-cell">Joined</th>
+                            <th className="px-4 py-3 hidden lg:table-cell">Wallet</th>
+                            <th className="px-4 py-3 hidden md:table-cell">Last Login</th>
                             <th className="px-4 py-3">Status</th>
                             <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
@@ -94,7 +95,8 @@ const UserManagement: React.FC = () => {
                                     {user.username} {user.isVerified && <VerifiedBadge />}
                                 </td>
                                 <td className="px-4 py-3 hidden sm:table-cell">{user.email}</td>
-                                <td className="px-4 py-3 hidden md:table-cell">{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
+                                <td className="px-4 py-3 hidden lg:table-cell">${user.wallet_balance?.toFixed(2)}</td>
+                                <td className="px-4 py-3 hidden md:table-cell">{user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}</td>
                                 <td className="px-4 py-3">
                                     <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded ${getStatusColor(user.status)}`}>
                                         {user.status}
@@ -109,6 +111,8 @@ const UserManagement: React.FC = () => {
                                         {activeDropdown === user.id && (
                                             <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
                                                 <div className="py-1" role="menu" aria-orientation="vertical">
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); alert(`Functionality to view profile of ${user.username} to be implemented.`); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-600">View Profile</a>
+                                                    <div className="border-t border-gray-600 my-1"></div>
                                                     <a href="#" onClick={() => { handleUpdateUser(user, { status: 'active' }); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-600">Set Active</a>
                                                     <a href="#" onClick={() => { handleUpdateUser(user, { status: 'suspended' }); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-600">Suspend</a>
                                                     <a href="#" onClick={() => { handleUpdateUser(user, { status: 'banned' }); setActiveDropdown(null); }} className="block px-4 py-2 text-sm text-yellow-400 hover:bg-gray-600">Ban</a>

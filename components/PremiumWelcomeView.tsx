@@ -17,11 +17,6 @@ const PremiumWelcomeView: React.FC<PremiumWelcomeViewProps> = ({ onNavigate }) =
             description: 'Your new blue badge is now visible on your profile, posts, and comments. Enjoy the recognition!'
         },
         {
-            icon: <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></Icon>,
-            title: 'Unleash Magic Compose',
-            description: 'Look for the ✨ icon when writing a comment to get AI-powered suggestions in various styles.'
-        },
-        {
             icon: <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" /></Icon>,
             title: 'Upload in Stunning 4K UHD',
             description: 'When creating a new post or reel, you can now upload your videos in the highest possible quality.'

@@ -54,7 +54,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversat
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
       <div 
-        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md border border-gray-700 flex flex-col max-h-[70vh]"
+        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md border border-gray-700 flex flex-col max-h-[70vh] animate-modal-intro"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-3 border-b border-gray-700 text-center relative">

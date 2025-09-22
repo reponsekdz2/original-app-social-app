@@ -67,6 +67,7 @@ router.post('/login', async (req, res) => {
                  return res.status(401).json({ message: 'Admin account does not exist. Please register first.' });
             }
             const user = users[0];
+            await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
             req.session.user = { id: user.id, username: user.username, isAdmin: true }; // Force admin status
             const { password, ...userWithoutPassword } = user;
             userWithoutPassword.isAdmin = true;
@@ -86,6 +87,7 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (isMatch) {
+            await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
             // Create session
             req.session.user = { id: user.id, username: user.username, isAdmin: user.is_admin };
             const { password, ...userWithoutPassword } = user;
@@ -122,7 +124,7 @@ router.get('/me', protect, async (req, res) => {
         const [rows] = await pool.query(
             `SELECT 
                 u.id, u.username, u.name, u.email, u.avatar_url as avatar, u.bio, u.website, u.gender, 
-                u.is_premium, u.is_verified, u.is_private, u.is_admin,
+                u.is_premium, u.is_verified, u.is_private, u.is_admin, u.last_login, u.wallet_balance,
                 COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', f.id, 'username', f.username, 'avatar', f.avatar_url)) FROM followers fo JOIN users f ON fo.following_id = f.id WHERE fo.follower_id = u.id), JSON_ARRAY()) as following,
                 COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', f.id, 'username', f.username, 'avatar', f.avatar_url)) FROM followers fo JOIN users f ON fo.follower_id = f.id WHERE fo.following_id = u.id), JSON_ARRAY()) as followers,
                 COALESCE(JSON_OBJECT("likes", us.likes_notifications, "comments", us.comments_notifications, "follows", us.follows_notifications), JSON_OBJECT("likes", TRUE, "comments", TRUE, "follows", TRUE)) as notificationSettings,

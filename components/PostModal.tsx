@@ -42,7 +42,7 @@ const PostModal: React.FC<PostModalProps> = (props) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-0 md:p-4" onClick={onClose}>
-            <div className="bg-gray-900 shadow-xl w-full h-full md:rounded-lg md:max-w-5xl md:max-h-[90vh] flex flex-col md:flex-row" onClick={e => e.stopPropagation()}>
+            <div className="bg-gray-900 shadow-xl w-full h-full md:rounded-lg md:max-w-5xl md:max-h-[90vh] flex flex-col md:flex-row animate-modal-intro" onClick={e => e.stopPropagation()}>
                 <div className="w-full md:w-1/2 lg:w-3/5 aspect-square bg-black relative flex items-center justify-center">
                     {post.media.map((media, index) => (
                         <div key={media.id} className={`absolute inset-0 transition-opacity duration-300 ${index === currentMediaIndex ? 'opacity-100' : 'opacity-0'}`}>

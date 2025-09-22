@@ -50,7 +50,7 @@ const CallModal: React.FC<CallModalProps> = (props) => {
   // Effect for handling outgoing call sound
   useEffect(() => {
     if (status === 'outgoing') {
-      audioRef.current = new Audio('/assets/ringtone.mp3'); // Assuming this file exists
+      audioRef.current = new Audio('/uploads/assets/ringtone.mp3'); // Assuming this file exists
       audioRef.current.loop = true;
       audioRef.current.play().catch(e => console.error("Outgoing ringtone autoplay failed:", e));
     }
