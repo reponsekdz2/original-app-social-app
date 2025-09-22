@@ -1,6 +1,5 @@
 import React from 'react';
-// Fix: Corrected import path for types to be relative.
-import type { User, View } from '../types';
+import type { User, View } from '../types.ts';
 import Icon from './Icon.tsx';
 import ToggleSwitch from './ToggleSwitch.tsx';
 

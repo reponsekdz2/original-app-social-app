@@ -1,6 +1,5 @@
 
 import React from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { FeedActivity, User } from '../types.ts';
 
 interface ActivityFeedItemProps {

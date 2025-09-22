@@ -1,8 +1,8 @@
 
 
+
 import React from 'react';
-// Fix: Corrected import path for types to be relative.
-import type { Notification, User } from '../types';
+import type { Notification, User } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface NotificationsPanelProps {

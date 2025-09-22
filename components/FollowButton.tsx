@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-// Fix: Corrected import path for types to be relative.
 import type { User } from '../types.ts';
 
 interface FollowButtonProps {

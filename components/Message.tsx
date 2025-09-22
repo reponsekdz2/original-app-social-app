@@ -52,7 +52,7 @@ const FileAttachmentMessage: React.FC<{ file: FileAttachment }> = ({ file }) => 
 }
 
 
-const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction, isVanishMode, onViewMedia }) => {
+const MessageComponent: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction, isVanishMode, onViewMedia }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const messageAlignment = isCurrentUser ? 'justify-end' : 'justify-start';
@@ -130,4 +130,4 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGrou
   );
 };
 
-export default Message;
+export default MessageComponent;

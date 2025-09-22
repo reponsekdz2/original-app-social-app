@@ -2,8 +2,7 @@
 
 
 import React from 'react';
-// Fix: Corrected import path for types to be relative.
-import type { StoryHighlight } from '../types';
+import type { StoryHighlight } from '../types.ts';
 
 interface HighlightBubbleProps {
   highlight: StoryHighlight;
