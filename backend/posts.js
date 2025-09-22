@@ -134,7 +134,7 @@ router.post('/', protect, upload.array('media', 10), async (req, res) => {
                     [postId, pollQuestion]
                 );
                 const pollId = pollResult.insertId;
-                const optionPromises = options.map((opt: string) => 
+                const optionPromises = options.map((opt) => 
                     connection.query('INSERT INTO poll_options (poll_id, option_text) VALUES (?, ?)', [pollId, opt])
                 );
                 await Promise.all(optionPromises);
@@ -149,7 +149,7 @@ router.post('/', protect, upload.array('media', 10), async (req, res) => {
                 'INSERT INTO post_collaborators (post_id, user_id, status) VALUES (?, ?, ?)',
                 [postId, userId, 'accepted']
             );
-            const collabPromises = collabIds.map((id: string) => 
+            const collabPromises = collabIds.map((id) => 
                 connection.query(
                     'INSERT INTO post_collaborators (post_id, user_id, status) VALUES (?, ?, ?)',
                     [postId, id, 'pending']

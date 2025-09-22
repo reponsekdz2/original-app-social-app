@@ -1,6 +1,3 @@
---- START OF FILE backend/schema.txt ---
-
--- Users Table: Core of the application
 CREATE TABLE `users` (
   `id` varchar(36) NOT NULL DEFAULT (uuid()),
   `username` varchar(50) NOT NULL UNIQUE,
