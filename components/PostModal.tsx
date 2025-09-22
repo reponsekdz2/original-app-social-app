@@ -43,19 +43,26 @@ const PostModal: React.FC<PostModalProps> = (props) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-0 md:p-4" onClick={onClose}>
             <div className="bg-gray-900 shadow-xl w-full h-full md:rounded-lg md:max-w-5xl md:max-h-[90vh] flex flex-col md:flex-row animate-modal-intro" onClick={e => e.stopPropagation()}>
-                <div className="w-full md:w-1/2 lg:w-3/5 aspect-square bg-black relative flex items-center justify-center">
-                    {post.media.map((media, index) => (
-                        <div key={media.id} className={`absolute inset-0 transition-opacity duration-300 ${index === currentMediaIndex ? 'opacity-100' : 'opacity-0'}`}>
-                            {media.type === 'image' 
-                            ? <img src={media.url} alt={`Post by ${post.user.username}`} className="w-full h-full object-contain" />
-                            : <video src={media.url} controls className="w-full h-full object-contain" />
-                            }
-                        </div>
-                    ))}
+                <div className="w-full md:w-1/2 lg:w-3/5 aspect-square bg-black relative flex items-center justify-center overflow-hidden">
+                    <div className="flex transition-transform duration-500 ease-in-out h-full w-full" style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}>
+                        {post.media.map((media) => (
+                            <div key={media.id} className="w-full h-full flex-shrink-0">
+                                {media.type === 'image' 
+                                ? <img src={media.url} alt={`Post by ${post.user.username}`} className="w-full h-full object-contain" />
+                                : <video src={media.url} controls className="w-full h-full object-contain" />
+                                }
+                            </div>
+                        ))}
+                    </div>
                     {post.media.length > 1 && (
                         <>
-                            {currentMediaIndex > 0 && <button onClick={prevMedia} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 rounded-full p-1"><Icon className="w-5 h-5"><path d="M15.75 19.5L8.25 12l7.5-7.5" /></Icon></button>}
-                            {currentMediaIndex < post.media.length - 1 && <button onClick={nextMedia} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 rounded-full p-1"><Icon className="w-5 h-5"><path d="M8.25 4.5l7.5 7.5-7.5 7.5" /></Icon></button>}
+                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                                {post.media.map((_, index) => (
+                                    <button key={index} onClick={() => setCurrentMediaIndex(index)} className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentMediaIndex ? 'bg-white scale-125' : 'bg-white/40'}`}></button>
+                                ))}
+                            </div>
+                            {currentMediaIndex > 0 && <button onClick={prevMedia} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm rounded-full p-1 opacity-70 hover:opacity-100 transition-opacity"><Icon className="w-5 h-5"><path d="M15.75 19.5L8.25 12l7.5-7.5" /></Icon></button>}
+                            {currentMediaIndex < post.media.length - 1 && <button onClick={nextMedia} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm rounded-full p-1 opacity-70 hover:opacity-100 transition-opacity"><Icon className="w-5 h-5"><path d="M8.25 4.5l7.5 7.5-7.5 7.5" /></Icon></button>}
                         </>
                     )}
                 </div>

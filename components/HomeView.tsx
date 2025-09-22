@@ -37,12 +37,12 @@ interface HomeViewProps {
 const HomeView: React.FC<HomeViewProps> = (props) => {
   return (
     <div className="flex justify-center container mx-auto gap-8 lg:gap-16 xl:gap-24">
-       <div className="w-full max-w-xl md:max-w-2xl xl:max-w-3xl flex flex-col h-[calc(100vh-4rem)]">
+       <div className="w-full max-w-2xl md:max-w-3xl xl:max-w-4xl flex flex-col h-[calc(100vh-4rem)]">
         {/* Stories Section */}
         <div className="py-4 border-b border-gray-800">
           <div className="flex items-center space-x-4 overflow-x-auto pb-2 scrollbar-hide px-2 sm:px-4">
-             <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={props.onCreateStory}>
-                <div className="relative group w-28 h-40">
+             <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0 group" onClick={props.onCreateStory}>
+                <div className="relative group w-28 h-40 transform group-hover:scale-105 transition-transform duration-300">
                   <img src={props.currentUser.avatar} alt="Add story" className="w-full h-full rounded-xl object-cover" />
                   <div className="absolute inset-0 bg-black/30 rounded-xl"></div>
                   <div className="absolute bottom-2 -right-2 bg-red-600 rounded-full p-1 border-2 border-black">

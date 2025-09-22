@@ -14,9 +14,9 @@ const StoryBubble: React.FC<StoryBubbleProps> = ({ story, onView }) => {
   }
 
   return (
-    <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0" onClick={() => onView(story)}>
-      <div className="relative group">
-        <div className="w-28 h-40 rounded-xl p-0.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500">
+    <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0 group" onClick={() => onView(story)}>
+      <div className="relative transform group-hover:scale-105 transition-transform duration-300">
+        <div className="w-28 h-40 rounded-xl p-0.5 animate-gradient-pulse">
           <div className="bg-black rounded-[10px] p-0.5 h-full w-full">
             {firstStory.mediaType === 'video' ? (
               <video

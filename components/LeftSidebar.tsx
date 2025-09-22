@@ -59,14 +59,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = (props) => {
         <ul>
             {navItems.map(item => (
                 <li key={item.label}>
-                    <button onClick={item.action} className={`w-full flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800 transition-colors ${currentView === item.view ? 'font-bold bg-gray-800' : ''}`}>
+                    <button onClick={item.action} className={`w-full flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800 transition-all duration-200 hover:scale-105 ${currentView === item.view ? 'font-bold bg-gradient-to-r from-gray-800 to-gray-900' : ''}`}>
                         <Icon className="w-7 h-7">{item.icon}</Icon>
                         <span className="text-lg hidden lg:block">{item.label}</span>
                     </button>
                 </li>
             ))}
         </ul>
-        <button onClick={onCreatePost} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg lg:flex items-center justify-center">
+        <button onClick={onCreatePost} className="w-full bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg lg:flex items-center justify-center transition-all transform hover:scale-105">
             <span className="hidden lg:block">Post</span>
             <Icon className="w-7 h-7 block lg:hidden"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></Icon>
         </button>

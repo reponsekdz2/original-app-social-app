@@ -27,7 +27,7 @@
         background: radial-gradient(circle at 20% 20%, #D90429, transparent 30%),
                     radial-gradient(circle at 80% 70%, #2a2a2a, transparent 40%),
                     radial-gradient(circle at 50% 50%, #1a1a1a, #0a0a0a 70%);
-        animation: gradient-animation 25s ease-in-out infinite;
+        animation: gradient-animation 40s ease-in-out infinite;
       }
 
       /* Custom Scrollbar for Webkit browsers */
@@ -52,11 +52,20 @@
       }
 
       @keyframes gradient-animation {
-        0% { transform: translate(0, 0); }
-        25% { transform: translate(-25%, -25%); }
-        50% { transform: translate(0, -25%); }
-        75% { transform: translate(-25%, 0); }
-        100% { transform: translate(0, 0); }
+        0% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(-25%, -25%) rotate(90deg); }
+        50% { transform: translate(0, -25%) rotate(180deg); }
+        75% { transform: translate(-25%, 0) rotate(270deg); }
+        100% { transform: translate(0, 0) rotate(360deg); }
+      }
+
+      @keyframes gradient-pulse {
+        0%, 100% { background-size: 200% 200%; background-position: 0% 50%; }
+        50% { background-size: 200% 200%; background-position: 100% 50%; }
+      }
+      .animate-gradient-pulse {
+        background: linear-gradient(90deg, #D90429, #ef233c, #D90429);
+        animation: gradient-pulse 5s ease infinite;
       }
 
       @keyframes story-progress {

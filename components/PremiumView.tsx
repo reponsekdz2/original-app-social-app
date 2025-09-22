@@ -40,7 +40,7 @@ const PremiumView: React.FC<PremiumViewProps> = ({ testimonials, onSubscribe }) 
                 <span className="text-5xl font-bold">$95.99</span>
                 <span className="text-gray-400">/ year</span>
             </div>
-            <button onClick={onSubscribe} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg transition-transform hover:scale-105">
+            <button onClick={onSubscribe} className="w-full bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg transition-transform hover:scale-105">
                 Subscribe Now
             </button>
         </div>

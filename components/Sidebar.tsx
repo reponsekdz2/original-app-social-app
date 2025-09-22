@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <h3 className="font-extrabold text-xl mb-1">Subscribe to Premium</h3>
           <p className="text-sm text-gray-300 mb-3">Subscribe to unlock new features and if eligible, receive a share of ads revenue.</p>
-          <button onClick={() => onNavigate('premium')} className="bg-red-600 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-red-700 transition-colors">
+          <button onClick={() => onNavigate('premium')} className="bg-gradient-to-br from-red-600 to-red-800 text-white font-bold py-2 px-4 rounded-full text-sm hover:from-red-500 hover:to-red-700 transition-all transform hover:scale-105">
             Subscribe
           </button>
         </div>
@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
              </div>
           ))}
         </div>
-        <button onClick={() => onNavigate('activity')} className="w-full text-left p-4 text-red-500 hover:bg-gray-800/50 rounded-b-xl text-sm transition-colors">
+        <button onClick={() => onNavigate('activity')} className="w-full text-left p-4 text-red-500 hover:text-red-400 rounded-b-xl text-sm transition-all hover:bg-gray-800/50">
           Show more
         </button>
       </div>
@@ -100,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           ))}
         </div>
-        <button onClick={onShowTrends} className="w-full text-left p-4 text-red-500 hover:bg-gray-800/50 rounded-b-xl text-sm transition-colors">
+        <button onClick={onShowTrends} className="w-full text-left p-4 text-red-500 hover:text-red-400 rounded-b-xl text-sm transition-all hover:bg-gray-800/50">
           Show more
         </button>
       </div>
@@ -129,7 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           ))}
         </div>
-        <button onClick={onShowSuggestions} className="w-full text-left p-4 text-red-500 hover:bg-gray-800/50 rounded-b-xl text-sm transition-colors">
+        <button onClick={onShowSuggestions} className="w-full text-left p-4 text-red-500 hover:text-red-400 rounded-b-xl text-sm transition-all hover:bg-gray-800/50">
           Show more
         </button>
       </div>
@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
           </div>
-          <button onClick={() => onNavigate('messages')} className="w-full text-left p-4 text-red-500 hover:bg-gray-800/50 rounded-b-xl text-sm transition-colors">
+          <button onClick={() => onNavigate('messages')} className="w-full text-left p-4 text-red-500 hover:text-red-400 rounded-b-xl text-sm transition-all hover:bg-gray-800/50">
             View all in Messages
           </button>
         </div>

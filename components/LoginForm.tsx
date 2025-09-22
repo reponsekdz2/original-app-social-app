@@ -49,7 +49,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onForgotPassword 
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
           disabled={isLoading}
-          className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all focus:scale-105"
+          className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all focus:scale-[1.02]"
           required
         />
       </div>
@@ -61,7 +61,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onForgotPassword 
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
-          className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all focus:scale-105"
+          className="w-full bg-gray-800 border border-gray-700 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all focus:scale-[1.02]"
           required
         />
         <button
@@ -80,7 +80,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onForgotPassword 
       <button
         type="submit"
         disabled={isLoading || !identifier.trim() || !password.trim()}
-        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-700 disabled:cursor-not-allowed flex items-center justify-center"
+        className="w-full bg-gradient-to-br from-red-600 to-red-800 text-white font-bold py-3 rounded-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-700 disabled:cursor-not-allowed flex items-center justify-center disabled:bg-none"
       >
         {isLoading && (
           <div className="sk-chase mr-3" style={{ width: '20px', height: '20px' }}>
