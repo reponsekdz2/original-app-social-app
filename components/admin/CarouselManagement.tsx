@@ -85,7 +85,7 @@ const CarouselManagement: React.FC = () => {
             </div>
 
             {isLoading ? (
-                <p className="text-center text-gray-400">Loading images...</p>
+                 <div className="flex items-center justify-center p-8"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>
             ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {images.map(image => (

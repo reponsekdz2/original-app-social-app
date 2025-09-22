@@ -59,8 +59,13 @@ const TipModal: React.FC<TipModalProps> = ({ post, onClose, onSendTip }) => {
                     className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 pl-7 text-center font-bold text-lg"
                 />
             </div>
-            <button onClick={handleSendTip} disabled={isProcessing || amount <= 0} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-600">
-                {isProcessing ? 'Sending...' : `Send Tip of $${amount}`}
+            <button onClick={handleSendTip} disabled={isProcessing || amount <= 0} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-600 flex justify-center items-center">
+                {isProcessing ? (
+                    <div className="sk-chase" style={{ width: '20px', height: '20px' }}>
+                        <div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div>
+                        <div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div>
+                    </div>
+                ) : `Send Tip of $${amount}`}
             </button>
         </div>
       </div>

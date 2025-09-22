@@ -79,7 +79,7 @@ const ReportManagement: React.FC = () => {
                         ))}
                     </tbody>
                 </table>
-                 {isLoading && <p className="text-center py-4">Loading reports...</p>}
+                 {isLoading && <div className="flex items-center justify-center p-8"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>}
                  {!isLoading && reports.length === 0 && <p className="text-center py-4">No reports found.</p>}
             </div>
         </div>

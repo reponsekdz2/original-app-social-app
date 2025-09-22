@@ -63,7 +63,7 @@ const ContentManagement: React.FC = () => {
                     </div>
                 ))}
             </div>
-            {isLoading && <p className="text-center py-4">Loading content...</p>}
+            {isLoading && <div className="flex items-center justify-center p-8"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>}
             {!isLoading && content.length === 0 && <p className="text-center py-4">No {contentType} found.</p>}
         </div>
     );

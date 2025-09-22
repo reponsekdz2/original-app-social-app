@@ -107,7 +107,7 @@ const SupportTicketManagement: React.FC = () => {
                     </div>
                 ))}
             </div>
-            {isLoading && <p className="text-center py-4">Loading tickets...</p>}
+            {isLoading && <div className="flex items-center justify-center p-8"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>}
             {!isLoading && tickets.length === 0 && <p className="text-center py-4">No support tickets found.</p>}
             
             {selectedTicket && <TicketDetailsModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} onReply={handleReply}/>}

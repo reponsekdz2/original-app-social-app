@@ -79,8 +79,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
           </div>
           <div className="pt-2">
-            <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-700 disabled:cursor-not-allowed" disabled={!canSubmit || isLoading}>
-              {isLoading ? 'Changing...' : 'Change Password'}
+            <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-700 disabled:cursor-not-allowed flex items-center justify-center" disabled={!canSubmit || isLoading}>
+              {isLoading ? (
+                  <div className="sk-chase" style={{ width: '20px', height: '20px' }}>
+                      <div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div>
+                      <div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div>
+                  </div>
+              ) : 'Change Password'}
             </button>
           </div>
         </form>

@@ -128,7 +128,7 @@ const UserManagement: React.FC = () => {
                         ))}
                     </tbody>
                 </table>
-                 {isLoading && <p className="text-center py-4">Loading users...</p>}
+                 {isLoading && <div className="flex items-center justify-center p-8"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>}
                  {!isLoading && filteredUsers.length === 0 && <p className="text-center py-4">No users found.</p>}
             </div>
         </div>
