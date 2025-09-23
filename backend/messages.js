@@ -9,7 +9,7 @@ export default (upload) => {
     router.get('/conversations', isAuthenticated, async (req, res) => {
         try {
             const [conversations] = await pool.query(`
-                SELECT c.* FROM conversations c
+                SELECT c.*, c.group_name as name FROM conversations c
                 JOIN conversation_participants cp ON c.id = cp.conversation_id
                 WHERE cp.user_id = ?
                 ORDER BY (SELECT MAX(created_at) FROM messages WHERE conversation_id = c.id) DESC
@@ -24,10 +24,14 @@ export default (upload) => {
                 convo.participants = participants;
 
                 const [messages] = await pool.query(`
-                    SELECT m.*, m.sender_id as senderId, m.message_type as type, m.created_at as timestamp 
+                    SELECT m.*, m.sender_id as senderId, m.message_type as type, m.created_at as timestamp, m.file_attachment 
                     FROM messages m 
                     WHERE m.conversation_id = ? ORDER BY m.created_at ASC`, [convo.id]);
-                convo.messages = messages;
+                
+                convo.messages = messages.map(m => ({
+                    ...m,
+                    fileAttachment: m.file_attachment ? JSON.parse(m.file_attachment) : null
+                }));
             }
 
             res.json(conversations);
@@ -43,8 +47,22 @@ export default (upload) => {
         const senderId = req.session.userId;
 
         let finalContent = content;
+        let fileAttachment = null;
+
         if (req.file) {
-            finalContent = `/uploads/${req.file.filename}`;
+            const fileUrl = `/uploads/${req.file.filename}`;
+            if (type === 'file') {
+                fileAttachment = JSON.stringify({
+                    fileName: req.file.originalname,
+                    fileSize: req.file.size,
+                    fileUrl: fileUrl,
+                    fileType: req.file.mimetype,
+                });
+                finalContent = "File Attachment"; 
+            } else {
+                // For images, etc.
+                finalContent = fileUrl;
+            }
         }
         
         const connection = await pool.getConnection();
@@ -81,17 +99,29 @@ export default (upload) => {
             }
 
             const [result] = await connection.query(
-                'INSERT INTO messages (conversation_id, sender_id, content, message_type, shared_content_id) VALUES (?, ?, ?, ?, ?)',
-                [convoId, senderId, finalContent, type, sharedId]
+                'INSERT INTO messages (conversation_id, sender_id, content, message_type, shared_content_id, file_attachment) VALUES (?, ?, ?, ?, ?, ?)',
+                [convoId, senderId, finalContent, type, sharedId, fileAttachment]
             );
             
             await connection.commit();
 
-            const [newMessage] = await pool.query('SELECT *, sender_id as senderId, message_type as type, created_at as timestamp FROM messages WHERE id = ?', [result.insertId]);
+            const [[newMessageData]] = await pool.query('SELECT *, conversation_id, sender_id as senderId, message_type as type, created_at as timestamp, file_attachment FROM messages WHERE id = ?', [result.insertId]);
 
-            // Real-time notification via Socket.IO would happen here
+            const newMessage = {
+                ...newMessageData,
+                fileAttachment: newMessageData.file_attachment ? JSON.parse(newMessageData.file_attachment) : null,
+            };
+            delete newMessage.file_attachment;
+
+
+            // Real-time notification via Socket.IO
+            const io = req.app.get('io');
+            const [participants] = await pool.query('SELECT user_id FROM conversation_participants WHERE conversation_id = ? AND user_id != ?', [convoId, senderId]);
+            participants.forEach(participant => {
+                io.to(participant.user_id).emit('receive_message', newMessage);
+            });
             
-            res.status(201).json(newMessage[0]);
+            res.status(201).json(newMessage);
 
         } catch (error) {
             await connection.rollback();
@@ -126,7 +156,7 @@ export default (upload) => {
             await connection.commit();
             
             // Fetch the newly created group to return it
-            const [newGroupData] = await pool.query('SELECT * FROM conversations WHERE id = ?', [convoId]);
+            const [newGroupData] = await pool.query('SELECT *, group_name as name FROM conversations WHERE id = ?', [convoId]);
             const newGroup = newGroupData[0];
             const [participants] = await pool.query('SELECT id, username, name, avatar_url FROM users WHERE id IN (?)', [allParticipantIds]);
             newGroup.participants = participants;

@@ -44,6 +44,9 @@ const io = new Server(server, {
   }
 });
 
+// Make io accessible to our routes
+app.set('io', io);
+
 const MySQLStoreSession = MySQLStore(session);
 const sessionStore = new MySQLStoreSession({}, pool);
 

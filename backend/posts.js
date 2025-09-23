@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
@@ -124,6 +125,54 @@ export default (upload) => {
             res.status(500).json({ message: 'Internal server error' });
         }
     });
+    
+    // POST /api/posts/:id/tip
+    router.post('/:id/tip', isAuthenticated, async (req, res) => {
+        const { amount } = req.body;
+        const postId = req.params.id;
+        const senderId = req.session.userId;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ message: "Invalid tip amount." });
+        }
+        
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            const [[sender]] = await connection.query('SELECT wallet_balance FROM users WHERE id = ? FOR UPDATE', [senderId]);
+            if (sender.wallet_balance < amount) {
+                await connection.rollback();
+                return res.status(400).json({ message: "Insufficient funds." });
+            }
+            
+            const [[post]] = await connection.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
+            const receiverId = post.user_id;
+
+            if(senderId === receiverId) {
+                await connection.rollback();
+                return res.status(400).json({ message: "You cannot tip yourself." });
+            }
+
+            await connection.query('UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?', [amount, senderId]);
+            await connection.query('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?', [amount, receiverId]);
+            await connection.query(
+                'INSERT INTO transactions (sender_id, receiver_id, post_id, amount, type) VALUES (?, ?, ?, ?, ?)',
+                [senderId, receiverId, postId, amount, 'tip']
+            );
+
+            await connection.commit();
+            res.json({ message: `Successfully tipped $${amount}`});
+
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error sending tip:', error);
+            res.status(500).json({ message: 'Failed to send tip.' });
+        } finally {
+            connection.release();
+        }
+    });
+
 
     return router;
 };

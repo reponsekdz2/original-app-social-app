@@ -1,4 +1,5 @@
-import type { User, Post, Story, Reel, Conversation, Message, AdminStats, AnalyticsData, Report, SupportTicket, SponsoredContent, TrendingTopic, AuthCarouselImage, Announcement, AccountStatusInfo } from '../types.ts';
+
+import type { User, Post, Story, Reel, Conversation, Message, AdminStats, AnalyticsData, Report, SupportTicket, SponsoredContent, TrendingTopic, AuthCarouselImage, Announcement, AccountStatusInfo, LiveStream } from '../types.ts';
 
 const apiRequest = async (method: string, path: string, body?: any, isFormData = false) => {
     const options: RequestInit = {
@@ -66,11 +67,17 @@ export const togglePostLike = (postId: string) => apiRequest('POST', `/posts/${p
 export const togglePostSave = (postId: string) => apiRequest('POST', `/posts/${postId}/save`);
 export const addComment = (postId: string, text: string) => apiRequest('POST', '/comments', { postId, text });
 export const followUser = (userId: string) => apiRequest('POST', `/users/${userId}/follow`);
+export const sendTip = (postId: string, amount: number) => apiRequest('POST', `/posts/${postId}/tip`, { amount });
 
 // --- Content Creation ---
 export const createPost = (formData: FormData) => apiRequest('POST', '/posts', formData, true);
 export const createReel = (formData: FormData) => apiRequest('POST', '/reels', formData, true);
 export const createStory = (formData: FormData) => apiRequest('POST', '/stories', formData, true);
+
+// --- Live Streaming ---
+export const getLiveStreams = (): Promise<LiveStream[]> => apiRequest('GET', '/livestreams');
+export const startStream = (title: string): Promise<LiveStream> => apiRequest('POST', '/livestreams', { title });
+export const endStream = (streamId: string) => apiRequest('POST', `/livestreams/${streamId}/end`);
 
 // --- Messaging ---
 export const getConversations = (): Promise<Conversation[]> => apiRequest('GET', '/messages/conversations');

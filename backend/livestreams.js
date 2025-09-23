@@ -42,8 +42,28 @@ router.post('/', isAuthenticated, async (req, res) => {
             'INSERT INTO livestreams (user_id, title, status) VALUES (?, ?, ?)',
             [req.session.userId, title || 'Live Stream', 'live']
         );
-        const [streamData] = await pool.query('SELECT * FROM livestreams WHERE id = ?', [result.insertId]);
-        res.status(201).json(streamData[0]);
+        const [[streamData]] = await pool.query(`
+            SELECT 
+                ls.id, ls.title, ls.started_at, ls.status,
+                u.id as user_id, u.username, u.avatar_url
+            FROM livestreams ls
+            JOIN users u ON ls.user_id = u.id
+            WHERE ls.id = ?
+        `, [result.insertId]);
+        
+        const formattedStream = {
+             id: streamData.id,
+            title: streamData.title,
+            started_at: streamData.started_at,
+            status: streamData.status,
+            user: {
+                id: streamData.user_id,
+                username: streamData.username,
+                avatar_url: streamData.avatar_url
+            }
+        }
+
+        res.status(201).json(formattedStream);
     } catch (error) {
          res.status(500).json({ message: "Internal server error" });
     }

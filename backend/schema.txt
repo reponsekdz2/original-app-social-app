@@ -1,4 +1,3 @@
-
 -- Users Table: Core of the application
 CREATE TABLE `users` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
@@ -156,6 +155,7 @@ CREATE TABLE `messages` (
   `content` TEXT,
   `message_type` ENUM('text','image','sticker','voicenote','share_post','share_reel', 'file') NOT NULL DEFAULT 'text',
   `shared_content_id` VARCHAR(36) DEFAULT NULL,
+  `file_attachment` JSON DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -182,6 +182,20 @@ CREATE TABLE `livestreams` (
   `status` ENUM('live','ended') NOT NULL DEFAULT 'live',
   `started_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Transactions Table
+CREATE TABLE `transactions` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `sender_id` VARCHAR(36) NOT NULL,
+  `receiver_id` VARCHAR(36) NOT NULL,
+  `post_id` VARCHAR(36) DEFAULT NULL,
+  `amount` DECIMAL(10, 2) NOT NULL,
+  `type` ENUM('tip', 'purchase') NOT NULL DEFAULT 'tip',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE SET NULL
 );
 
 -- Reports Table

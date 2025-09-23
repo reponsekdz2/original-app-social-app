@@ -1,4 +1,3 @@
-
 // This is a mock WebRTC Manager. In a real application, this would contain
 // complex logic for setting up peer-to-peer connections using WebRTC.
 
@@ -7,51 +6,61 @@ class WebRTCManager {
     peerConnection: RTCPeerConnection | null = null;
     
     constructor() {
-        console.log("WebRTCManager initialized (mock)");
+        console.log("WebRTCManager initialized");
     }
 
-    private async getLocalStream() {
-        if (!this.localStream) {
-            this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    async getLocalStream(video: boolean, audio: boolean): Promise<MediaStream | null> {
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => track.stop());
         }
-        return this.localStream;
+        try {
+            this.localStream = await navigator.mediaDevices.getUserMedia({ video, audio });
+            return this.localStream;
+        } catch (error) {
+            console.error("Error accessing media devices.", error);
+            alert("Could not access camera/microphone. Please check permissions.");
+            return null;
+        }
     }
 
-    async startCall(userId: string) {
-        console.log(`Starting call with ${userId} (mock)`);
-        await this.getLocalStream();
-        // Here you would create a peer connection, add tracks, create an offer,
-        // and send it to the other user via your signaling server (e.g., WebSockets).
+    startCall(userId: string) {
+        console.log(`Starting call with ${userId}`);
+        // In a real app, you would create a peer connection, get the local stream,
+        // add tracks, create an offer, and send it via a signaling server.
     }
 
-    async answerCall() {
-        console.log(`Answering call (mock)`);
-        await this.getLocalStream();
-        // Here you would handle an incoming offer, create an answer, set descriptions,
-        // and send the answer back.
+    answerCall() {
+        console.log(`Answering call`);
+        // In a real app, you would handle an incoming offer, set up the peer connection,
+        // get local stream, add tracks, and create and send an answer.
     }
 
     hangUp() {
-        console.log(`Hanging up (mock)`);
-        if (this.localStream) {
-            this.localStream.getTracks().forEach(track => track.stop());
-            this.localStream = null;
-        }
+        console.log(`Hanging up`);
+        this.stopStream();
         if (this.peerConnection) {
             this.peerConnection.close();
             this.peerConnection = null;
         }
     }
 
+    stopStream() {
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => track.stop());
+            this.localStream = null;
+            console.log("Local stream stopped.");
+        }
+    }
+
     toggleMute(isMuted: boolean) {
-        console.log(`Toggling mute to: ${isMuted} (mock)`);
+        console.log(`Toggling mute to: ${isMuted}`);
         if(this.localStream) {
             this.localStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
         }
     }
 
     toggleVideo(isVideoOff: boolean) {
-        console.log(`Toggling video to: ${!isVideoOff} (mock)`);
+        console.log(`Toggling video to: ${!isVideoOff}`);
         if(this.localStream) {
             this.localStream.getVideoTracks().forEach(track => track.enabled = !isVideoOff);
         }

@@ -4,7 +4,6 @@ import type { Message, User, SharedContent, FileAttachment, Reaction } from '../
 import Icon from './Icon.tsx';
 import VoicenoteMessage from './VoicenoteMessage.tsx';
 import EmojiPicker from './EmojiPicker.tsx';
-import { formatTimestamp } from './utils.tsx';
 
 interface MessageProps {
   message: Message;

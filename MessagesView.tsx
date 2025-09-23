@@ -47,45 +47,45 @@ const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, onNavigate, on
         fetchData();
     }, []);
   
-  const updateConversationWithMessage = useCallback((conversationId: string, message: Message) => {
+  const updateConversationWithMessage = useCallback((newMessage: Message) => {
+    if (!newMessage.conversation_id) return;
+    const conversationId = newMessage.conversation_id;
+
+    const updateFn = (convo: Conversation) => {
+        if (convo.id === conversationId) {
+            // Avoid duplicating messages
+            if (convo.messages.some(m => m.id === newMessage.id)) return convo;
+            return { ...convo, messages: [...convo.messages, newMessage] };
+        }
+        return convo;
+    };
+
     setConversations(prev => {
         const convoExists = prev.some(c => c.id === conversationId);
-        if (!convoExists) {
-            // This could happen if a new conversation is started by the other user.
-            // We'd ideally fetch the new conversation details here.
-            // For now, we'll log it and wait for a manual refresh.
-            console.warn(`Received message for an unknown conversation: ${conversationId}`);
+        if(!convoExists) {
+            // If convo is new, we should refetch, but for now we'll ignore it to avoid complexity
+            console.warn("New message for a conversation not in the current list. Refetch might be needed.");
             return prev;
         }
-
-        return prev.map(convo => {
-            if (convo.id === conversationId) {
-                // Avoid duplicating messages
-                if (convo.messages.some(m => m.id === message.id)) {
-                    return convo;
-                }
-                const updatedMessages = [...convo.messages, message];
-                return { ...convo, messages: updatedMessages };
-            }
-            return convo;
-        }).sort((a, b) => {
+        const updatedList = prev.map(updateFn).sort((a, b) => {
             const lastMsgA = a.messages[a.messages.length - 1];
             const lastMsgB = b.messages[b.messages.length - 1];
             if (!lastMsgA) return 1;
             if (!lastMsgB) return -1;
             return new Date(lastMsgB.timestamp).getTime() - new Date(lastMsgA.timestamp).getTime();
         });
+        return updatedList;
     });
+
+    setSelectedConversation(prev => (prev && prev.id === conversationId ? updateFn(prev) : prev));
 
 }, []);
   
   useEffect(() => {
     const handleNewMessage = (newMessage: Message) => {
-        if (newMessage.conversation_id) {
-            updateConversationWithMessage(newMessage.conversation_id, newMessage);
-            if (newMessage.senderId !== currentUser.id) {
-                 messageAudioRef.current?.play().catch(e => console.error("Message sound play failed", e));
-            }
+        if (newMessage.senderId !== currentUser.id) {
+            updateConversationWithMessage(newMessage);
+            messageAudioRef.current?.play().catch(e => console.error("Message sound play failed", e));
         }
     };
 
@@ -131,13 +131,13 @@ const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, onNavigate, on
         if (isTempConvo && newMessage.conversation_id) {
             // The first message was sent, a real conversation now exists.
             // Replace the temporary conversation with the real one.
-            const realConvo = await api.getConversations().then(convos => convos.find(c => c.id === newMessage.conversation_id));
-            if (realConvo) {
-                setConversations(prev => [realConvo, ...prev.filter(c => c.id !== selectedConversation.id)]);
-                setSelectedConversation(realConvo);
-            }
+            const newConversations = await api.getConversations();
+            setConversations(newConversations);
+            const newSelected = newConversations.find(c => c.id === newMessage.conversation_id);
+            setSelectedConversation(newSelected || null);
+
         } else if(newMessage.conversation_id) {
-             updateConversationWithMessage(newMessage.conversation_id, newMessage);
+             updateConversationWithMessage(newMessage);
         }
     } catch(error) {
         console.error("Failed to send message:", error);
