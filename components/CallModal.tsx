@@ -8,9 +8,10 @@ interface CallModalProps {
   status: 'calling' | 'connected';
   type: 'video' | 'audio';
   onHangUp: () => void;
+  remoteStream: MediaStream | null;
 }
 
-const CallModal: React.FC<CallModalProps> = ({ user, status, type, onHangUp }) => {
+const CallModal: React.FC<CallModalProps> = ({ user, status, type, onHangUp, remoteStream }) => {
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(type === 'audio');
     const [callDuration, setCallDuration] = useState(0);
@@ -28,19 +29,16 @@ const CallModal: React.FC<CallModalProps> = ({ user, status, type, onHangUp }) =
     }, [status]);
     
     useEffect(() => {
-        const startStream = async () => {
-            const stream = await webRTCManager.getLocalStream(!isVideoOff, true);
-            if (localVideoRef.current && stream) {
-                localVideoRef.current.srcObject = stream;
-            }
-        };
-        startStream();
+        // Attach the local stream to the local video element
+        if (localVideoRef.current && webRTCManager.localStream) {
+            localVideoRef.current.srcObject = webRTCManager.localStream;
+        }
 
-        // Cleanup stream on component unmount
-        return () => {
-            webRTCManager.stopStream();
-        };
-    }, [isVideoOff]);
+        // Attach the remote stream to the remote video element
+        if (remoteVideoRef.current && remoteStream) {
+            remoteVideoRef.current.srcObject = remoteStream;
+        }
+    }, [webRTCManager.localStream, remoteStream]);
     
     const handleToggleMute = () => {
         const newMutedState = !isMuted;
@@ -60,27 +58,29 @@ const CallModal: React.FC<CallModalProps> = ({ user, status, type, onHangUp }) =
         const secs = (seconds % 60).toString().padStart(2, '0');
         return `${mins}:${secs}`;
     };
+    
+    const showRemoteVideo = status === 'connected' && remoteStream && type === 'video';
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center text-white p-4">
+    <div className="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white p-4">
         {/* Remote user video (or avatar) */}
         <div className="absolute inset-0 flex items-center justify-center">
-            {status === 'connected' ? (
+            {showRemoteVideo ? (
                  <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
             ) : (
-                <>
-                    <img src={user.avatar_url} alt={user.username} className="w-48 h-48 rounded-full border-4 border-gray-600 opacity-50" />
-                    <div className="absolute text-center">
+                <div className="flex flex-col items-center">
+                    <img src={user.avatar_url} alt={user.username} className="w-48 h-48 rounded-full border-4 border-gray-600 opacity-50 mb-4" />
+                    <div className="text-center">
                         <p className="text-2xl font-bold">{user.username}</p>
-                        <p className="text-lg text-gray-400">{status === 'calling' ? 'Calling...' : 'Connecting...'}</p>
+                        <p className="text-lg text-gray-400">{status === 'calling' ? 'Calling...' : status === 'connected' ? 'Connected' : 'Connecting...'}</p>
                     </div>
-                </>
+                </div>
             )}
         </div>
 
-      <div className="absolute top-4 left-4 text-left z-10">
-          <h2 className="text-2xl font-bold">In call with {user.username}</h2>
-          <p className="text-gray-400">{formatDuration(callDuration)}</p>
+      <div className="absolute top-4 left-4 text-left z-10 bg-black/30 p-2 rounded-lg">
+          <h2 className="text-xl font-bold">In call with {user.username}</h2>
+          <p className="text-gray-300">{formatDuration(callDuration)}</p>
       </div>
 
        {/* Local user video preview */}
@@ -89,7 +89,7 @@ const CallModal: React.FC<CallModalProps> = ({ user, status, type, onHangUp }) =
             autoPlay 
             playsInline 
             muted 
-            className={`absolute bottom-28 right-4 w-32 h-48 object-cover rounded-lg border-2 border-gray-500 z-20 ${isVideoOff ? 'hidden' : 'block'}`} 
+            className={`absolute bottom-28 right-4 w-32 h-48 object-cover rounded-lg border-2 border-gray-500 z-20 transition-opacity ${isVideoOff || type === 'audio' ? 'opacity-0' : 'opacity-100'}`} 
         />
     
       <div className="absolute bottom-10 flex items-center gap-6 z-10">
@@ -101,7 +101,7 @@ const CallModal: React.FC<CallModalProps> = ({ user, status, type, onHangUp }) =
         </button>
          <button onClick={handleToggleVideo} disabled={type === 'audio'} className={`p-4 rounded-full ${isVideoOff ? 'bg-red-500' : 'bg-gray-700/80'} ${type === 'audio' ? 'opacity-50 cursor-not-allowed' : ''}`}>
             <Icon className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.053v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
                  {isVideoOff && <path d="M4 4l16 16" strokeWidth="2" />}
             </Icon>
         </button>

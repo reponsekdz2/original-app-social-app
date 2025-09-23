@@ -1,145 +1,160 @@
+// services/apiService.ts
 
-import type { User, Post, Story, Reel, Conversation, Message, AdminStats, AnalyticsData, Report, SupportTicket, SponsoredContent, TrendingTopic, AuthCarouselImage, Announcement, AccountStatusInfo, LiveStream } from '../types.ts';
+import type {
+  User,
+  Post,
+  Story,
+  Reel,
+  Conversation,
+  Message,
+  Notification,
+  AdminStats,
+  AnalyticsData,
+  TrendingTopic,
+  SponsoredContent,
+  FeedActivity,
+  AuthCarouselImage,
+  SupportTicket,
+  Report,
+  Announcement,
+  AccountStatusInfo,
+  LiveStream,
+  StoryItem,
+} from '../types.ts';
 
-const apiRequest = async (method: string, path: string, body?: any, isFormData = false) => {
-    const options: RequestInit = {
-        method,
-        credentials: 'include', // Important for sessions
-    };
+const API_BASE_URL = '/api';
 
-    if (body) {
-        if (isFormData) {
-            options.body = body; // body is already a FormData object
-        } else {
-            options.headers = { 'Content-Type': 'application/json' };
-            options.body = JSON.stringify(body);
-        }
-    }
-    
-    // In a real dev environment, you might have a full URL like http://localhost:3001
-    const baseUrl = '/api'; 
+async function fetchWrapper<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const defaultHeaders: HeadersInit = {};
+  if (!(options.body instanceof FormData)) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
 
-    try {
-        const response = await fetch(`${baseUrl}${path}`, options);
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: `An unknown error occurred. Status: ${response.status}` }));
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-        }
-        
-        if (response.status === 204) {
-            return null;
-        }
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
 
-        return response.json();
-    } catch (error) {
-        console.error(`API request failed: ${method} ${path}`, error);
-        throw error;
-    }
-};
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return null as T;
+  }
+
+  return response.json();
+}
+
+// Auth
+export const login = (username: string, password: string): Promise<{ user: User }> => fetchWrapper('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+export const register = (username: string, email: string, password: string): Promise<{ user: User }> => fetchWrapper('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password }) });
+export const logout = (): Promise<void> => fetchWrapper('/auth/logout', { method: 'POST' });
+export const getSession = (): Promise<{ user: User }> => fetchWrapper('/auth/session');
+
+// Posts
+export const getPosts = (): Promise<Post[]> => fetchWrapper('/posts');
+export const createPost = (formData: FormData): Promise<Post> => fetchWrapper('/posts', { method: 'POST', body: formData });
+export const togglePostLike = (postId: string): Promise<{ likes: number }> => fetchWrapper(`/posts/${postId}/like`, { method: 'POST' });
+export const togglePostSave = (postId: string): Promise<{ isSaved: boolean }> => fetchWrapper(`/posts/${postId}/save`, { method: 'POST' });
+export const addPostComment = (postId: string, text: string): Promise<Comment> => fetchWrapper(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+export const getPostById = (postId: string): Promise<Post> => fetchWrapper(`/posts/${postId}`);
+export const editPost = (postId: string, caption: string, location: string): Promise<Post> => fetchWrapper(`/posts/${postId}`, { method: 'PUT', body: JSON.stringify({ caption, location }) });
+export const deletePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}`, { method: 'DELETE' });
+export const archivePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}/archive`, { method: 'POST' });
+export const unarchivePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}/unarchive`, { method: 'POST' });
 
 
-// --- Auth ---
-export const login = (username, password) => apiRequest('POST', '/auth/login', { username, password });
-export const register = (username, email, password) => apiRequest('POST', '/auth/register', { username, email, password });
-export const logout = () => apiRequest('POST', '/auth/logout');
-export const checkSession = () => apiRequest('GET', '/auth/session');
+// Reels
+export const getReels = (): Promise<Reel[]> => fetchWrapper('/reels');
+export const createReel = (formData: FormData): Promise<Reel> => fetchWrapper('/reels', { method: 'POST', body: formData });
 
-// --- Data Fetching ---
-export const getPosts = (): Promise<Post[]> => apiRequest('GET', '/posts/feed');
-export const getStories = (): Promise<Story[]> => apiRequest('GET', '/stories');
-export const getReels = (): Promise<Reel[]> => apiRequest('GET', '/reels');
-export const getAllUsers = (): Promise<User[]> => apiRequest('GET', '/users');
-export const getCarouselImages = (): Promise<AuthCarouselImage[]> => apiRequest('GET', '/misc/carousel');
-export const getStickers = async (): Promise<string[]> => {
-    // This isn't in the backend, so we mock it.
-    return Promise.resolve([
-        '/uploads/assets/stickers/sticker1.png',
-        '/uploads/assets/stickers/sticker2.png',
-        '/uploads/assets/stickers/sticker3.png',
-    ]);
-};
-export const getBlockedUsers = (): Promise<User[]> => apiRequest('GET', '/users/blocked'); // Assuming this endpoint exists
-export const getAccountStatus = (): Promise<AccountStatusInfo> => apiRequest('GET', '/users/account-status'); // Assuming this endpoint exists
+// Stories
+export const getStories = (): Promise<Story[]> => fetchWrapper('/stories');
+export const createStory = (formData: FormData): Promise<{ message: string }> => fetchWrapper('/stories', { method: 'POST', body: formData });
+export const getUserArchivedStories = (): Promise<StoryItem[]> => fetchWrapper('/users/me/stories/archived');
+export const createHighlight = (title: string, storyIds: string[]): Promise<void> => fetchWrapper('/users/me/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
 
-// --- Interactions ---
-export const togglePostLike = (postId: string) => apiRequest('POST', `/posts/${postId}/like`);
-export const togglePostSave = (postId: string) => apiRequest('POST', `/posts/${postId}/save`);
-export const addComment = (postId: string, text: string) => apiRequest('POST', '/comments', { postId, text });
-export const followUser = (userId: string) => apiRequest('POST', `/users/${userId}/follow`);
-export const sendTip = (postId: string, amount: number) => apiRequest('POST', `/posts/${postId}/tip`, { amount });
+// Users
+export const getAllUsers = (): Promise<User[]> => fetchWrapper('/users');
+export const getUserProfile = (username: string): Promise<User> => fetchWrapper(`/users/${username}`);
+export const followUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/follow`, { method: 'POST' });
+export const unfollowUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/unfollow`, { method: 'POST' });
+export const updateProfile = (data: { name: string; bio: string; website: string; gender: string }): Promise<User> => fetchWrapper('/users/me', { method: 'PUT', body: JSON.stringify(data) });
+export const getBlockedUsers = (): Promise<User[]> => fetchWrapper('/users/me/blocked');
+export const blockUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/block`, { method: 'POST' });
+export const unblockUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/unblock`, { method: 'POST' });
+export const muteUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/mute`, { method: 'POST' });
+export const unmuteUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/unmute`, { method: 'POST' });
+export const getSuggestedUsers = (): Promise<User[]> => fetchWrapper('/users/suggestions');
 
-// --- Content Creation ---
-export const createPost = (formData: FormData) => apiRequest('POST', '/posts', formData, true);
-export const createReel = (formData: FormData) => apiRequest('POST', '/reels', formData, true);
-export const createStory = (formData: FormData) => apiRequest('POST', '/stories', formData, true);
+// Messages
+export const getConversations = (): Promise<Conversation[]> => fetchWrapper('/messages/conversations');
+export const sendMessage = (content: string | File, type: Message['type'], conversationId?: string, recipientId?: string, sharedContentId?: string, sharedContentType?: 'post' | 'reel'): Promise<Message> => {
+    const formData = new FormData();
+    formData.append('type', type);
+    if (conversationId) formData.append('conversationId', conversationId);
+    if (recipientId) formData.append('recipientId', recipientId);
+    if (sharedContentId) formData.append('sharedContentId', sharedContentId);
+    if (sharedContentType) formData.append('sharedContentType', sharedContentType);
 
-// --- Live Streaming ---
-export const getLiveStreams = (): Promise<LiveStream[]> => apiRequest('GET', '/livestreams');
-export const startStream = (title: string): Promise<LiveStream> => apiRequest('POST', '/livestreams', { title });
-export const endStream = (streamId: string) => apiRequest('POST', `/livestreams/${streamId}/end`);
-
-// --- Messaging ---
-export const getConversations = (): Promise<Conversation[]> => apiRequest('GET', '/messages/conversations');
-export const sendMessage = (
-    content: string | File, 
-    type: Message['type'], 
-    conversationId?: string, 
-    recipientId?: string,
-    sharedContentId?: string,
-    sharedContentType?: 'post' | 'reel'
-): Promise<Message> => {
     if (typeof content === 'string') {
-        return apiRequest('POST', '/messages', { content, type, conversationId, recipientId, sharedContentId, sharedContentType });
+        formData.append('content', content);
     } else {
-        const formData = new FormData();
         formData.append('media', content);
-        formData.append('type', type);
-        if (conversationId) formData.append('conversationId', conversationId);
-        if (recipientId) formData.append('recipientId', recipientId);
-        return apiRequest('POST', '/messages', formData, true);
     }
+
+    return fetchWrapper('/messages', { method: 'POST', body: formData });
 };
-export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => apiRequest('POST', '/messages/conversations/group', { name, userIds });
-export const addMessageReaction = (messageId: string, emoji: string) => apiRequest('POST', `/messages/${messageId}/react`, { emoji }); // Assuming endpoint
-export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>) => apiRequest('PUT', `/messages/conversations/${conversationId}/settings`, { settings }); // Assuming endpoint
+export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => fetchWrapper('/messages/conversations/group', { method: 'POST', body: JSON.stringify({ name, userIds }) });
+export const addMessageReaction = (messageId: string, emoji: string): Promise<void> => fetchWrapper(`/messages/${messageId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) });
+export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => fetchWrapper(`/messages/conversations/${conversationId}/settings`, { method: 'PUT', body: JSON.stringify(settings) });
 
-// --- Admin ---
-export const getAdminStats = (): Promise<AdminStats> => apiRequest('GET', '/admin/stats');
-export const getAdminUserGrowthData = (): Promise<AnalyticsData> => apiRequest('GET', '/admin/analytics/user-growth'); // Assuming endpoint
-export const getAdminContentTrendsData = (): Promise<any> => apiRequest('GET', '/admin/analytics/content-trends'); // Assuming endpoint
-export const getAdminUsers = (searchTerm: string): Promise<User[]> => apiRequest('GET', `/admin/users?search=${searchTerm}`);
-export const updateAdminUser = (userId: string, updates: any) => apiRequest('PUT', `/admin/users/${userId}`, updates);
-export const issueUserWarning = (userId: string, reason: string) => apiRequest('POST', `/admin/users/${userId}/warn`, { reason }); // Assuming endpoint
-export const deleteAdminUser = (userId: string) => apiRequest('DELETE', `/admin/users/${userId}`);
 
-export const getAdminContent = (type: 'posts' | 'reels'): Promise<any[]> => apiRequest('GET', `/admin/content/${type}`); // Assuming endpoint
-export const deleteAdminContent = (type: string, id: string) => apiRequest('DELETE', `/admin/content/${type}/${id}`); // Assuming endpoint
+// Misc
+export const getSponsoredContent = (): Promise<SponsoredContent[]> => fetchWrapper('/misc/sponsored');
+export const getTrendingTopics = (): Promise<TrendingTopic[]> => fetchWrapper('/misc/trending');
+export const getFeedActivity = (): Promise<FeedActivity[]> => fetchWrapper('/misc/feed-activity');
+export const getStickers = (): Promise<string[]> => fetchWrapper('/misc/stickers');
+export const getCarouselImages = (): Promise<AuthCarouselImage[]> => fetchWrapper('/misc/carousel');
+export const getActiveAnnouncement = (): Promise<Announcement | null> => fetchWrapper('/misc/announcements/active');
+export const getAccountStatus = (): Promise<AccountStatusInfo> => fetchWrapper('/misc/account-status');
+export const getLiveStreams = (): Promise<LiveStream[]> => fetchWrapper('/livestreams');
+export const startLiveStream = (title: string): Promise<LiveStream> => fetchWrapper('/livestreams', { method: 'POST', body: JSON.stringify({ title }) });
+export const endLiveStream = (streamId: string): Promise<void> => fetchWrapper(`/livestreams/${streamId}/end`, { method: 'POST' });
+export const submitReport = (content: Post | User, reason: string, details: string): Promise<void> => fetchWrapper('/reports', { method: 'POST', body: JSON.stringify({ content, reason, details }) });
 
-export const getAdminReports = (): Promise<Report[]> => apiRequest('GET', '/admin/reports');
-export const updateAdminReportStatus = (reportId: number, status: Report['status']) => apiRequest('PUT', `/admin/reports/${reportId}`, { status });
 
-export const getAdminSupportTickets = (): Promise<SupportTicket[]> => apiRequest('GET', '/admin/support'); // Assuming endpoint
-export const getAdminSupportTicketDetails = (ticketId: number): Promise<SupportTicket> => apiRequest('GET', `/admin/support/${ticketId}`); // Assuming endpoint
-export const replyToSupportTicket = (ticketId: number, message: string): Promise<void> => apiRequest('POST', `/admin/support/${ticketId}/reply`, { message }); // Assuming endpoint
-
-export const getAdminSponsoredContent = (): Promise<SponsoredContent[]> => apiRequest('GET', '/admin/sponsored'); // Assuming endpoint
-export const createAdminSponsoredContent = (adData: Omit<SponsoredContent, 'id'>) => apiRequest('POST', '/admin/sponsored', adData); // Assuming endpoint
-export const updateAdminSponsoredContent = (adId: number, adData: Partial<SponsoredContent>) => apiRequest('PUT', `/admin/sponsored/${adId}`, adData); // Assuming endpoint
-export const deleteAdminSponsoredContent = (adId: number) => apiRequest('DELETE', `/admin/sponsored/${adId}`); // Assuming endpoint
-
-export const getAdminTrendingTopics = (): Promise<TrendingTopic[]> => apiRequest('GET', '/admin/trending'); // Assuming endpoint
-export const createAdminTrendingTopic = (topic: string, post_count: number) => apiRequest('POST', '/admin/trending', { topic, post_count }); // Assuming endpoint
-export const deleteAdminTrendingTopic = (id: number) => apiRequest('DELETE', `/admin/trending/${id}`); // Assuming endpoint
-
-export const adminGetCarouselImages = (): Promise<AuthCarouselImage[]> => apiRequest('GET', '/admin/carousel');
-export const adminAddCarouselImage = (formData: FormData) => apiRequest('POST', '/admin/carousel', formData, true);
-export const adminDeleteCarouselImage = (id: number) => apiRequest('DELETE', `/admin/carousel/${id}`);
-
-export const getAnnouncements = (): Promise<Announcement[]> => apiRequest('GET', '/admin/announcements'); // Assuming endpoint
-export const createAnnouncement = (payload: any) => apiRequest('POST', '/admin/announcements', payload); // Assuming endpoint
-export const updateAnnouncement = (id: number, payload: any) => apiRequest('PUT', `/admin/announcements/${id}`, payload); // Assuming endpoint
-export const deleteAnnouncement = (id: number) => apiRequest('DELETE', `/admin/announcements/${id}`); // Assuming endpoint
-
-export const getAppSettings = (): Promise<Record<string, any>> => apiRequest('GET', '/admin/settings'); // Assuming endpoint
-export const updateAppSettings = (settings: Record<string, any>) => apiRequest('PUT', '/admin/settings', settings); // Assuming endpoint
+// Admin
+export const getAdminStats = (): Promise<AdminStats> => fetchWrapper('/admin/stats');
+export const getAdminUsers = (searchTerm: string): Promise<User[]> => fetchWrapper(`/admin/users?search=${searchTerm}`);
+export const updateAdminUser = (userId: string, updates: any): Promise<void> => fetchWrapper(`/admin/users/${userId}`, { method: 'PUT', body: JSON.stringify(updates) });
+export const deleteAdminUser = (userId: string): Promise<void> => fetchWrapper(`/admin/users/${userId}`, { method: 'DELETE' });
+export const issueUserWarning = (userId: string, reason: string): Promise<void> => fetchWrapper(`/admin/users/${userId}/warn`, { method: 'POST', body: JSON.stringify({ reason }) });
+export const getAdminContent = (type: 'posts' | 'reels'): Promise<any[]> => fetchWrapper(`/admin/content?type=${type}`);
+export const deleteAdminContent = (type: 'post' | 'reel', id: string): Promise<void> => fetchWrapper(`/admin/content/${type}/${id}`, { method: 'DELETE' });
+export const getAdminReports = (): Promise<Report[]> => fetchWrapper('/admin/reports');
+export const updateAdminReportStatus = (reportId: number, status: Report['status']): Promise<void> => fetchWrapper(`/admin/reports/${reportId}`, { method: 'PUT', body: JSON.stringify({ status }) });
+export const getAdminSupportTickets = (): Promise<SupportTicket[]> => fetchWrapper('/admin/support');
+export const getAdminSupportTicketDetails = (ticketId: number): Promise<SupportTicket> => fetchWrapper(`/admin/support/${ticketId}`);
+export const replyToSupportTicket = (ticketId: number, message: string): Promise<void> => fetchWrapper(`/admin/support/${ticketId}/reply`, { method: 'POST', body: JSON.stringify({ message }) });
+export const getAdminSponsoredContent = (): Promise<SponsoredContent[]> => fetchWrapper('/admin/sponsored');
+export const createAdminSponsoredContent = (ad: Omit<SponsoredContent, 'id'>): Promise<void> => fetchWrapper('/admin/sponsored', { method: 'POST', body: JSON.stringify(ad) });
+export const updateAdminSponsoredContent = (id: number, ad: Partial<SponsoredContent>): Promise<void> => fetchWrapper(`/admin/sponsored/${id}`, { method: 'PUT', body: JSON.stringify(ad) });
+export const deleteAdminSponsoredContent = (id: number): Promise<void> => fetchWrapper(`/admin/sponsored/${id}`, { method: 'DELETE' });
+export const getAdminTrendingTopics = (): Promise<TrendingTopic[]> => fetchWrapper('/admin/trending');
+export const createAdminTrendingTopic = (topic: string, post_count: number): Promise<void> => fetchWrapper('/admin/trending', { method: 'POST', body: JSON.stringify({ topic, post_count }) });
+export const deleteAdminTrendingTopic = (id: number): Promise<void> => fetchWrapper(`/admin/trending/${id}`, { method: 'DELETE' });
+export const adminGetCarouselImages = (): Promise<AuthCarouselImage[]> => fetchWrapper('/admin/carousel');
+export const adminAddCarouselImage = (formData: FormData): Promise<void> => fetchWrapper('/admin/carousel', { method: 'POST', body: formData });
+export const adminDeleteCarouselImage = (id: number): Promise<void> => fetchWrapper(`/admin/carousel/${id}`, { method: 'DELETE' });
+export const getAnnouncements = (): Promise<Announcement[]> => fetchWrapper('/admin/announcements');
+export const createAnnouncement = (announcement: Omit<Announcement, 'id'>): Promise<void> => fetchWrapper('/admin/announcements', { method: 'POST', body: JSON.stringify(announcement) });
+export const updateAnnouncement = (id: number, announcement: Partial<Announcement>): Promise<void> => fetchWrapper(`/admin/announcements/${id}`, { method: 'PUT', body: JSON.stringify(announcement) });
+export const deleteAnnouncement = (id: number): Promise<void> => fetchWrapper(`/admin/announcements/${id}`, { method: 'DELETE' });
+export const getAppSettings = (): Promise<Record<string, any>> => fetchWrapper('/admin/settings');
+export const updateAppSettings = (settings: Record<string, any>): Promise<void> => fetchWrapper('/admin/settings', { method: 'POST', body: JSON.stringify(settings) });

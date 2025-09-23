@@ -1,102 +1,84 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { User, Post, Story, View, Reel, Notification, TrendingTopic, FeedActivity, SponsoredContent, LiveStream } from './types.ts';
+import type { View, User, Post, Story, Reel, Notification, Conversation, Message, LiveStream } from './types.ts';
 import * as api from './services/apiService.ts';
 import { socketService } from './services/socketService.ts';
-import { webRTCManager } from './services/WebRTCManager.ts';
 
 import AuthView from './components/AuthView.tsx';
 import LeftSidebar from './components/LeftSidebar.tsx';
 import Header from './components/Header.tsx';
+import BottomNav from './components/BottomNav.tsx';
 import HomeView from './components/HomeView.tsx';
 import ExploreView from './components/ExploreView.tsx';
 import ReelsView from './components/ReelsView.tsx';
-// FIX: Corrected import path for MessagesView to point to the root directory.
 import MessagesView from './MessagesView.tsx';
 import ProfileView from './components/ProfileView.tsx';
-import Sidebar from './components/Sidebar.tsx';
-import StoryViewer from './components/StoryViewer.tsx';
-import PostModal from './components/PostModal.tsx';
-import CreateChoiceModal from './components/CreateChoiceModal.tsx';
-import CreatePostModal from './components/CreatePostModal.tsx';
-import CreateReelModal from './components/CreateReelModal.tsx';
-import CreateStoryModal from './components/CreateStoryModal.tsx';
-import AccountSwitcherModal from './components/AccountSwitcherModal.tsx';
-import NotificationsPanel from './components/NotificationsPanel.tsx';
-import BottomNav from './components/BottomNav.tsx';
-import SavedView from './components/SavedView.tsx';
 import SettingsView from './components/SettingsView.tsx';
+import SavedView from './components/SavedView.tsx';
+import ActivityView from './components/ActivityView.tsx';
+import ArchiveView from './components/ArchiveView.tsx';
 import AdminView from './components/AdminView.tsx';
-import ShareModal from './components/ShareModal.tsx';
-import ViewLikesModal from './components/ViewLikesModal.tsx';
-import PostWithOptionsModal from './components/PostWithOptionsModal.tsx';
-import CallModal from './components/CallModal.tsx';
-import IncomingCallModal from './components/IncomingCallModal.tsx';
-import MediaViewerModal from './components/MediaViewerModal.tsx';
-import TipModal from './components/TipModal.tsx';
-import GoLiveModal from './components/GoLiveModal.tsx';
+import PremiumView from './components/PremiumView.tsx';
 import LiveStreamsView from './components/LiveStreamsView.tsx';
 import LiveStreamView from './components/LiveStreamView.tsx';
 
+import PostModal from './components/PostModal.tsx';
+import StoryViewer from './components/StoryViewer.tsx';
+import CreatePostModal from './components/CreatePostModal.tsx';
+import CreateReelModal from './components/CreateReelModal.tsx';
+import CreateStoryModal from './components/CreateStoryModal.tsx';
+import CreateChoiceModal from './components/CreateChoiceModal.tsx';
+import NotificationsPanel from './components/NotificationsPanel.tsx';
+import SearchView from './components/SearchView.tsx';
+import AccountSwitcherModal from './components/AccountSwitcherModal.tsx';
 
 const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [currentView, setCurrentView] = useState<View>('home');
     const [isLoading, setIsLoading] = useState(true);
+    const [currentView, setCurrentView] = useState<View>('home');
+    const [viewingUser, setViewingUser] = useState<User | null>(null);
     
-    // Data state
+    // Data states
     const [posts, setPosts] = useState<Post[]>([]);
     const [stories, setStories] = useState<Story[]>([]);
     const [reels, setReels] = useState<Reel[]>([]);
-    const [liveStreams, setLiveStreams] = useState<LiveStream[]>([]);
     const [allUsers, setAllUsers] = useState<User[]>([]);
-    
-    // Sidebar Data (can still be static or fetched)
-    const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
-    const [sponsoredContent, setSponsoredContent] = useState<SponsoredContent[]>([]);
-    
-    // UI State
-    const [isCreateModalOpen, setCreateModalOpen] = useState(false);
-    const [createModalType, setCreateModalType] = useState<'post' | 'reel' | 'story' | 'live' | null>(null);
-    const [viewingStory, setViewingStory] = useState<{ story: Story, index: number } | null>(null);
-    const [viewingPost, setViewingPost] = useState<Post | null>(null);
-    const [isNotificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
-    const [isAccountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
-    const [sharingContent, setSharingContent] = useState<Post | Reel | null>(null);
-    const [viewingLikes, setViewingLikes] = useState<User[] | null>(null);
-    const [postWithOptions, setPostWithOptions] = useState<Post | null>(null);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [liveStreams, setLiveStreams] = useState<LiveStream[]>([]);
 
-    // New Features State
-    const [incomingCall, setIncomingCall] = useState<{ caller: User, type: 'video' | 'audio' } | null>(null);
-    const [activeCall, setActiveCall] = useState<{ user: User, type: 'video' | 'audio', status: 'calling' | 'connected' } | null>(null);
-    const [viewingMedia, setViewingMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
-    const [tippingPost, setTippingPost] = useState<Post | null>(null);
-    const [viewingStream, setViewingStream] = useState<LiveStream | null>(null);
+    // Modal/Panel states
+    const [activeModal, setActiveModal] = useState<string | null>(null);
+    const [modalContent, setModalContent] = useState<any>(null);
+    const [isNotificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
+    const [isSearchOpen, setSearchOpen] = useState(false);
+    const [activeLiveStream, setActiveLiveStream] = useState<LiveStream | null>(null);
+
 
     const fetchData = useCallback(async () => {
-        if (!currentUser) return;
         try {
-            const [postsData, storiesData, reelsData, allUsersData, streamsData] = await Promise.all([
+            const [postsData, storiesData, reelsData, usersData, liveStreamsData] = await Promise.all([
                 api.getPosts(),
                 api.getStories(),
                 api.getReels(),
                 api.getAllUsers(),
-                api.getLiveStreams()
+                api.getLiveStreams(),
             ]);
             setPosts(postsData);
             setStories(storiesData);
             setReels(reelsData);
-            setAllUsers(allUsersData);
-            setLiveStreams(streamsData);
+            setAllUsers(usersData);
+            setLiveStreams(liveStreamsData);
         } catch (error) {
-            console.error("Failed to fetch app data:", error);
+            console.error("Failed to fetch initial data:", error);
         }
-    }, [currentUser]);
+    }, []);
 
     useEffect(() => {
         const checkSession = async () => {
             try {
-                const { user } = await api.checkSession();
+                const { user } = await api.getSession();
                 setCurrentUser(user);
+                await fetchData();
                 socketService.connect('/');
             } catch (error) {
                 console.log("No active session");
@@ -108,262 +90,108 @@ const App: React.FC = () => {
         
         return () => {
             socketService.disconnect();
-        };
-    }, []);
+        }
+    }, [fetchData]);
 
-    useEffect(() => {
-        if (currentUser) {
-            fetchData();
-        }
-    }, [currentUser, fetchData]);
-    
-    // --- ACTION HANDLERS ---
-    const handleToggleLike = async (postId: string) => {
-        if (!currentUser) return;
-        // Optimistic update
-        setPosts(prevPosts => prevPosts.map(p => {
-            if (p.id === postId) {
-                const isLiked = p.likedBy.some(u => u.id === currentUser.id);
-                const newLikes = isLiked ? p.likes - 1 : p.likes + 1;
-                const newLikedBy = isLiked 
-                    ? p.likedBy.filter(u => u.id !== currentUser.id)
-                    : [...p.likedBy, currentUser];
-                return { ...p, likes: newLikes, likedBy: newLikedBy };
-            }
-            return p;
-        }));
-        try {
-            await api.togglePostLike(postId);
-        } catch (error) {
-            console.error("Failed to toggle like:", error);
-            fetchData(); // Revert on error
-        }
-    };
-    
-    const handleToggleSave = async (postId: string) => {
-        setPosts(prevPosts => prevPosts.map(p => p.id === postId ? { ...p, isSaved: !p.isSaved } : p));
-        try {
-            await api.togglePostSave(postId);
-        } catch (error) {
-            console.error("Failed to toggle save:", error);
-            fetchData(); // Revert on error
-        }
-    };
-
-    const handleComment = async (postId: string, text: string) => {
-        try {
-            await api.addComment(postId, text);
-            await fetchData(); // simple refresh
-        } catch (error) {
-             console.error("Failed to comment:", error);
-        }
-    };
-
-    const handleFollow = async (userToFollow: User) => {
-        if(!currentUser) return;
-        // Optimistic update
-        setCurrentUser(prev => ({...prev!, following: [...(prev?.following || []), userToFollow] }));
-        try {
-            await api.followUser(userToFollow.id);
-        } catch (error) {
-            console.error("Follow failed:", error);
-            // Revert
-            setCurrentUser(prev => ({...prev!, following: prev!.following!.filter(u => u.id !== userToFollow.id)}));
-        }
-    };
-    
-    const handleUnfollow = async (userToUnfollow: User) => {
-         if(!currentUser) return;
-        // Optimistic update
-        setCurrentUser(prev => ({...prev!, following: prev!.following!.filter(u => u.id !== userToUnfollow.id)}));
-        try {
-            await api.followUser(userToUnfollow.id); // Same endpoint for toggle
-        } catch (error) {
-            console.error("Unfollow failed:", error);
-            // Revert
-             setCurrentUser(prev => ({...prev!, following: [...(prev?.following || []), userToUnfollow] }));
-        }
-    };
-    
-    const handleCreate = async (formData: FormData) => {
-        if (!createModalType) return;
-        try {
-            switch(createModalType) {
-                case 'post': await api.createPost(formData); break;
-                case 'reel': await api.createReel(formData); break;
-                case 'story': await api.createStory(formData); break;
-            }
-            await fetchData();
-            closeCreateModals();
-        } catch(error) {
-            console.error(`Failed to create ${createModalType}:`, error);
-        }
-    }
-    
-    const handleStartStream = async (title: string) => {
-        try {
-            const newStream = await api.startStream(title);
-            setLiveStreams(prev => [newStream, ...prev]);
-            setViewingStream(newStream);
-            closeCreateModals();
-        } catch(error) {
-            console.error("Failed to start stream:", error);
-        }
-    };
-
-    const handleSendTip = async (amount: number) => {
-        if (!tippingPost || !currentUser) return;
-        try {
-            await api.sendTip(tippingPost.id, amount);
-            // Optimistic update of wallet balance
-            setCurrentUser(prev => ({...prev!, wallet_balance: (prev!.wallet_balance || 0) - amount}));
-        } catch(error) {
-            console.error("Failed to send tip:", error);
-            throw error;
-        }
-    };
-    
-    // --- CALL HANDLERS ---
-    // In a real app this would come from a socket event
-    const simulateIncomingCall = (caller: User, type: 'video' | 'audio') => {
-        // Don't show incoming call if already in one
-        if (!activeCall) {
-            setIncomingCall({ caller, type });
-        }
-    };
-    
-    const handleInitiateCall = (user: User, type: 'video' | 'audio') => {
-        if (!currentUser || activeCall) return;
-        setActiveCall({ user, type, status: 'calling' });
-        // Simulate the other user receiving the call after a short delay
-        setTimeout(() => simulateIncomingCall(currentUser, type), 1500);
-    };
-
-    const handleAcceptCall = () => {
-        if (!incomingCall) return;
-        setActiveCall({ user: incomingCall.caller, type: incomingCall.type, status: 'connected' });
-        setIncomingCall(null);
-    };
-
-    const handleDeclineCall = () => {
-        setIncomingCall(null);
-        // In a real app, a 'decline' signal would be sent.
-        // For simulation, we just end the call for the caller too.
-        if (activeCall?.status === 'calling') {
-            setActiveCall(null);
-        }
-    };
-
-    const handleHangUp = () => {
-        if (activeCall) {
-            webRTCManager.hangUp();
-            setActiveCall(null);
-            setIncomingCall(null); // Also clear any lingering incoming call state
-        }
-    };
-
-    // --- NAVIGATION & VIEWS ---
-    const handleLoginSuccess = (data: { user: User }) => {
+    const handleLoginSuccess = async (data: { user: User }) => {
         setCurrentUser(data.user);
+        await fetchData();
         socketService.connect('/');
     };
-
+    
     const handleLogout = async () => {
         await api.logout();
         setCurrentUser(null);
         socketService.disconnect();
     };
 
-    const handleNavigate = (view: View) => {
+    const handleNavigate = (view: View, user: User | null = null) => {
         setCurrentView(view);
-        setNotificationsPanelOpen(false);
+        setViewingUser(user);
+        window.scrollTo(0, 0);
     };
 
-    const openCreateModal = (type: 'post' | 'reel' | 'story' | 'live' | null = null) => {
-        if (type) {
-             if (type === 'live') {
-                setCreateModalType('live');
-             } else {
-                setCreateModalType(type);
-             }
-        }
-        setCreateModalOpen(true);
-    };
-    
-    const closeCreateModals = () => {
-        setCreateModalOpen(false);
-        setCreateModalType(null);
-    }
-    
+    // Placeholder handlers - these would have full logic in a real app
+    const handleToggleLike = (postId: string) => console.log('Toggle Like:', postId);
+    const handleToggleSave = (postId: string) => console.log('Toggle Save:', postId);
+    const handleComment = (postId: string, text: string) => console.log('Comment:', postId, text);
+    const handleFollow = (user: User) => console.log('Follow:', user.username);
+    const handleUnfollow = (user: User) => console.log('Unfollow:', user.username);
+    const handleCreatePost = (formData: FormData) => { console.log('Creating Post', formData); setActiveModal(null); };
+
     const renderView = () => {
-        if (!currentUser) return null;
+        const profileUser = viewingUser || currentUser;
         switch (currentView) {
             case 'home':
-                return <HomeView posts={posts} stories={stories} currentUser={currentUser} onViewStory={(story, index) => setViewingStory({ story, index })} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={setSharingContent} onViewLikes={setViewingLikes} onViewProfile={() => {}} onViewPost={setViewingPost} onOptions={setPostWithOptions} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={setTippingPost} onVote={() => {}} />;
+                return <HomeView posts={posts} stories={stories} currentUser={currentUser!} onViewStory={(story, index) => { setModalContent({ stories, index }); setActiveModal('storyViewer'); }} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => { setModalContent(post); setActiveModal('share'); }} onViewLikes={(users) => { setModalContent(users); setActiveModal('viewLikes'); }} onViewProfile={(user) => handleNavigate('profile', user)} onViewPost={(post) => { setModalContent(post); setActiveModal('post'); }} onOptions={(post) => { setModalContent(post); setActiveModal('postOptions'); }} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={(post) => { setModalContent(post); setActiveModal('tip'); }} onVote={(optionId) => console.log('voted', optionId)} />;
             case 'explore':
-                return <ExploreView posts={posts} onViewPost={setViewingPost} />;
+                return <ExploreView posts={posts} onViewPost={(post) => { setModalContent(post); setActiveModal('post'); }} />;
             case 'reels':
-                return <ReelsView reels={reels} currentUser={currentUser} onLikeReel={() => {}} onCommentOnReel={() => {}} onShareReel={() => {}} />;
-            case 'live':
-                return <LiveStreamsView streams={liveStreams} onJoinStream={setViewingStream} />;
+                return <ReelsView reels={reels} currentUser={currentUser!} onLikeReel={(id) => console.log(id)} onCommentOnReel={(reel) => console.log(reel)} onShareReel={(reel) => console.log(reel)} />;
             case 'messages':
-                return <MessagesView currentUser={currentUser} onNavigate={() => {}} onInitiateCall={handleInitiateCall} onViewMedia={setViewingMedia} />;
+                return <MessagesView currentUser={currentUser!} onNavigate={(view, user) => handleNavigate(view, user)} onInitiateCall={() => {}} onViewMedia={() => {}} />;
             case 'profile':
-                return <ProfileView user={currentUser} posts={posts.filter(p => p.user.id === currentUser.id)} reels={reels.filter(r => r.user.id === currentUser.id)} isCurrentUser={true} currentUser={currentUser} onEditProfile={() => {}} onViewArchive={() => {}} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={() => {}} onShowFollowing={() => {}} onEditPost={() => {}} onViewPost={setViewingPost} onViewReel={() => {}} onOpenCreateHighlightModal={() => {}} onMessage={() => {}} />;
-            case 'saved':
-                return <SavedView posts={posts.filter(p => p.isSaved)} onViewPost={setViewingPost} />;
+                 return profileUser ? <ProfileView user={profileUser} posts={posts.filter(p => p.user.id === profileUser.id)} reels={reels.filter(r => r.user.id === profileUser.id)} isCurrentUser={currentUser!.id === profileUser.id} currentUser={currentUser!} onEditProfile={() => setActiveModal('editProfile')} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={(users) => { setModalContent({title: 'Followers', users}); setActiveModal('followList')}} onShowFollowing={(users) => { setModalContent({title: 'Following', users}); setActiveModal('followList')}} onEditPost={(post) => { setModalContent(post); setActiveModal('editPost'); }} onViewPost={(post) => { setModalContent(post); setActiveModal('post'); }} onViewReel={(reel) => { setModalContent(reel); setActiveModal('reelViewer'); }} onOpenCreateHighlightModal={() => setActiveModal('createHighlight')} onMessage={(user) => handleNavigate('messages', user)} /> : null;
             case 'settings':
-                return <SettingsView onBack={() => handleNavigate('profile')} onNavigate={(setting) => { if (setting === 'logout') handleLogout() }} />;
+                return <SettingsView onBack={() => handleNavigate('profile')} onNavigate={(setting) => console.log(setting)} />;
+            case 'saved':
+                return <SavedView posts={posts.filter(p => p.isSaved)} onViewPost={(post) => { setModalContent(post); setActiveModal('post'); }} />;
+            case 'activity':
+                 return <ActivityView activities={notifications} />;
+             case 'archive':
+                return <ArchiveView posts={[]} onViewPost={(post) => { setModalContent(post); setActiveModal('post'); }} onUnarchivePost={(post) => console.log(post)} />;
             case 'admin':
                 return <AdminView onExit={() => handleNavigate('home')} />;
+            case 'premium':
+                return <PremiumView />;
+            case 'live':
+                return <LiveStreamsView streams={liveStreams} onJoinStream={(stream) => setActiveLiveStream(stream)} />;
             default:
-                return <div className="p-8">View "{currentView}" not implemented.</div>;
+                return <HomeView posts={posts} stories={stories} currentUser={currentUser!} onViewStory={() => {}} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={() => {}} onViewLikes={() => {}} onViewProfile={() => {}} onViewPost={() => {}} onOptions={() => {}} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={() => {}} onVote={() => {}} />;
         }
     };
-    
+
     if (isLoading) {
-        return <div className="bg-black text-white min-h-screen flex items-center justify-center"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>;
+        return <div className="bg-black h-screen flex items-center justify-center text-white">Loading...</div>;
     }
 
     if (!currentUser) {
         return <AuthView onLoginSuccess={handleLoginSuccess} />;
     }
 
+    if(activeLiveStream){
+        return <LiveStreamView stream={activeLiveStream} currentUser={currentUser} onClose={() => setActiveLiveStream(null)} />
+    }
+
     return (
         <div className="bg-black text-white min-h-screen">
-            {currentView !== 'admin' && <LeftSidebar currentView={currentView} onNavigate={handleNavigate} onCreatePost={() => openCreateModal()} onShowNotifications={() => setNotificationsPanelOpen(true)} />}
-            
-            <div className={`transition-transform duration-300 ${isNotificationsPanelOpen ? '-translate-x-[397px]' : 'translate-x-0'} md:ml-[72px] lg:ml-64`}>
-                {currentView !== 'admin' && <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => setAccountSwitcherOpen(true)} onCreatePost={() => openCreateModal()} onShowNotifications={() => setNotificationsPanelOpen(p => !p)} onLogout={handleLogout} />}
-                
-                <main className="flex">
-                    <div className="flex-1">
-                        {renderView()}
-                    </div>
-                    {currentView === 'home' && <Sidebar trendingTopics={trendingTopics} suggestedUsers={allUsers.filter(u => u.id !== currentUser.id).slice(0,5)} feedActivities={[]} sponsoredContent={sponsoredContent} currentUser={currentUser} onFollow={handleFollow} onUnfollow={handleUnfollow} onViewProfile={() => {}} />}
+            <div className="flex">
+                <LeftSidebar 
+                    currentView={currentView}
+                    onNavigate={(view) => handleNavigate(view)}
+                    onCreate={() => setActiveModal('createChoice')}
+                    onShowNotifications={() => setNotificationsPanelOpen(p => !p)}
+                    onShowSearch={() => setSearchOpen(true)}
+                    onLogout={handleLogout}
+                />
+                <main className="flex-1">
+                    <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => setActiveModal('accountSwitcher')} onCreatePost={() => setActiveModal('createPost')} onShowNotifications={() => setNotificationsPanelOpen(p => !p)} onLogout={handleLogout} />
+                    {renderView()}
                 </main>
-
-                {currentView !== 'admin' && <BottomNav currentView={currentView} onNavigate={handleNavigate} onCreate={() => openCreateModal()} currentUser={currentUser} />}
             </div>
+            <BottomNav currentView={currentView} onNavigate={handleNavigate} onCreate={() => setActiveModal('createChoice')} currentUser={currentUser} />
             
-            {/* Modals & Overlays */}
-            {viewingStory && <StoryViewer stories={stories} initialStoryIndex={viewingStory.index} onClose={() => setViewingStory(null)} onNextUser={() => {}} onPrevUser={() => {}} />}
-            {viewingPost && <PostModal post={viewingPost} currentUser={currentUser} onClose={() => setViewingPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={setSharingContent} onViewProfile={() => {}} onOptions={setPostWithOptions} />}
-            {isCreateModalOpen && !createModalType && <CreateChoiceModal onClose={closeCreateModals} onChoice={(type) => openCreateModal(type)} />}
-            {createModalType === 'post' && <CreatePostModal onClose={closeCreateModals} onCreatePost={handleCreate} allUsers={allUsers} currentUser={currentUser} />}
-            {createModalType === 'reel' && <CreateReelModal onClose={closeCreateModals} onCreateReel={handleCreate} />}
-            {createModalType === 'story' && <CreateStoryModal onClose={closeCreateModals} onCreateStory={handleCreate} />}
-            {createModalType === 'live' && <GoLiveModal onClose={closeCreateModals} onStartStream={handleStartStream} />}
-            {isAccountSwitcherOpen && <AccountSwitcherModal accounts={allUsers} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchAccount={() => {}} onAddAccount={() => {}} />}
-            {isNotificationsPanelOpen && <NotificationsPanel notifications={[]} onClose={() => setNotificationsPanelOpen(false)} onViewProfile={() => {}} onMarkAsRead={() => {}} onCollaborationResponse={() => {}} />}
-            {sharingContent && <ShareModal content={sharingContent} currentUser={currentUser} conversations={[]} onClose={() => setSharingContent(null)} onShareSuccess={() => {}} />}
-            {viewingLikes && <ViewLikesModal users={viewingLikes} currentUser={currentUser} onClose={() => setViewingLikes(null)} onViewProfile={() => {}} onFollow={handleFollow} onUnfollow={handleUnfollow} />}
-            {postWithOptions && <PostWithOptionsModal post={postWithOptions} currentUser={currentUser} onClose={() => setPostWithOptions(null)} onUnfollow={handleUnfollow} onFollow={handleFollow} onEdit={()=>{}} onDelete={()=>{}} onArchive={()=>{}} onReport={()=>{}} onShare={setSharingContent} onCopyLink={()=>{}} onViewProfile={()=>{}} onGoToPost={setViewingPost} />}
-            {activeCall && <CallModal user={activeCall.user} status={activeCall.status} type={activeCall.type} onHangUp={handleHangUp} />}
-            {incomingCall && !activeCall && <IncomingCallModal caller={incomingCall.caller} onAccept={handleAcceptCall} onDecline={handleDeclineCall} />}
-            {viewingMedia && <MediaViewerModal mediaUrl={viewingMedia.url} mediaType={viewingMedia.type} onClose={() => setViewingMedia(null)} />}
-            {tippingPost && <TipModal post={tippingPost} onClose={() => setTippingPost(null)} onSendTip={handleSendTip} />}
-            {viewingStream && <LiveStreamView stream={viewingStream} currentUser={currentUser} onClose={() => setViewingStream(null)} />}
+            {/* Modals & Panels */}
+            {isNotificationsPanelOpen && <NotificationsPanel notifications={notifications} onClose={() => setNotificationsPanelOpen(false)} currentUser={currentUser} onFollow={handleFollow} onUnfollow={handleUnfollow} />}
+            {isSearchOpen && <SearchView onClose={() => setSearchOpen(false)} onViewProfile={(user) => handleNavigate('profile', user)} onViewPost={(post) => { setModalContent(post); setActiveModal('post'); }} />}
+            
+            {activeModal === 'post' && modalContent && <PostModal post={modalContent} currentUser={currentUser} onClose={() => setActiveModal(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={() => {}} onViewLikes={() => {}} onViewProfile={(user) => handleNavigate('profile', user)} onOptions={() => {}} />}
+            {activeModal === 'storyViewer' && modalContent && <StoryViewer stories={modalContent.stories} initialStoryIndex={modalContent.index} onClose={() => setActiveModal(null)} onNextUser={() => {}} onPrevUser={() => {}} />}
+            {activeModal === 'createChoice' && <CreateChoiceModal onClose={() => setActiveModal(null)} onChoice={(type) => { setActiveModal(type === 'post' ? 'createPost' : type === 'reel' ? 'createReel' : 'createStory'); }} />}
+            {activeModal === 'createPost' && <CreatePostModal onClose={() => setActiveModal(null)} onCreatePost={handleCreatePost} allUsers={allUsers} currentUser={currentUser} />}
+            {activeModal === 'createReel' && <CreateReelModal onClose={() => setActiveModal(null)} onCreateReel={(data) => { console.log(data); setActiveModal(null); }} />}
+            {activeModal === 'createStory' && <CreateStoryModal onClose={() => setActiveModal(null)} onCreateStory={(data) => { console.log(data); setActiveModal(null); }} />}
+            {activeModal === 'accountSwitcher' && <AccountSwitcherModal accounts={[currentUser]} currentUser={currentUser} onClose={() => setActiveModal(null)} onSwitchAccount={() => {}} onAddAccount={() => {}} />}
         </div>
     );
 };
