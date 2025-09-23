@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { LiveStream, User } from '../types.ts';
 import Icon from './Icon.tsx';
+import { socketService } from '../services/socketService.ts';
 
 interface LiveStreamViewProps {
   stream: LiveStream;
@@ -8,13 +9,47 @@ interface LiveStreamViewProps {
   onClose: () => void;
 }
 
+interface LiveChatMessage {
+    user: {
+        id: string;
+        username: string;
+    };
+    text: string;
+}
+
 const LiveStreamView: React.FC<LiveStreamViewProps> = ({ stream, currentUser, onClose }) => {
   const [comment, setComment] = useState('');
-  const [messages, setMessages] = useState<{ user: User, text: string }[]>([]);
+  const [messages, setMessages] = useState<LiveChatMessage[]>([]);
+
+  useEffect(() => {
+    // Join the stream room on mount
+    socketService.emit('join_stream', stream.id);
+
+    // Listener for new comments
+    const handleNewComment = (newComment: LiveChatMessage) => {
+        setMessages(prev => [...prev, newComment]);
+    };
+    socketService.on('new_live_comment', handleNewComment);
+
+    // Cleanup on unmount
+    return () => {
+        socketService.emit('leave_stream', stream.id);
+        socketService.off('new_live_comment', handleNewComment);
+    };
+  }, [stream.id]);
+
 
   const handleSendComment = () => {
     if (comment.trim()) {
-      setMessages(prev => [...prev, { user: currentUser, text: comment }]);
+      const commentData: LiveChatMessage = {
+        user: {
+          id: currentUser.id,
+          username: currentUser.username,
+        },
+        text: comment.trim(),
+      };
+      // Emit the comment to the server to be broadcasted
+      socketService.emit('live_comment', { streamId: stream.id, comment: commentData });
       setComment('');
     }
   };

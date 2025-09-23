@@ -3,6 +3,7 @@ import Icon from './Icon.tsx';
 import type { Message, User } from '../types';
 import EmojiStickerPanel from './EmojiStickerPanel.tsx';
 import { socketService } from '../services/socketService.ts';
+import CameraCaptureModal from './CameraCaptureModal.tsx';
 
 interface MessageInputProps {
   onSend: (content: string | File, type: Message['type']) => void;
@@ -15,6 +16,7 @@ interface MessageInputProps {
 const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCancelReply, conversationId, otherUser }) => {
   const [text, setText] = useState('');
   const [isEmojiPanelOpen, setEmojiPanelOpen] = useState(false);
+  const [isCameraOpen, setCameraOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,6 +82,11 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
     onSend(stickerUrl, 'sticker');
     setEmojiPanelOpen(false);
   };
+  
+  const handleCaptureSend = (imageFile: File) => {
+    onSend(imageFile, 'image');
+    setCameraOpen(false);
+  };
 
   return (
     <div className="relative" ref={panelRef}>
@@ -118,6 +125,9 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
             </button>
           ) : (
             <div className="flex items-center gap-1">
+                <button onClick={() => setCameraOpen(true)} className="p-1.5 rounded-full hover:bg-gray-700">
+                    <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></Icon>
+                </button>
                 <button onClick={handleSendVoicenote} className="p-1.5 rounded-full hover:bg-gray-700">
                     <Icon className="w-6 h-6 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m12 7.5v-1.5a6 6 0 00-6-6v-1.5a6 6 0 00-6 6v1.5m6 6v-1.5m0-10.5v-1.5a6 6 0 00-6 6v1.5" /></Icon>
                 </button>
@@ -129,6 +139,12 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSend, replyingTo, onCance
           )}
         </div>
       </div>
+      {isCameraOpen && (
+        <CameraCaptureModal
+            onClose={() => setCameraOpen(false)}
+            onCapture={handleCaptureSend}
+        />
+      )}
     </div>
   );
 };
