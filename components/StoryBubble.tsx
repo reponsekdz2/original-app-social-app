@@ -1,5 +1,7 @@
+
 import React from 'react';
-import type { Story } from '../types';
+// Fix: Add .ts extension to types import
+import type { Story } from '../types.ts';
 
 interface StoryBubbleProps {
   story: Story;

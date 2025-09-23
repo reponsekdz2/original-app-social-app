@@ -1,6 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon.tsx';
-import type { Message, User } from '../types';
+// Fix: Add .ts extension to types import
+import type { Message, User } from '../types.ts';
 import EmojiStickerPanel from './EmojiStickerPanel.tsx';
 import { socketService } from '../services/socketService.ts';
 import CameraCaptureModal from './CameraCaptureModal.tsx';

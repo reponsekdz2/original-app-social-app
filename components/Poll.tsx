@@ -1,5 +1,7 @@
+
 import React from 'react';
-import type { Poll as PollType } from '../types';
+// Fix: Add .ts extension to types import
+import type { Poll as PollType } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface PollProps {

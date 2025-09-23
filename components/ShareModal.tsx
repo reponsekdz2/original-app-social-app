@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import type { Post, Reel, User, Conversation } from '../types';
+// Fix: Add .ts extension to types import
+import type { Post, Reel, User, Conversation } from '../types.ts';
 import Icon from './Icon.tsx';
 import * as api from '../services/apiService.ts';
 

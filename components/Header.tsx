@@ -1,6 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import Icon from './Icon.tsx';
-import type { User, View } from '../types';
+// Fix: Add .ts extension to types import
+import type { User, View } from '../types.ts';
 
 interface HeaderProps {
     currentUser: User;

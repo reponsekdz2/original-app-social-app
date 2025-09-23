@@ -1,202 +1,169 @@
-import type { 
-    User, Post, Reel, Story, Conversation, Message, Notification, 
-    FeedActivity, SponsoredContent, TrendingTopic, Testimonial, 
-    HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report, Announcement, AuthCarouselImage, AccountStatusInfo 
-} from '../types';
 
-const API_URL = 'http://localhost:3001/api';
+import type { User, Post, Story, Reel, Conversation, Message, SupportTicket, AdminStats, AnalyticsData, Report, AuthCarouselImage, Announcement, SponsoredContent, TrendingTopic } from '../types.ts';
+import { mockUser, mockPosts, mockStories, mockReels, mockSuggested, mockTrending, mockActivities, mockSponsored, mockConversations, mockAllUsers } from './mockData.ts';
 
-const apiFetch = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-    const headers: HeadersInit = {
-        ...options.headers,
+// This is a mock API service. In a real application, these would be network requests.
+
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+let db = {
+    users: [...mockAllUsers],
+    posts: [...mockPosts],
+    stories: [...mockStories],
+    reels: [...mockReels],
+    conversations: [...mockConversations],
+    trending: [...mockTrending],
+    activities: [...mockActivities],
+    sponsored: [...mockSponsored],
+    carouselImages: [
+        { id: 1, image_url: 'https://images.unsplash.com/photo-1528732263494-242a3536015c?q=80&w=800&auto=format&fit=crop', sort_order: 1 },
+        { id: 2, image_url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800&auto=format&fit=crop', sort_order: 2 }
+    ],
+    supportTickets: [],
+    reports: [],
+    announcements: [],
+    settings: { maintenance_mode: 'false', disable_new_registrations: 'false', reels_enabled: 'true' },
+    stickers: [
+        '/uploads/assets/stickers/sticker1.png',
+        '/uploads/assets/stickers/sticker2.png',
+        '/uploads/assets/stickers/sticker3.png',
+        '/uploads/assets/stickers/sticker4.png',
+    ],
+    accountStatus: { status: 'active', warnings: [] },
+    blockedUsers: [],
+};
+
+// --- AUTH ---
+export const login = async (identifier: string, password: string): Promise<{ user: User }> => {
+    await delay(500);
+    const user = db.users.find(u => (u.username === identifier || u.email === identifier));
+    if (user && password) { // Mock: no password check
+        return { user };
+    }
+    throw new Error("Invalid credentials");
+};
+
+export const register = async (data: any): Promise<{ user: User }> => {
+    await delay(500);
+    const newUser: User = {
+        id: String(Date.now()),
+        username: data.username,
+        name: data.name,
+        email: data.email,
+        avatar: 'https://picsum.photos/id/1025/200/200',
+        followers: [],
+        following: [],
+        posts: [],
+        reels: [],
+        stories: [],
+        savedPosts: [],
+        isVerified: false, isPrivate: false, isPremium: false, isAdmin: false,
+        blockedUsers: [], mutedUsers: [],
+        status: 'active',
     };
-    
-    // Do not set Content-Type for FormData
-    if (!(options.body instanceof FormData)) {
-        headers['Content-Type'] = 'application/json';
-    }
-
-    try {
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            ...options,
-            credentials: 'include', // Automatically send session cookies
-            headers,
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-        }
-        
-        if (response.status === 204) { // No Content
-            return undefined as T;
-        }
-
-        return response.json();
-    } catch (error) {
-        console.error(`API call to ${endpoint} failed:`, error);
-        throw error;
-    }
+    db.users.push(newUser);
+    return { user: newUser };
 };
 
-// --- Auth ---
-export const login = (identifier: string, password: string): Promise<{ user: User }> => 
-    apiFetch('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ identifier, password }),
-    });
+export const getAuthCarouselImages = async (): Promise<AuthCarouselImage[]> => {
+    await delay(200);
+    return db.carouselImages;
+};
 
-export const register = (data: any): Promise<{ user: User }> => 
-    apiFetch('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
-    });
-    
-export const logout = (): Promise<void> => apiFetch('/auth/logout', { method: 'POST' });
+// --- DATA FETCHING ---
+export const getPosts = async (): Promise<Post[]> => { await delay(300); return db.posts; };
+export const getStories = async (): Promise<Story[]> => { await delay(200); return db.stories; };
+export const getReels = async (): Promise<Reel[]> => { await delay(300); return db.reels; };
+export const getConversations = async (): Promise<Conversation[]> => { await delay(400); return db.conversations; };
+export const getStickers = async (): Promise<string[]> => { await delay(100); return db.stickers; };
+export const getBlockedUsers = async (): Promise<User[]> => { await delay(200); return db.users.filter(u => db.blockedUsers.includes(u.id)); };
+export const getAccountStatus = async (): Promise<any> => { await delay(200); return db.accountStatus; };
 
-export const getMe = (): Promise<{ user: User }> => apiFetch('/auth/me');
+// --- ACTIONS ---
+export const sendMessage = async (userId: string, content: string | File, type: Message['type'], contentId?: string, contentType?: 'post' | 'reel', conversationId?: string): Promise<Message> => {
+    await delay(250);
+    let convo = conversationId ? db.conversations.find(c => c.id === conversationId) : db.conversations.find(c => !c.isGroup && c.participants.some(p => p.id === userId));
 
-export const changePassword = (oldPassword: string, newPassword: string): Promise<void> =>
-    apiFetch('/auth/change-password', {
-        method: 'PUT',
-        body: JSON.stringify({ oldPassword, newPassword }),
-    });
-    
-export const forgotPassword = (email: string): Promise<{ resetTokenForSimulation: string }> =>
-    apiFetch('/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-    });
-    
-export const resetPassword = (token: string, password: string): Promise<void> =>
-    apiFetch('/auth/reset-password', {
-        method: 'POST',
-        body: JSON.stringify({ token, password }),
-    });
+    const message: Message = {
+        id: `msg-${Date.now()}`,
+        senderId: mockUser.id,
+        content: typeof content === 'string' ? content : 'File content',
+        timestamp: new Date().toISOString(),
+        type,
+        read: false,
+    };
 
-export const enableTwoFactor = (): Promise<void> => apiFetch('/auth/enable-2fa', { method: 'POST' });
-
-// --- Content ---
-export const getFeedPosts = (): Promise<{ posts: Post[] }> => apiFetch('/posts/feed');
-export const getExplorePosts = (): Promise<{ posts: Post[] }> => apiFetch('/posts/explore');
-export const getReels = (): Promise<Reel[]> => apiFetch('/reels');
-export const getStories = (): Promise<{ stories: Story[] }> => apiFetch('/stories/feed');
-export const createPost = (formData: FormData): Promise<Post> => apiFetch('/posts', { method: 'POST', body: formData });
-export const createReel = (formData: FormData): Promise<Reel> => apiFetch('/reels', { method: 'POST', body: formData });
-export const createStory = (formData: FormData): Promise<void> => apiFetch('/stories', { method: 'POST', body: formData });
-
-
-// --- Interactions ---
-export const toggleLike = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/like`, { method: 'POST' });
-export const toggleSave = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/save`, { method: 'POST' });
-export const addComment = (postId: string, text: string): Promise<Comment> => apiFetch(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
-export const toggleCommentLike = (commentId: string): Promise<void> => apiFetch(`/comments/${commentId}/like`, { method: 'POST' });
-export const toggleReelLike = (reelId: string): Promise<void> => apiFetch(`/reels/${reelId}/like`, { method: 'POST' });
-export const addReelComment = (reelId: string, text: string): Promise<void> => apiFetch(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
-export const getNotifications = (): Promise<Notification[]> => apiFetch('/misc/notifications');
-export const voteOnPoll = (optionId: number): Promise<void> => apiFetch(`/posts/polls/${optionId}/vote`, { method: 'POST' });
-export const submitReport = (entityId: string, entityType: 'user' | 'post' | 'comment' | 'reel', reason: string, details: string): Promise<void> =>
-    apiFetch('/reports', { method: 'POST', body: JSON.stringify({ entityId, entityType, reason, details }) });
-export const acceptCollab = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/collaborations/accept`, { method: 'POST' });
-export const declineCollab = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/collaborations/decline`, { method: 'POST' });
-
-
-// --- Post Management ---
-export const editPost = (postId: string, caption: string, location: string): Promise<void> => apiFetch(`/posts/${postId}`, { method: 'PUT', body: JSON.stringify({ caption, location }) });
-export const deletePost = (postId: string): Promise<void> => apiFetch(`/posts/${postId}`, { method: 'DELETE' });
-export const archivePost = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/archive`, { method: 'PUT' });
-export const unarchivePost = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/unarchive`, { method: 'PUT' });
-
-// --- Users ---
-export const getAllUsers = (): Promise<User[]> => apiFetch('/users');
-export const followUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/follow`, { method: 'POST' });
-export const unfollowUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/unfollow`, { method: 'POST' });
-export const blockUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/block`, { method: 'POST' });
-export const unblockUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/unblock`, { method: 'POST' });
-export const getBlockedUsers = (): Promise<User[]> => apiFetch('/users/blocked');
-export const updateProfile = (data: any): Promise<void> => apiFetch('/users/profile', { method: 'PUT', body: JSON.stringify(data) });
-export const updateUserSettings = (settings: any): Promise<void> => apiFetch('/users/settings', { method: 'PUT', body: JSON.stringify(settings) });
-export const createHighlight = (title: string, storyIds: string[]): Promise<void> => apiFetch('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
-export const muteUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/mute`, { method: 'POST' });
-export const getAccountStatus = (): Promise<AccountStatusInfo> => apiFetch('/users/account-status');
-
-
-// --- Messaging ---
-export const getConversations = (): Promise<Conversation[]> => apiFetch('/messages');
-export const sendMessage = (recipientId: string | undefined, content: string | File, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel', conversationId?: string): Promise<Message> => {
-    const formData = new FormData();
-    if (recipientId) formData.append('recipientId', recipientId);
-    if (conversationId) formData.append('conversationId', conversationId);
-    if (typeof content === 'string') {
-        formData.append('content', content);
+    if (convo) {
+        convo.messages.push(message);
     } else {
-        formData.append('file', content);
+        const newConvo: Conversation = {
+            id: `convo-${Date.now()}`,
+            participants: [mockUser, db.users.find(u => u.id === userId)!],
+            messages: [message],
+            isGroup: false,
+            settings: { theme: 'default', vanish_mode_enabled: false },
+        };
+        db.conversations.unshift(newConvo);
     }
-    formData.append('type', type);
-    if (sharedContentId) formData.append('sharedContentId', sharedContentId);
-    if (contentType) formData.append('contentType', contentType);
-    
-    return apiFetch('/messages', { method: 'POST', body: formData });
+    return message;
 };
-export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => apiFetch('/messages/group', { method: 'POST', body: JSON.stringify({ name, userIds }) });
-export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => 
-    apiFetch(`/messages/${conversationId}/settings`, {
-        method: 'PUT',
-        body: JSON.stringify(settings)
-    });
-export const addMessageReaction = (messageId: string, emoji: string): Promise<void> =>
-    apiFetch(`/messages/${messageId}/react`, {
-        method: 'POST',
-        body: JSON.stringify({ emoji }),
-    });
+
+export const addMessageReaction = async (messageId: string, emoji: string): Promise<void> => {
+    await delay(100);
+    // Mock logic: find message and add reaction
+    console.log(`Reacting with ${emoji} to message ${messageId}`);
+};
+export const updateConversationSettings = async (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => {
+    await delay(150);
+    const convo = db.conversations.find(c => c.id === conversationId);
+    if (convo) {
+        convo.settings = { ...convo.settings, ...settings };
+    }
+};
+export const createGroupChat = async (name: string, userIds: string[]): Promise<Conversation> => {
+    await delay(400);
+    const participants = db.users.filter(u => userIds.includes(u.id) || u.id === mockUser.id);
+    const newGroup: Conversation = {
+        id: `convo-${Date.now()}`,
+        participants,
+        name,
+        messages: [],
+        isGroup: true,
+        settings: { theme: 'default', vanish_mode_enabled: false },
+    };
+    db.conversations.unshift(newGroup);
+    return newGroup;
+};
 
 
-// --- Misc ---
-export const getTrendingTopics = (): Promise<TrendingTopic[]> => apiFetch('/misc/trending');
-export const getSuggestedUsers = (): Promise<User[]> => apiFetch('/misc/suggestions');
-export const getFeedActivity = (): Promise<FeedActivity[]> => apiFetch('/misc/feed-activity');
-export const getSponsoredContent = (): Promise<SponsoredContent[]> => apiFetch('/misc/sponsored');
-export const getStickers = (): Promise<string[]> => apiFetch('/misc/stickers');
-export const getActiveAnnouncement = (): Promise<Announcement | null> => apiFetch('/misc/announcements/active');
-export const getAuthCarouselImages = (): Promise<AuthCarouselImage[]> => apiFetch('/misc/carousel-images');
-
-
-// --- Premium & Support ---
-export const subscribeToPremium = (): Promise<void> => apiFetch('/users/subscribe-premium', { method: 'POST' });
-export const applyForVerification = (data: any): Promise<void> => apiFetch('/users/apply-verification', { method: 'POST', body: JSON.stringify(data) });
-export const createSupportTicket = (subject: string, description: string): Promise<void> => apiFetch('/users/support-ticket', { method: 'POST', body: JSON.stringify({ subject, description }) });
-export const sendTip = (postId: string, amount: number): Promise<void> => apiFetch(`/posts/${postId}/tip`, { method: 'POST', body: JSON.stringify({ amount }) });
-export const startLiveStream = (title: string): Promise<LiveStream> => apiFetch('/livestreams/start', { method: 'POST', body: JSON.stringify({ title }) });
-export const getLiveStreams = (): Promise<LiveStream[]> => apiFetch('/livestreams');
-
-// --- Admin ---
-export const getAdminStats = (): Promise<AdminStats> => apiFetch('/admin/stats');
-export const getAdminUserGrowthData = (): Promise<AnalyticsData> => apiFetch('/admin/analytics/user-growth');
-export const getAdminContentTrendsData = (): Promise<{ labels: string[], postValues: number[], reelValues: number[] }> => apiFetch('/admin/analytics/content-trends');
-export const getAdminUsers = (searchTerm: string): Promise<User[]> => apiFetch(`/admin/users?search=${searchTerm}`);
-export const updateAdminUser = (userId: string, updates: any): Promise<void> => apiFetch(`/admin/users/${userId}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const issueUserWarning = (userId: string, reason: string): Promise<void> => apiFetch(`/admin/users/${userId}/warn`, { method: 'POST', body: JSON.stringify({ reason }) });
-export const deleteAdminUser = (userId: string): Promise<void> => apiFetch(`/admin/users/${userId}`, { method: 'DELETE' });
-export const getAdminContent = (type: 'posts' | 'reels'): Promise<({ id: string, username: string, caption: string, media_url: string })[]> => apiFetch(`/admin/content?type=${type}`);
-export const deleteAdminContent = (type: 'post' | 'reel', id: string): Promise<void> => apiFetch(`/admin/content/${type}/${id}`, { method: 'DELETE' });
-export const getAdminReports = (): Promise<Report[]> => apiFetch('/admin/reports');
-export const updateAdminReportStatus = (reportId: number, status: Report['status']): Promise<void> => apiFetch(`/admin/reports/${reportId}`, { method: 'PUT', body: JSON.stringify({ status }) });
-export const getAdminSupportTickets = (): Promise<SupportTicket[]> => apiFetch('/admin/support-tickets');
-export const getAdminSupportTicketDetails = (ticketId: number): Promise<SupportTicket> => apiFetch(`/admin/support-tickets/${ticketId}`);
-export const replyToSupportTicket = (ticketId: number, message: string): Promise<void> => apiFetch(`/admin/support-tickets/${ticketId}/reply`, { method: 'POST', body: JSON.stringify({ message }) });
-export const getAdminSponsoredContent = (): Promise<SponsoredContent[]> => apiFetch('/admin/sponsored');
-export const createAdminSponsoredContent = (data: any): Promise<void> => apiFetch('/admin/sponsored', { method: 'POST', body: JSON.stringify(data) });
-export const updateAdminSponsoredContent = (id: number, data: any): Promise<void> => apiFetch(`/admin/sponsored/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-export const deleteAdminSponsoredContent = (id: number): Promise<void> => apiFetch(`/admin/sponsored/${id}`, { method: 'DELETE' });
-export const getAdminTrendingTopics = (): Promise<TrendingTopic[]> => apiFetch('/admin/trending');
-export const createAdminTrendingTopic = (topic: string, post_count: number): Promise<void> => apiFetch('/admin/trending', { method: 'POST', body: JSON.stringify({ topic, post_count }) });
-export const deleteAdminTrendingTopic = (id: number): Promise<void> => apiFetch(`/admin/trending/${id}`, { method: 'DELETE' });
-export const getAppSettings = (): Promise<Record<string, string>> => apiFetch('/admin/settings');
-export const updateAppSettings = (settings: Record<string, string>): Promise<void> => apiFetch('/admin/settings', { method: 'PUT', body: JSON.stringify(settings) });
-export const getAnnouncements = (): Promise<Announcement[]> => apiFetch('/admin/announcements');
-export const createAnnouncement = (data: Partial<Announcement>): Promise<void> => apiFetch('/admin/announcements', { method: 'POST', body: JSON.stringify(data) });
-export const updateAnnouncement = (id: number, data: Partial<Announcement>): Promise<void> => apiFetch(`/admin/announcements/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-export const deleteAnnouncement = (id: number): Promise<void> => apiFetch(`/admin/announcements/${id}`, { method: 'DELETE' });
-export const adminGetCarouselImages = (): Promise<AuthCarouselImage[]> => apiFetch('/admin/carousel');
-export const adminAddCarouselImage = (formData: FormData): Promise<void> => apiFetch('/admin/carousel', { method: 'POST', body: formData });
-export const adminDeleteCarouselImage = (id: number): Promise<void> => apiFetch(`/admin/carousel/${id}`, { method: 'DELETE' });
+// --- ADMIN ---
+export const getAdminStats = async (): Promise<AdminStats> => { await delay(200); return { totalUsers: 1234, newUsersToday: 45, totalPosts: 5678, totalReels: 1234, pendingReports: 12, liveStreams: 3 }; };
+export const getAdminUserGrowthData = async (): Promise<AnalyticsData> => { await delay(200); return { labels: ['W1', 'W2', 'W3', 'W4'], values: [100, 150, 120, 200] }; };
+export const getAdminContentTrendsData = async (): Promise<any> => { await delay(200); return { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], postValues: [50, 60, 80, 70, 90], reelValues: [30, 40, 50, 45, 60] }; };
+export const getAdminUsers = async (searchTerm: string): Promise<User[]> => { await delay(300); return db.users.filter(u => u.username.includes(searchTerm)); };
+export const updateAdminUser = async (userId: string, updates: any): Promise<void> => { await delay(200); console.log('Updating user', userId, updates); };
+export const issueUserWarning = async (userId: string, reason: string): Promise<void> => { await delay(200); console.log(`Warning user ${userId} for ${reason}`); };
+export const deleteAdminUser = async (userId: string): Promise<void> => { await delay(200); console.log('Deleting user', userId); };
+export const getAdminContent = async (type: 'posts' | 'reels'): Promise<any[]> => { await delay(300); return type === 'posts' ? db.posts.map(p => ({ id: p.id, username: p.user.username, caption: p.caption, media_url: p.media[0]?.url })) : db.reels.map(r => ({ id: r.id, username: r.user.username, caption: r.caption, media_url: r.video })); };
+export const deleteAdminContent = async (type: 'post' | 'reel', id: string): Promise<void> => { await delay(200); console.log(`Deleting ${type} ${id}`); };
+export const getAdminReports = async (): Promise<Report[]> => { await delay(300); return db.reports; };
+export const updateAdminReportStatus = async (reportId: number, status: Report['status']): Promise<void> => { await delay(200); console.log(`Updating report ${reportId} to ${status}`); };
+export const getAdminSupportTickets = async (): Promise<SupportTicket[]> => { await delay(300); return db.supportTickets; };
+export const getAdminSupportTicketDetails = async (ticketId: number): Promise<SupportTicket> => { await delay(200); return db.supportTickets.find(t => t.id === ticketId)!; };
+export const replyToSupportTicket = async (ticketId: number, message: string): Promise<void> => { await delay(200); console.log(`Replying to ticket ${ticketId} with: ${message}`); };
+export const getAdminSponsoredContent = async (): Promise<SponsoredContent[]> => { await delay(200); return db.sponsored; };
+export const updateAdminSponsoredContent = async (id: number, data: any): Promise<void> => { await delay(200); console.log(`Updating ad ${id}`, data); };
+export const createAdminSponsoredContent = async (data: any): Promise<void> => { await delay(200); console.log('Creating ad', data); };
+export const deleteAdminSponsoredContent = async (id: number): Promise<void> => { await delay(200); console.log(`Deleting ad ${id}`); };
+export const getAdminTrendingTopics = async (): Promise<TrendingTopic[]> => { await delay(200); return db.trending; };
+export const createAdminTrendingTopic = async (topic: string, post_count: number): Promise<void> => { await delay(200); console.log(`Creating trend ${topic}`); };
+export const deleteAdminTrendingTopic = async (id: number): Promise<void> => { await delay(200); console.log(`Deleting trend ${id}`); };
+export const adminGetCarouselImages = async (): Promise<AuthCarouselImage[]> => { await delay(200); return db.carouselImages; };
+export const adminAddCarouselImage = async (formData: FormData): Promise<void> => { await delay(300); console.log('Uploading carousel image'); };
+export const adminDeleteCarouselImage = async (id: number): Promise<void> => { await delay(200); console.log(`Deleting carousel image ${id}`); };
+export const getAnnouncements = async (): Promise<Announcement[]> => { await delay(200); return db.announcements; };
+export const updateAnnouncement = async (id: number, data: any): Promise<void> => { await delay(200); console.log(`Updating announcement ${id}`, data); };
+export const createAnnouncement = async (data: any): Promise<void> => { await delay(200); console.log('Creating announcement', data); };
+export const deleteAnnouncement = async (id: number): Promise<void> => { await delay(200); console.log(`Deleting announcement ${id}`); };
+export const getAppSettings = async (): Promise<any> => { await delay(200); return db.settings; };
+export const updateAppSettings = async (settings: any): Promise<void> => { await delay(200); db.settings = { ...db.settings, ...settings }; };

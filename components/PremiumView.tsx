@@ -1,69 +1,52 @@
 
-
 import React from 'react';
-import type { Testimonial } from '../types';
 import Icon from './Icon.tsx';
 
-interface PremiumViewProps {
-  testimonials: Testimonial[];
-  onSubscribe: () => void;
-}
+const PremiumFeature: React.FC<{ title: string; description: string; icon: JSX.Element }> = ({ title, description, icon }) => (
+  <div className="flex items-start gap-4">
+    <div className="bg-red-500/10 text-red-400 p-3 rounded-lg">{icon}</div>
+    <div>
+      <h3 className="font-semibold">{title}</h3>
+      <p className="text-sm text-gray-400">{description}</p>
+    </div>
+  </div>
+);
 
-const PremiumView: React.FC<PremiumViewProps> = ({ testimonials, onSubscribe }) => {
-  const features = [
-    'Get a verified badge on your profile.',
-    'Upload videos in stunning 4K UHD.',
-    'Enjoy a completely ad-free experience.',
-    'Priority support from our team.',
-    'Early access to new features.',
-    'Eligible to receive a share of ad revenue.',
-  ];
-
+const PremiumView: React.FC = () => {
   return (
-    <div className="p-4 md:p-8 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
-        <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 font-serif tracking-wide">Go Premium</h1>
-            <p className="text-lg md:text-xl text-gray-300 mb-10">Unlock exclusive features, get verified, and enhance your experience.</p>
-        </div>
+    <div className="max-w-4xl mx-auto p-4 md:p-8">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold">Unlock Premium Features</h1>
+        <p className="text-lg text-gray-400 mt-2">Get the most out of our platform with an exclusive membership.</p>
+      </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-8 shadow-2xl shadow-red-900/10 mb-12">
-            <h2 className="text-2xl font-bold text-center mb-6">Premium Features</h2>
-            <ul className="space-y-4 mb-8">
-                {features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                        <Icon className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.052-.143z" clipRule="evenodd" /></Icon>
-                        <span>{feature}</span>
-                    </li>
-                ))}
-            </ul>
-            <div className="text-center mb-2">
-                <span className="text-5xl font-bold">$95.99</span>
-                <span className="text-gray-400">/ year</span>
-            </div>
-            <button onClick={onSubscribe} className="w-full bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg transition-transform hover:scale-105">
+      <div className="mt-10 grid md:grid-cols-2 gap-8 items-center">
+        <div className="space-y-6">
+          <PremiumFeature 
+            title="Ad-Free Experience" 
+            description="Browse without interruptions. No more sponsored posts in your feed or stories."
+            icon={<Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></Icon>}
+          />
+           <PremiumFeature 
+            title="Exclusive Profile Badge" 
+            description="Show off your premium status with a special badge next to your name."
+            icon={<Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.602-3.751m-.228-3.447A11.96 11.96 0 0012 2.25c-2.636 0-5.053.94-6.976 2.502" /></Icon>}
+          />
+           <PremiumFeature 
+            title="Advanced Analytics" 
+            description="Get deeper insights into your posts' performance and audience engagement."
+            icon={<Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-3.182-3.182m3.182 3.182v4.995A2.25 2.25 0 0119.5 19.5h-4.995" /></Icon>}
+          />
+        </div>
+        <div className="bg-gray-800/50 p-8 rounded-lg border border-gray-700 text-center">
+            <h2 className="text-xl font-bold">Monthly Plan</h2>
+            <p className="text-4xl font-extrabold my-4">$9.99<span className="text-base font-normal text-gray-400">/month</span></p>
+            <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg">
                 Subscribe Now
             </button>
+            <p className="text-xs text-gray-500 mt-4">Billed monthly. Cancel anytime.</p>
         </div>
-
-        {testimonials.length > 0 && (
-             <div className="max-w-4xl mx-auto w-full">
-                <h3 className="text-2xl font-bold text-center mb-6">What Creators Are Saying</h3>
-                <div className="grid md:grid-cols-3 gap-6">
-                    {testimonials.map(t => (
-                        <div key={t.id} className="bg-gray-900 p-6 rounded-lg border border-gray-800">
-                             <p className="text-gray-300 mb-4">"{t.quote}"</p>
-                             <div className="flex items-center gap-3">
-                                <img src={t.user.avatar} alt={t.user.username} className="w-10 h-10 rounded-full" />
-                                <div>
-                                    <p className="font-semibold">{t.user.name}</p>
-                                    <p className="text-sm text-gray-500">@{t.user.username}</p>
-                                </div>
-                             </div>
-                        </div>
-                    ))}
-                </div>
-             </div>
-        )}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import type { Story, StoryItem, User } from '../types';
+// Fix: Add .ts extension to types import
+import type { Story, StoryItem, User } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface StoryViewerProps {

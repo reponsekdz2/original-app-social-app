@@ -1,5 +1,7 @@
 
+
 import React from 'react';
+// Fix: Add .ts extension to types import
 import type { SupportTicket } from './types.ts';
 import Icon from './components/Icon.tsx';
 

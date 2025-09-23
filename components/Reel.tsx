@@ -1,5 +1,7 @@
+
 import React, { useRef, useState, useEffect } from 'react';
-import type { Reel as ReelType, User } from '../types';
+// Fix: Add .ts extension to types import
+import type { Reel as ReelType, User } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface ReelProps {

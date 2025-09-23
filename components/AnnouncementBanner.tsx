@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import type { Announcement } from '../types';
+// Fix: Add .ts extension to types import
+import type { Announcement } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface AnnouncementBannerProps {

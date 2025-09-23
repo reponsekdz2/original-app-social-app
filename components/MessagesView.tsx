@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { Conversation, User, Message } from '../types';
+import type { Conversation, User, Message } from '../types.ts';
 import Icon from './Icon.tsx';
 import ChatWindow from './ChatWindow.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';

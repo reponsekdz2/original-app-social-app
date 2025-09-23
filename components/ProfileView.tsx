@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import type { User, Post as PostType, Reel as ReelType } from '../types';
+// Fix: Add .ts extension to types import
+import type { User, Post as PostType, Reel as ReelType } from '../types.ts';
 import ProfileHeader from './ProfileHeader.tsx';
 import ProfileHighlights from './ProfileHighlights.tsx';
 import ProfileTabs from './ProfileTabs.tsx';

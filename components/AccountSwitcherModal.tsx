@@ -1,5 +1,7 @@
+
 import React from 'react';
-import type { User } from '../types';
+// Fix: Add .ts extension to types import
+import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
 
 interface AccountSwitcherModalProps {

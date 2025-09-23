@@ -1,6 +1,8 @@
+
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
-import type { User } from '../types';
+// Fix: Add .ts extension to types import
+import type { User } from '../types.ts';
 import * as api from '../services/apiService.ts';
 
 interface CreatePostModalProps {

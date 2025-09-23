@@ -1,44 +1,45 @@
-import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:3001';
+type EventHandler = (payload: any) => void;
 
 class SocketService {
-    public socket: Socket | null = null;
+    private events: { [key: string]: EventHandler[] } = {};
+    public socket: { on: Function, off: Function, emit: Function } | null = null;
 
-    connect(userId: string): void {
-        if (this.socket) {
-            this.socket.disconnect();
+    constructor() {
+        // In a real app, you would initialize socket.io-client here.
+        // For this mock, we'll just simulate the interface.
+        this.socket = {
+            on: this.on.bind(this),
+            off: this.off.bind(this),
+            emit: this.emit.bind(this),
+        };
+        console.log("Mock Socket Service Initialized");
+    }
+
+    on(event: string, handler: EventHandler) {
+        if (!this.events[event]) {
+            this.events[event] = [];
         }
-        this.socket = io(SOCKET_URL, {
-            auth: { userId }
-        });
-
-        this.socket?.on('connect', () => {
-            console.log('Socket connected:', this.socket?.id);
-        });
-
-        this.socket?.on('disconnect', () => {
-            console.log('Socket disconnected');
-        });
+        this.events[event].push(handler);
     }
 
-    disconnect(): void {
-        if (this.socket) {
-            this.socket.disconnect();
-            this.socket = null;
+    off(event: string, handler: EventHandler) {
+        if (this.events[event]) {
+            this.events[event] = this.events[event].filter(h => h !== handler);
         }
     }
 
-    on(event: string, callback: (data: any) => void): void {
-        this.socket?.on(event, callback);
+    emit(event: string, payload?: any) {
+        console.log(`%cSOCKET EMIT: ${event}`, 'color: #f5a623', payload);
+        // Here you could add logic to simulate server responses.
     }
 
-    off(event: string, callback?: (data: any) => void): void {
-        this.socket?.off(event, callback);
-    }
-
-    emit(event: string, data: any): void {
-        this.socket?.emit(event, data);
+    // A method for other parts of the app to trigger events for simulation
+    mockReceive(event: string, payload: any) {
+        console.log(`%cSOCKET MOCK RECEIVE: ${event}`, 'color: #4a90e2', payload);
+        if (this.events[event]) {
+            this.events[event].forEach(handler => handler(payload));
+        }
     }
 }
 

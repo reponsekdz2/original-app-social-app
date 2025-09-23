@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import type { Conversation, User, Message } from '../types';
+// Fix: Add .ts extension to types import
+import type { Conversation, User, Message } from '../types.ts';
 import Icon from './Icon.tsx';
 import MessageComponent from './Message.tsx';
 import MessageInput from './MessageInput.tsx';
@@ -87,12 +89,12 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
             } else {
                 // Different emoji, update it
                 const updatedReactions = [...reactions];
-                updatedReactions[existingReactionIndex] = { emoji, user: currentUser };
+                updatedReactions[existingReactionIndex] = { emoji, user: currentUser as any }; // Fix: cast user for optimistic update
                 return { ...msg, reactions: updatedReactions };
             }
         } else {
             // New reaction
-            const newReaction = { emoji, user: currentUser };
+            const newReaction = { emoji, user: currentUser as any }; // Fix: cast user for optimistic update
             return { ...msg, reactions: [...reactions, newReaction] };
         }
       }

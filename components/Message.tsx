@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { Message, User, SharedContent, FileAttachment, Reaction } from '../types.ts';
 import Icon from './Icon.tsx';

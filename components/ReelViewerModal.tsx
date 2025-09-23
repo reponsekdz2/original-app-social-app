@@ -1,5 +1,7 @@
+
 import React from 'react';
-import type { Reel as ReelType, User } from '../types';
+// Fix: Add .ts extension to types import
+import type { Reel as ReelType, User } from '../types.ts';
 import Reel from './Reel.tsx';
 import Icon from './Icon.tsx';
 
