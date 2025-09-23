@@ -19,7 +19,7 @@ const CallModal: React.FC<CallModalProps> = ({ user, onHangUp }) => {
       </div>
 
       <div className="flex-1 flex items-center justify-center">
-        <img src={user.avatar} alt={user.username} className="w-48 h-48 rounded-full border-4 border-gray-600" />
+        <img src={user.avatar_url} alt={user.username} className="w-48 h-48 rounded-full border-4 border-gray-600" />
       </div>
 
       <div className="absolute bottom-10 flex items-center gap-6">

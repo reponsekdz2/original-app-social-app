@@ -16,7 +16,7 @@ const UnfollowModal: React.FC<UnfollowModalProps> = ({ user, onCancel, onConfirm
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
-          <img src={user.avatar} alt={user.username} className="w-24 h-24 rounded-full object-cover mx-auto mb-4" />
+          <img src={user.avatar_url} alt={user.username} className="w-24 h-24 rounded-full object-cover mx-auto mb-4" />
           <p className="text-gray-300">
             If you change your mind, you'll have to request to follow @{user.username} again.
           </p>

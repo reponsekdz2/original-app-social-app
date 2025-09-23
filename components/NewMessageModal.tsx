@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -46,7 +47,7 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ users, onClose, onSel
               <li key={user.id}>
                 <button onClick={() => onSelectUser(user)} className="w-full flex items-center justify-between p-3 hover:bg-gray-700 text-left">
                    <div className="flex items-center gap-3">
-                      <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
+                      <img src={user.avatar_url} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
                       <div>
                         <p className="font-semibold text-sm flex items-center">{user.username} {user.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
                         <p className="text-xs text-gray-400">{user.name}</p>

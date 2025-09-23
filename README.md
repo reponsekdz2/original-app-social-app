@@ -16,11 +16,11 @@ You can access a live, interactive version of this application here:
 
 ## ✨ Core Features
 
-This application is more than a simple clone; it's a feature-rich platform with a wide array of capabilities, including:
+This application is more than a simple clone; it's a feature-rich platform with a wide array of capabilities, all powered by a live backend and database:
 
 **👤 User & Profile Management:**
 *   **Authentication:** Secure session-based login, registration, and session management.
-*   **Profiles:** Customizable user profiles with avatars, bios, highlights, and follower/following counts.
+*   **Profiles:** Customizable user profiles with avatars, bios, highlights, and real-time follower/following counts.
 *   **Relationships:** Full follow/unfollow, block/unblock, and mute/unmute functionality.
 *   **Privacy:** Option for users to set their accounts to private.
 
@@ -86,7 +86,7 @@ npm install
 # 3. Set up the database
 #  - Start your local MySQL server.
 #  - Create a new database (e.g., CREATE DATABASE talka;).
-#  - Execute the SQL commands in `backend/schema.txt` to create all tables.
+#  - Execute the SQL commands in `schema.txt` to create all tables.
 
 # 4. Create upload directories
 #  - Inside the `backend/` directory, create an `uploads` folder.

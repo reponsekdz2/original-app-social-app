@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { Post } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -39,7 +40,7 @@ const TipModal: React.FC<TipModalProps> = ({ post, onClose, onSendTip }) => {
           <button onClick={onClose} className="absolute top-3 right-3"><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
         </div>
         <div className="p-6 text-center">
-            <img src={post.user.avatar} alt={post.user.username} className="w-20 h-20 rounded-full mx-auto mb-3" />
+            <img src={post.user.avatar_url} alt={post.user.username} className="w-20 h-20 rounded-full mx-auto mb-3" />
             <p>You are tipping <span className="font-bold">{post.user.username}</span></p>
             <p className="text-xs text-gray-400 mb-6">Show your appreciation for their content!</p>
 

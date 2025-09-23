@@ -22,7 +22,7 @@ const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({ activity, onViewPro
 
     return (
         <div className="flex items-start gap-3 p-1 rounded-md hover:bg-gray-900 cursor-pointer" onClick={() => onViewProfile(activity.user)}>
-            <img src={activity.user.avatar} alt={activity.user.username} className="w-9 h-9 rounded-full object-cover" />
+            <img src={activity.user.avatar_url} alt={activity.user.username} className="w-9 h-9 rounded-full object-cover" />
             <div className="text-xs flex-1">
                 <p>
                     <span className="font-semibold">{activity.user.username}</span>

@@ -89,12 +89,14 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
             } else {
                 // Different emoji, update it
                 const updatedReactions = [...reactions];
-                updatedReactions[existingReactionIndex] = { emoji, user: currentUser as any }; // Fix: cast user for optimistic update
+                // FIX: Removed unnecessary `as any` cast as currentUser is of type User.
+                updatedReactions[existingReactionIndex] = { emoji, user: currentUser };
                 return { ...msg, reactions: updatedReactions };
             }
         } else {
             // New reaction
-            const newReaction = { emoji, user: currentUser as any }; // Fix: cast user for optimistic update
+            // FIX: Removed unnecessary `as any` cast as currentUser is of type User.
+            const newReaction = { emoji, user: currentUser };
             return { ...msg, reactions: [...reactions, newReaction] };
         }
       }
@@ -126,11 +128,11 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
   }
   
   const headerDetails = conversation.isGroup ? {
-      avatar: '/uploads/assets/group_avatar.png',
+      avatar_url: '/uploads/assets/group_avatar.png',
       name: conversation.name,
       status: `${conversation.participants.length} members`
   } : {
-      avatar: otherUser?.avatar,
+      avatar_url: otherUser?.avatar_url,
       name: otherUser?.username,
       status: 'Online'
   };
@@ -142,7 +144,7 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
           <button onClick={onBack} className="sm:hidden p-2 -ml-2">
             <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></Icon>
           </button>
-          <img src={headerDetails.avatar} alt={headerDetails.name} className="w-10 h-10 rounded-full cursor-pointer" onClick={() => otherUser && onViewProfile(otherUser)} />
+          <img src={headerDetails.avatar_url} alt={headerDetails.name} className="w-10 h-10 rounded-full cursor-pointer" onClick={() => otherUser && onViewProfile(otherUser)} />
           <div>
             <p className="font-semibold flex items-center gap-1.5 cursor-pointer" onClick={() => otherUser && onViewProfile(otherUser)}>{headerDetails.name} {otherUser?.isVerified && <VerifiedBadge className="w-3 h-3"/>}</p>
             <p className="text-xs text-gray-400">{headerDetails.status}</p>

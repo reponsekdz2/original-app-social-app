@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { User, Post } from '../types.ts';
 import VerifiedBadge from './VerifiedBadge.tsx';
@@ -6,7 +7,6 @@ import Icon from './Icon.tsx';
 
 interface ProfileHeaderProps {
   user: User;
-  posts: Post[];
   isCurrentUser: boolean;
   currentUser: User;
   onEditProfile: () => void;
@@ -20,7 +20,6 @@ interface ProfileHeaderProps {
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ 
     user, 
-    posts, 
     isCurrentUser, 
     currentUser, 
     onEditProfile, 
@@ -32,15 +31,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     onMessage
 }) => {
   const stats = [
-    { label: 'posts', value: posts.length, action: () => {} },
-    { label: 'followers', value: user.followers.length, action: () => onShowFollowers(user.followers) },
-    { label: 'following', value: user.following.length, action: () => onShowFollowing(user.following) },
+    { label: 'posts', value: user.post_count || 0, action: () => {} },
+    { label: 'followers', value: user.follower_count || 0, action: () => onShowFollowers(user.followers || []) },
+    { label: 'following', value: user.following_count || 0, action: () => onShowFollowing(user.following || []) },
   ];
 
   return (
     <header className="p-4 sm:p-6 md:p-8">
       <div className="flex flex-col sm:flex-row items-center">
-        <img src={user.avatar} alt={user.username} className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 rounded-full object-cover flex-shrink-0" />
+        <img src={user.avatar_url} alt={user.username} className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 rounded-full object-cover flex-shrink-0" />
         <div className="ml-0 mt-4 sm:mt-0 sm:ml-6 md:ml-10 flex-1 w-full">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mb-4">
             <h1 className="text-xl sm:text-2xl">{user.username}</h1>

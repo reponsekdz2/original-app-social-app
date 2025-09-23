@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Reel } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -16,7 +17,7 @@ const ReelGrid: React.FC<ReelGridProps> = ({ reels, onViewReel }) => {
     <div className="grid grid-cols-3 gap-1 sm:gap-2">
       {reels.map(reel => (
         <div key={reel.id} className="relative aspect-[9/16] group cursor-pointer bg-black" onClick={() => onViewReel(reel)}>
-          <video src={reel.video} className="w-full h-full object-cover rounded" />
+          <video src={reel.video_url} className="w-full h-full object-cover rounded" />
           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center rounded">
             <div className="text-white opacity-0 group-hover:opacity-100 flex items-center space-x-4">
               <span className="flex items-center font-bold text-sm"><Icon className="w-5 h-5 mr-1" fill="currentColor"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon>{reel.likes}</span>

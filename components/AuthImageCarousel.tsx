@@ -1,54 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../services/apiService.ts';
+import type { AuthCarouselImage } from '../types.ts';
 
 const AuthImageCarousel: React.FC = () => {
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<AuthCarouselImage[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const carouselImages = await api.getAuthCarouselImages();
-        if (carouselImages.length > 0) {
-          setImages(carouselImages.map(img => img.image_url));
-        }
+        const imageData = await api.getCarouselImages();
+        setImages(imageData);
       } catch (error) {
-        console.error("Failed to fetch carousel images:", error);
-        // Fallback to default images if API fails
-        setImages([
-          'https://images.unsplash.com/photo-1528732263494-242a3536015c?q=80&w=800&auto=format&fit=crop',
-          'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800&auto=format&fit=crop',
-        ]);
+        console.error('Failed to fetch carousel images:', error);
       }
     };
     fetchImages();
   }, []);
 
   useEffect(() => {
-    if (images.length === 0) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 4000); // Change image every 4 seconds
+    if (images.length > 1) {
+      const timer = setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      }, 5000); // Change image every 5 seconds
 
-    return () => clearInterval(interval);
-  }, [images]);
+      return () => clearInterval(timer);
+    }
+  }, [images.length]);
 
   if (images.length === 0) {
-      return (
-        <div className="relative w-full max-w-[280px] h-[540px] bg-black rounded-3xl border-8 border-gray-800 flex items-center justify-center">
-            <p className="text-gray-500 text-sm">Loading images...</p>
-        </div>
-      );
+    return <div className="w-96 h-[580px] bg-gray-800 rounded-lg animate-pulse"></div>;
   }
 
   return (
-    <div className="relative w-full max-w-[280px] h-[540px] bg-black rounded-3xl border-8 border-gray-800 overflow-hidden shadow-2xl shadow-red-900/10">
-      {images.map((src, index) => (
+    <div className="relative w-96 h-[580px] overflow-hidden rounded-lg shadow-2xl">
+      {images.map((image, index) => (
         <img
-          key={src}
-          src={src}
+          key={image.id}
+          src={image.image_url}
           alt={`Carousel image ${index + 1}`}
-          className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
             index === currentIndex ? 'opacity-100' : 'opacity-0'
           }`}
         />

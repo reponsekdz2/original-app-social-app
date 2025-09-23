@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState } from 'react';
 import type { Post } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -56,7 +57,8 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, onClose, onSave }) 
 
           <div className="w-full md:w-1/2 p-4 flex flex-col">
             <div className="flex items-center gap-3 mb-4">
-              <img src={post.user.avatar} alt={post.user.username} className="w-9 h-9 rounded-full" />
+              {/* Fix: Changed post.user.avatar to post.user.avatar_url */}
+              <img src={post.user.avatar_url} alt={post.user.username} className="w-9 h-9 rounded-full" />
               <span className="font-semibold">{post.user.username}</span>
             </div>
             <textarea

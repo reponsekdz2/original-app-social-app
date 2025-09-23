@@ -38,7 +38,7 @@ const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {reel.comments.map(comment => (
             <div key={comment.id} className="flex items-start gap-3">
-              <img src={comment.user.avatar} alt={comment.user.username} className="w-9 h-9 rounded-full" />
+              <img src={comment.user.avatar_url} alt={comment.user.username} className="w-9 h-9 rounded-full" />
               <div>
                 <p className="text-sm bg-gray-700 p-2 rounded-lg">
                   <span className="font-semibold">{comment.user.username}</span> {comment.text}
@@ -54,7 +54,7 @@ const ReelCommentsModal: React.FC<ReelCommentsModalProps> = ({ reel, currentUser
 
         <div className="p-4 border-t border-gray-700">
           <form onSubmit={handleSubmit} className="flex items-center gap-2 bg-gray-700 rounded-full p-1">
-            <img src={currentUser.avatar} alt="current user" className="w-8 h-8 rounded-full" />
+            <img src={currentUser.avatar_url} alt="current user" className="w-8 h-8 rounded-full" />
             <input
               type="text"
               placeholder="Add a comment..."

@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import type { User, Post, Story, View, Conversation, Reel, Notification } from './types.ts';
+import type { User, Post, Story, View, Reel, Notification, TrendingTopic, FeedActivity, SponsoredContent } from './types.ts';
 import * as api from './services/apiService.ts';
-import { mockUser, mockPosts, mockStories, mockSuggested, mockTrending, mockActivities, mockSponsored, mockConversations, mockReels, mockAllUsers } from './services/mockData.ts';
+import { socketService } from './services/socketService.ts';
 
 import AuthView from './components/AuthView.tsx';
 import LeftSidebar from './components/LeftSidebar.tsx';
@@ -15,13 +14,19 @@ import ProfileView from './components/ProfileView.tsx';
 import Sidebar from './components/Sidebar.tsx';
 import StoryViewer from './components/StoryViewer.tsx';
 import PostModal from './components/PostModal.tsx';
+import CreateChoiceModal from './components/CreateChoiceModal.tsx';
 import CreatePostModal from './components/CreatePostModal.tsx';
+import CreateReelModal from './components/CreateReelModal.tsx';
+import CreateStoryModal from './components/CreateStoryModal.tsx';
 import AccountSwitcherModal from './components/AccountSwitcherModal.tsx';
 import NotificationsPanel from './components/NotificationsPanel.tsx';
 import BottomNav from './components/BottomNav.tsx';
 import SavedView from './components/SavedView.tsx';
 import SettingsView from './components/SettingsView.tsx';
 import AdminView from './components/AdminView.tsx';
+import ShareModal from './components/ShareModal.tsx';
+import ViewLikesModal from './components/ViewLikesModal.tsx';
+import PostWithOptionsModal from './components/PostWithOptionsModal.tsx';
 
 const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -32,45 +37,162 @@ const App: React.FC = () => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [stories, setStories] = useState<Story[]>([]);
     const [reels, setReels] = useState<Reel[]>([]);
-    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
     
-    // Modal/Panel state
+    // Sidebar Data (can still be static or fetched)
+    const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
+    const [sponsoredContent, setSponsoredContent] = useState<SponsoredContent[]>([]);
+    
+    // UI State
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+    const [createModalType, setCreateModalType] = useState<'post' | 'reel' | 'story' | 'live' | null>(null);
     const [viewingStory, setViewingStory] = useState<{ story: Story, index: number } | null>(null);
     const [viewingPost, setViewingPost] = useState<Post | null>(null);
     const [isNotificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
     const [isAccountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
+    const [sharingContent, setSharingContent] = useState<Post | Reel | null>(null);
+    const [viewingLikes, setViewingLikes] = useState<User[] | null>(null);
+    const [postWithOptions, setPostWithOptions] = useState<Post | null>(null);
+
+
+    const fetchData = useCallback(async () => {
+        if (!currentUser) return;
+        try {
+            const [postsData, storiesData, reelsData, allUsersData] = await Promise.all([
+                api.getPosts(),
+                api.getStories(),
+                api.getReels(),
+                api.getAllUsers()
+            ]);
+            setPosts(postsData);
+            setStories(storiesData);
+            setReels(reelsData);
+            setAllUsers(allUsersData);
+        } catch (error) {
+            console.error("Failed to fetch app data:", error);
+        }
+    }, [currentUser]);
 
     useEffect(() => {
-        // Mock session check
-        const sessionUser = localStorage.getItem('currentUser');
-        if (sessionUser) {
-            setCurrentUser(JSON.parse(sessionUser));
-        } else {
-            // For development, auto-login mock user
-            setCurrentUser(mockUser);
-        }
-        setIsLoading(false);
+        const checkSession = async () => {
+            try {
+                const { user } = await api.checkSession();
+                setCurrentUser(user);
+                socketService.connect('/');
+            } catch (error) {
+                console.log("No active session");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        checkSession();
+        
+        return () => {
+            socketService.disconnect();
+        };
     }, []);
 
     useEffect(() => {
         if (currentUser) {
-            // Fetch data when user logs in
-            setPosts(mockPosts);
-            setStories(mockStories);
-            setReels(mockReels);
-            setConversations(mockConversations);
+            fetchData();
         }
-    }, [currentUser]);
-
-    const handleLoginSuccess = (data: { user: User }) => {
-        setCurrentUser(data.user);
-        localStorage.setItem('currentUser', JSON.stringify(data.user));
+    }, [currentUser, fetchData]);
+    
+    // --- ACTION HANDLERS ---
+    const handleToggleLike = async (postId: string) => {
+        if (!currentUser) return;
+        // Optimistic update
+        setPosts(prevPosts => prevPosts.map(p => {
+            if (p.id === postId) {
+                const isLiked = p.likedBy.some(u => u.id === currentUser.id);
+                const newLikes = isLiked ? p.likes - 1 : p.likes + 1;
+                const newLikedBy = isLiked 
+                    ? p.likedBy.filter(u => u.id !== currentUser.id)
+                    : [...p.likedBy, currentUser];
+                return { ...p, likes: newLikes, likedBy: newLikedBy };
+            }
+            return p;
+        }));
+        try {
+            await api.togglePostLike(postId);
+        } catch (error) {
+            console.error("Failed to toggle like:", error);
+            fetchData(); // Revert on error
+        }
+    };
+    
+    const handleToggleSave = async (postId: string) => {
+        setPosts(prevPosts => prevPosts.map(p => p.id === postId ? { ...p, isSaved: !p.isSaved } : p));
+        try {
+            await api.togglePostSave(postId);
+        } catch (error) {
+            console.error("Failed to toggle save:", error);
+            fetchData(); // Revert on error
+        }
     };
 
-    const handleLogout = () => {
+    const handleComment = async (postId: string, text: string) => {
+        try {
+            await api.addComment(postId, text);
+            await fetchData(); // simple refresh
+        } catch (error) {
+             console.error("Failed to comment:", error);
+        }
+    };
+
+    const handleFollow = async (userToFollow: User) => {
+        if(!currentUser) return;
+        // Optimistic update
+        setCurrentUser(prev => ({...prev!, following: [...(prev?.following || []), userToFollow] }));
+        try {
+            await api.followUser(userToFollow.id);
+        } catch (error) {
+            console.error("Follow failed:", error);
+            // Revert
+            setCurrentUser(prev => ({...prev!, following: prev!.following!.filter(u => u.id !== userToFollow.id)}));
+        }
+    };
+    
+    const handleUnfollow = async (userToUnfollow: User) => {
+         if(!currentUser) return;
+        // Optimistic update
+        setCurrentUser(prev => ({...prev!, following: prev!.following!.filter(u => u.id !== userToUnfollow.id)}));
+        try {
+            await api.followUser(userToUnfollow.id); // Same endpoint for toggle
+        } catch (error) {
+            console.error("Unfollow failed:", error);
+            // Revert
+             setCurrentUser(prev => ({...prev!, following: [...(prev?.following || []), userToUnfollow] }));
+        }
+    };
+    
+    const handleCreate = async (formData: FormData) => {
+        if (!createModalType) return;
+        try {
+            switch(createModalType) {
+                case 'post': await api.createPost(formData); break;
+                case 'reel': await api.createReel(formData); break;
+                case 'story': await api.createStory(formData); break;
+            }
+            await fetchData();
+            setCreateModalType(null);
+            setCreateModalOpen(false);
+        } catch(error) {
+            console.error(`Failed to create ${createModalType}:`, error);
+        }
+    }
+
+
+    // --- NAVIGATION & VIEWS ---
+    const handleLoginSuccess = (data: { user: User }) => {
+        setCurrentUser(data.user);
+        socketService.connect('/');
+    };
+
+    const handleLogout = async () => {
+        await api.logout();
         setCurrentUser(null);
-        localStorage.removeItem('currentUser');
+        socketService.disconnect();
     };
 
     const handleNavigate = (view: View) => {
@@ -78,19 +200,28 @@ const App: React.FC = () => {
         setNotificationsPanelOpen(false);
     };
 
+    const openCreateModal = () => {
+        setCreateModalOpen(true);
+    };
+    
+    const closeCreateModals = () => {
+        setCreateModalOpen(false);
+        setCreateModalType(null);
+    }
+    
     const renderView = () => {
         if (!currentUser) return null;
         switch (currentView) {
             case 'home':
-                return <HomeView posts={posts} stories={stories} currentUser={currentUser} onViewStory={(story, index) => setViewingStory({ story, index })} onToggleLike={() => {}} onToggleSave={() => {}} onComment={() => {}} onShare={() => {}} onViewLikes={() => {}} onViewProfile={() => {}} onViewPost={setViewingPost} onOptions={() => {}} onFollow={() => {}} onUnfollow={() => {}} onTip={() => {}} onVote={() => {}} />;
+                return <HomeView posts={posts} stories={stories} currentUser={currentUser} onViewStory={(story, index) => setViewingStory({ story, index })} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={setSharingContent} onViewLikes={setViewingLikes} onViewProfile={() => {}} onViewPost={setViewingPost} onOptions={setPostWithOptions} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={() => {}} onVote={() => {}} />;
             case 'explore':
                 return <ExploreView posts={posts} onViewPost={setViewingPost} />;
             case 'reels':
                 return <ReelsView reels={reels} currentUser={currentUser} onLikeReel={() => {}} onCommentOnReel={() => {}} onShareReel={() => {}} />;
             case 'messages':
-                return <MessagesView conversations={conversations} currentUser={currentUser} allUsers={mockAllUsers} onNavigate={() => {}} onInitiateCall={() => {}} onUpdateConversation={() => {}} onUpdateUserRelationship={() => {}} onReport={() => {}} onViewMedia={() => {}} />;
+                return <MessagesView currentUser={currentUser} onNavigate={() => {}} onInitiateCall={() => {}} onViewMedia={() => {}} />;
             case 'profile':
-                return <ProfileView user={currentUser} posts={posts.filter(p => p.user.id === currentUser.id)} reels={reels.filter(r => r.user.id === currentUser.id)} isCurrentUser={true} currentUser={currentUser} onEditProfile={() => {}} onViewArchive={() => {}} onFollow={() => {}} onUnfollow={() => {}} onShowFollowers={() => {}} onShowFollowing={() => {}} onEditPost={() => {}} onViewPost={setViewingPost} onViewReel={() => {}} onOpenCreateHighlightModal={() => {}} onMessage={() => {}} />;
+                return <ProfileView user={currentUser} posts={posts.filter(p => p.user.id === currentUser.id)} reels={reels.filter(r => r.user.id === currentUser.id)} isCurrentUser={true} currentUser={currentUser} onEditProfile={() => {}} onViewArchive={() => {}} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={() => {}} onShowFollowing={() => {}} onEditPost={() => {}} onViewPost={setViewingPost} onViewReel={() => {}} onOpenCreateHighlightModal={() => {}} onMessage={() => {}} />;
             case 'saved':
                 return <SavedView posts={posts.filter(p => p.isSaved)} onViewPost={setViewingPost} />;
             case 'settings':
@@ -102,7 +233,9 @@ const App: React.FC = () => {
         }
     };
     
-    if (isLoading) return <div className="bg-black min-h-screen"></div>;
+    if (isLoading) {
+        return <div className="bg-black text-white min-h-screen flex items-center justify-center"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>;
+    }
 
     if (!currentUser) {
         return <AuthView onLoginSuccess={handleLoginSuccess} />;
@@ -110,29 +243,36 @@ const App: React.FC = () => {
 
     return (
         <div className="bg-black text-white min-h-screen">
-            {currentView !== 'admin' && <LeftSidebar currentView={currentView} onNavigate={handleNavigate} onCreatePost={() => setCreateModalOpen(true)} onShowNotifications={() => setNotificationsPanelOpen(true)} />}
+            {currentView !== 'admin' && <LeftSidebar currentView={currentView} onNavigate={handleNavigate} onCreatePost={openCreateModal} onShowNotifications={() => setNotificationsPanelOpen(true)} />}
             
             <div className={`transition-transform duration-300 ${isNotificationsPanelOpen ? '-translate-x-[397px]' : 'translate-x-0'} md:ml-[72px] lg:ml-64`}>
-                {currentView !== 'admin' && <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => setAccountSwitcherOpen(true)} onCreatePost={() => setCreateModalOpen(true)} onShowNotifications={() => setNotificationsPanelOpen(p => !p)} onLogout={handleLogout} />}
+                {currentView !== 'admin' && <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => setAccountSwitcherOpen(true)} onCreatePost={openCreateModal} onShowNotifications={() => setNotificationsPanelOpen(p => !p)} onLogout={handleLogout} />}
                 
                 <main className="flex">
                     <div className="flex-1">
                         {renderView()}
                     </div>
-                    {currentView === 'home' && <Sidebar trendingTopics={mockTrending} suggestedUsers={mockSuggested} feedActivities={mockActivities} sponsoredContent={mockSponsored} currentUser={currentUser} onFollow={() => {}} onUnfollow={() => {}} onViewProfile={() => {}} />}
+                    {currentView === 'home' && <Sidebar trendingTopics={trendingTopics} suggestedUsers={allUsers.filter(u => u.id !== currentUser.id).slice(0,5)} feedActivities={[]} sponsoredContent={sponsoredContent} currentUser={currentUser} onFollow={handleFollow} onUnfollow={handleUnfollow} onViewProfile={() => {}} />}
                 </main>
 
-                {currentView !== 'admin' && <BottomNav currentView={currentView} onNavigate={handleNavigate} onCreate={() => setCreateModalOpen(true)} currentUser={currentUser} />}
+                {currentView !== 'admin' && <BottomNav currentView={currentView} onNavigate={handleNavigate} onCreate={openCreateModal} currentUser={currentUser} />}
             </div>
             
             {/* Modals & Overlays */}
             {viewingStory && <StoryViewer stories={stories} initialStoryIndex={viewingStory.index} onClose={() => setViewingStory(null)} onNextUser={() => {}} onPrevUser={() => {}} />}
-            {viewingPost && <PostModal post={viewingPost} currentUser={currentUser} onClose={() => setViewingPost(null)} onToggleLike={() => {}} onToggleSave={() => {}} onComment={() => {}} onShare={() => {}} onViewProfile={() => {}} onOptions={() => {}} />}
-            {isCreateModalOpen && <CreatePostModal onClose={() => setCreateModalOpen(false)} onCreatePost={() => {}} allUsers={mockAllUsers} currentUser={currentUser} />}
-            {isAccountSwitcherOpen && <AccountSwitcherModal accounts={mockAllUsers} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchAccount={() => {}} onAddAccount={() => {}} />}
+            {viewingPost && <PostModal post={viewingPost} currentUser={currentUser} onClose={() => setViewingPost(null)} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={setSharingContent} onViewProfile={() => {}} onOptions={setPostWithOptions} />}
+            {isCreateModalOpen && !createModalType && <CreateChoiceModal onClose={closeCreateModals} onChoice={setCreateModalType} />}
+            {createModalType === 'post' && <CreatePostModal onClose={closeCreateModals} onCreatePost={handleCreate} allUsers={allUsers} currentUser={currentUser} />}
+            {createModalType === 'reel' && <CreateReelModal onClose={closeCreateModals} onCreateReel={handleCreate} />}
+            {createModalType === 'story' && <CreateStoryModal onClose={closeCreateModals} onCreateStory={handleCreate} />}
+            {isAccountSwitcherOpen && <AccountSwitcherModal accounts={allUsers} currentUser={currentUser} onClose={() => setAccountSwitcherOpen(false)} onSwitchAccount={() => {}} onAddAccount={() => {}} />}
             {isNotificationsPanelOpen && <NotificationsPanel notifications={[]} onClose={() => setNotificationsPanelOpen(false)} onViewProfile={() => {}} onMarkAsRead={() => {}} onCollaborationResponse={() => {}} />}
+            {sharingContent && <ShareModal content={sharingContent} currentUser={currentUser} conversations={[]} onClose={() => setSharingContent(null)} onShareSuccess={() => {}} />}
+            {viewingLikes && <ViewLikesModal users={viewingLikes} currentUser={currentUser} onClose={() => setViewingLikes(null)} onViewProfile={() => {}} onFollow={handleFollow} onUnfollow={handleUnfollow} />}
+            {postWithOptions && <PostWithOptionsModal post={postWithOptions} currentUser={currentUser} onClose={() => setPostWithOptions(null)} onUnfollow={handleUnfollow} onFollow={handleFollow} onEdit={()=>{}} onDelete={()=>{}} onArchive={()=>{}} onReport={()=>{}} onShare={setSharingContent} onCopyLink={()=>{}} onViewProfile={()=>{}} onGoToPost={setViewingPost} />}
         </div>
     );
 };
 
+// Fix: Corrected typo 't6export' to 'export'
 export default App;

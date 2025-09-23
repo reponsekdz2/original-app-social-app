@@ -1,28 +1,35 @@
-// Fix: Create full type definitions
+
 export interface User {
   id: string;
   username: string;
   name: string;
-  avatar: string;
+  avatar_url: string; // Renamed from avatar
   bio?: string;
   website?: string;
-  followers: User[];
-  following: User[];
-  posts: Post[];
-  reels: Reel[];
-  stories: Story[];
-  savedPosts: string[];
+  followers?: User[];
+  following?: User[];
+  follower_count?: number;
+  following_count?: number;
+  post_count?: number;
+  posts?: Post[];
+  reels?: Reel[];
+  stories?: Story[];
+  savedPosts?: string[];
   isVerified: boolean;
   isPrivate: boolean;
   isPremium: boolean;
   isAdmin: boolean;
-  blockedUsers: string[];
-  mutedUsers: string[];
+  blockedUsers?: string[];
+  mutedUsers?: string[];
   highlights?: StoryHighlight[];
   status: 'active' | 'suspended' | 'banned';
   email?: string;
+  phone?: string;
+  dob?: string;
+  gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   wallet_balance?: number;
   last_login?: string;
+  created_at: string;
 }
 
 export interface Comment {
@@ -76,7 +83,7 @@ export interface Post {
 
 export interface StoryItem {
   id: string;
-  media: string;
+  media_url: string; // Renamed from media
   mediaType: 'image' | 'video';
   duration?: number;
 }
@@ -84,7 +91,8 @@ export interface StoryItem {
 export interface Story {
   id:string;
   user: User;
-  stories: StoryItem[];
+  items: StoryItem[]; // Renamed from stories
+  created_at: string;
 }
 
 export interface StoryHighlight {
@@ -146,6 +154,8 @@ export interface Message {
     reactions?: Reaction[];
     sharedContent?: SharedContent;
     fileAttachment?: FileAttachment;
+    // Fix: Add conversation_id to Message type
+    conversation_id?: string;
 }
 
 export interface Conversation {
@@ -163,7 +173,7 @@ export interface Conversation {
 export interface Reel {
   id: string;
   user: User;
-  video: string;
+  video_url: string; // Renamed from video
   caption: string;
   likes: number;
   likedBy: User[];
@@ -174,11 +184,12 @@ export interface Reel {
 
 export interface Notification {
   id: string;
-  user: User;
-  type: 'like' | 'comment' | 'follow' | 'mention' | 'collab_invite';
+  actor: User; // Renamed from user
+  type: 'like_post' | 'comment_post' | 'follow' | 'mention' | 'collab_invite' | 'like_reel' | 'comment_reel';
   post?: Post;
   commentText?: string;
   timestamp: string;
+  read_status: boolean;
 }
 
 export interface SupportTicket {

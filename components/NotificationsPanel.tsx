@@ -13,9 +13,12 @@ interface NotificationsPanelProps {
 const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose, onViewProfile, onMarkAsRead, onCollaborationResponse }) => {
   const renderNotificationText = (notification: Notification) => {
     switch (notification.type) {
-      case 'like':
-        return <>liked your post.</>;
-      case 'comment':
+      // Fix: Handle specific like and comment types
+      case 'like_post':
+      case 'like_reel':
+        return <>liked your {notification.type.includes('reel') ? 'reel' : 'post'}.</>;
+      case 'comment_post':
+      case 'comment_reel':
         return <>commented: "{notification.commentText}"</>;
       case 'follow':
         return <>started following you.</>;
@@ -41,11 +44,12 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, 
               <div className="py-2">
                 {notifications.map(notification => (
                   <div key={notification.id} className="p-4 hover:bg-gray-800/50">
-                    <div className="flex items-start gap-3 cursor-pointer" onClick={() => onViewProfile(notification.user)}>
-                        <img src={notification.user.avatar} alt={notification.user.username} className="w-10 h-10 rounded-full object-cover" />
+                    {/* Fix: Use notification.actor instead of notification.user and avatar_url */}
+                    <div className="flex items-start gap-3 cursor-pointer" onClick={() => onViewProfile(notification.actor)}>
+                        <img src={notification.actor.avatar_url} alt={notification.actor.username} className="w-10 h-10 rounded-full object-cover" />
                         <div className="flex-1">
                           <p className="text-sm">
-                            <span className="font-semibold">{notification.user.username}</span> {renderNotificationText(notification)}
+                            <span className="font-semibold">{notification.actor.username}</span> {renderNotificationText(notification)}
                           </p>
                           <p className="text-xs text-gray-500">{notification.timestamp}</p>
                         </div>

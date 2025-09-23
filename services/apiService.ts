@@ -1,169 +1,138 @@
+import type { User, Post, Story, Reel, Conversation, Message, AdminStats, AnalyticsData, Report, SupportTicket, SponsoredContent, TrendingTopic, AuthCarouselImage, Announcement, AccountStatusInfo } from '../types.ts';
 
-import type { User, Post, Story, Reel, Conversation, Message, SupportTicket, AdminStats, AnalyticsData, Report, AuthCarouselImage, Announcement, SponsoredContent, TrendingTopic } from '../types.ts';
-import { mockUser, mockPosts, mockStories, mockReels, mockSuggested, mockTrending, mockActivities, mockSponsored, mockConversations, mockAllUsers } from './mockData.ts';
+const apiRequest = async (method: string, path: string, body?: any, isFormData = false) => {
+    const options: RequestInit = {
+        method,
+        credentials: 'include', // Important for sessions
+    };
 
-// This is a mock API service. In a real application, these would be network requests.
+    if (body) {
+        if (isFormData) {
+            options.body = body; // body is already a FormData object
+        } else {
+            options.headers = { 'Content-Type': 'application/json' };
+            options.body = JSON.stringify(body);
+        }
+    }
+    
+    // In a real dev environment, you might have a full URL like http://localhost:3001
+    const baseUrl = '/api'; 
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    try {
+        const response = await fetch(`${baseUrl}${path}`, options);
 
-let db = {
-    users: [...mockAllUsers],
-    posts: [...mockPosts],
-    stories: [...mockStories],
-    reels: [...mockReels],
-    conversations: [...mockConversations],
-    trending: [...mockTrending],
-    activities: [...mockActivities],
-    sponsored: [...mockSponsored],
-    carouselImages: [
-        { id: 1, image_url: 'https://images.unsplash.com/photo-1528732263494-242a3536015c?q=80&w=800&auto=format&fit=crop', sort_order: 1 },
-        { id: 2, image_url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800&auto=format&fit=crop', sort_order: 2 }
-    ],
-    supportTickets: [],
-    reports: [],
-    announcements: [],
-    settings: { maintenance_mode: 'false', disable_new_registrations: 'false', reels_enabled: 'true' },
-    stickers: [
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: `An unknown error occurred. Status: ${response.status}` }));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+        
+        if (response.status === 204) {
+            return null;
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error(`API request failed: ${method} ${path}`, error);
+        throw error;
+    }
+};
+
+
+// --- Auth ---
+export const login = (username, password) => apiRequest('POST', '/auth/login', { username, password });
+export const register = (username, email, password) => apiRequest('POST', '/auth/register', { username, email, password });
+export const logout = () => apiRequest('POST', '/auth/logout');
+export const checkSession = () => apiRequest('GET', '/auth/session');
+
+// --- Data Fetching ---
+export const getPosts = (): Promise<Post[]> => apiRequest('GET', '/posts/feed');
+export const getStories = (): Promise<Story[]> => apiRequest('GET', '/stories');
+export const getReels = (): Promise<Reel[]> => apiRequest('GET', '/reels');
+export const getAllUsers = (): Promise<User[]> => apiRequest('GET', '/users');
+export const getCarouselImages = (): Promise<AuthCarouselImage[]> => apiRequest('GET', '/misc/carousel');
+export const getStickers = async (): Promise<string[]> => {
+    // This isn't in the backend, so we mock it.
+    return Promise.resolve([
         '/uploads/assets/stickers/sticker1.png',
         '/uploads/assets/stickers/sticker2.png',
         '/uploads/assets/stickers/sticker3.png',
-        '/uploads/assets/stickers/sticker4.png',
-    ],
-    accountStatus: { status: 'active', warnings: [] },
-    blockedUsers: [],
+    ]);
 };
+export const getBlockedUsers = (): Promise<User[]> => apiRequest('GET', '/users/blocked'); // Assuming this endpoint exists
+export const getAccountStatus = (): Promise<AccountStatusInfo> => apiRequest('GET', '/users/account-status'); // Assuming this endpoint exists
 
-// --- AUTH ---
-export const login = async (identifier: string, password: string): Promise<{ user: User }> => {
-    await delay(500);
-    const user = db.users.find(u => (u.username === identifier || u.email === identifier));
-    if (user && password) { // Mock: no password check
-        return { user };
-    }
-    throw new Error("Invalid credentials");
-};
+// --- Interactions ---
+export const togglePostLike = (postId: string) => apiRequest('POST', `/posts/${postId}/like`);
+export const togglePostSave = (postId: string) => apiRequest('POST', `/posts/${postId}/save`);
+export const addComment = (postId: string, text: string) => apiRequest('POST', '/comments', { postId, text });
+export const followUser = (userId: string) => apiRequest('POST', `/users/${userId}/follow`);
 
-export const register = async (data: any): Promise<{ user: User }> => {
-    await delay(500);
-    const newUser: User = {
-        id: String(Date.now()),
-        username: data.username,
-        name: data.name,
-        email: data.email,
-        avatar: 'https://picsum.photos/id/1025/200/200',
-        followers: [],
-        following: [],
-        posts: [],
-        reels: [],
-        stories: [],
-        savedPosts: [],
-        isVerified: false, isPrivate: false, isPremium: false, isAdmin: false,
-        blockedUsers: [], mutedUsers: [],
-        status: 'active',
-    };
-    db.users.push(newUser);
-    return { user: newUser };
-};
+// --- Content Creation ---
+export const createPost = (formData: FormData) => apiRequest('POST', '/posts', formData, true);
+export const createReel = (formData: FormData) => apiRequest('POST', '/reels', formData, true);
+export const createStory = (formData: FormData) => apiRequest('POST', '/stories', formData, true);
 
-export const getAuthCarouselImages = async (): Promise<AuthCarouselImage[]> => {
-    await delay(200);
-    return db.carouselImages;
-};
-
-// --- DATA FETCHING ---
-export const getPosts = async (): Promise<Post[]> => { await delay(300); return db.posts; };
-export const getStories = async (): Promise<Story[]> => { await delay(200); return db.stories; };
-export const getReels = async (): Promise<Reel[]> => { await delay(300); return db.reels; };
-export const getConversations = async (): Promise<Conversation[]> => { await delay(400); return db.conversations; };
-export const getStickers = async (): Promise<string[]> => { await delay(100); return db.stickers; };
-export const getBlockedUsers = async (): Promise<User[]> => { await delay(200); return db.users.filter(u => db.blockedUsers.includes(u.id)); };
-export const getAccountStatus = async (): Promise<any> => { await delay(200); return db.accountStatus; };
-
-// --- ACTIONS ---
-export const sendMessage = async (userId: string, content: string | File, type: Message['type'], contentId?: string, contentType?: 'post' | 'reel', conversationId?: string): Promise<Message> => {
-    await delay(250);
-    let convo = conversationId ? db.conversations.find(c => c.id === conversationId) : db.conversations.find(c => !c.isGroup && c.participants.some(p => p.id === userId));
-
-    const message: Message = {
-        id: `msg-${Date.now()}`,
-        senderId: mockUser.id,
-        content: typeof content === 'string' ? content : 'File content',
-        timestamp: new Date().toISOString(),
-        type,
-        read: false,
-    };
-
-    if (convo) {
-        convo.messages.push(message);
+// --- Messaging ---
+export const getConversations = (): Promise<Conversation[]> => apiRequest('GET', '/messages/conversations');
+export const sendMessage = (
+    content: string | File, 
+    type: Message['type'], 
+    conversationId?: string, 
+    recipientId?: string,
+    sharedContentId?: string,
+    sharedContentType?: 'post' | 'reel'
+): Promise<Message> => {
+    if (typeof content === 'string') {
+        return apiRequest('POST', '/messages', { content, type, conversationId, recipientId, sharedContentId, sharedContentType });
     } else {
-        const newConvo: Conversation = {
-            id: `convo-${Date.now()}`,
-            participants: [mockUser, db.users.find(u => u.id === userId)!],
-            messages: [message],
-            isGroup: false,
-            settings: { theme: 'default', vanish_mode_enabled: false },
-        };
-        db.conversations.unshift(newConvo);
-    }
-    return message;
-};
-
-export const addMessageReaction = async (messageId: string, emoji: string): Promise<void> => {
-    await delay(100);
-    // Mock logic: find message and add reaction
-    console.log(`Reacting with ${emoji} to message ${messageId}`);
-};
-export const updateConversationSettings = async (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => {
-    await delay(150);
-    const convo = db.conversations.find(c => c.id === conversationId);
-    if (convo) {
-        convo.settings = { ...convo.settings, ...settings };
+        const formData = new FormData();
+        formData.append('media', content);
+        formData.append('type', type);
+        if (conversationId) formData.append('conversationId', conversationId);
+        if (recipientId) formData.append('recipientId', recipientId);
+        return apiRequest('POST', '/messages', formData, true);
     }
 };
-export const createGroupChat = async (name: string, userIds: string[]): Promise<Conversation> => {
-    await delay(400);
-    const participants = db.users.filter(u => userIds.includes(u.id) || u.id === mockUser.id);
-    const newGroup: Conversation = {
-        id: `convo-${Date.now()}`,
-        participants,
-        name,
-        messages: [],
-        isGroup: true,
-        settings: { theme: 'default', vanish_mode_enabled: false },
-    };
-    db.conversations.unshift(newGroup);
-    return newGroup;
-};
+export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => apiRequest('POST', '/messages/conversations/group', { name, userIds });
+export const addMessageReaction = (messageId: string, emoji: string) => apiRequest('POST', `/messages/${messageId}/react`, { emoji }); // Assuming endpoint
+export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>) => apiRequest('PUT', `/messages/conversations/${conversationId}/settings`, { settings }); // Assuming endpoint
 
+// --- Admin ---
+export const getAdminStats = (): Promise<AdminStats> => apiRequest('GET', '/admin/stats');
+export const getAdminUserGrowthData = (): Promise<AnalyticsData> => apiRequest('GET', '/admin/analytics/user-growth'); // Assuming endpoint
+export const getAdminContentTrendsData = (): Promise<any> => apiRequest('GET', '/admin/analytics/content-trends'); // Assuming endpoint
+export const getAdminUsers = (searchTerm: string): Promise<User[]> => apiRequest('GET', `/admin/users?search=${searchTerm}`);
+export const updateAdminUser = (userId: string, updates: any) => apiRequest('PUT', `/admin/users/${userId}`, updates);
+export const issueUserWarning = (userId: string, reason: string) => apiRequest('POST', `/admin/users/${userId}/warn`, { reason }); // Assuming endpoint
+export const deleteAdminUser = (userId: string) => apiRequest('DELETE', `/admin/users/${userId}`);
 
-// --- ADMIN ---
-export const getAdminStats = async (): Promise<AdminStats> => { await delay(200); return { totalUsers: 1234, newUsersToday: 45, totalPosts: 5678, totalReels: 1234, pendingReports: 12, liveStreams: 3 }; };
-export const getAdminUserGrowthData = async (): Promise<AnalyticsData> => { await delay(200); return { labels: ['W1', 'W2', 'W3', 'W4'], values: [100, 150, 120, 200] }; };
-export const getAdminContentTrendsData = async (): Promise<any> => { await delay(200); return { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], postValues: [50, 60, 80, 70, 90], reelValues: [30, 40, 50, 45, 60] }; };
-export const getAdminUsers = async (searchTerm: string): Promise<User[]> => { await delay(300); return db.users.filter(u => u.username.includes(searchTerm)); };
-export const updateAdminUser = async (userId: string, updates: any): Promise<void> => { await delay(200); console.log('Updating user', userId, updates); };
-export const issueUserWarning = async (userId: string, reason: string): Promise<void> => { await delay(200); console.log(`Warning user ${userId} for ${reason}`); };
-export const deleteAdminUser = async (userId: string): Promise<void> => { await delay(200); console.log('Deleting user', userId); };
-export const getAdminContent = async (type: 'posts' | 'reels'): Promise<any[]> => { await delay(300); return type === 'posts' ? db.posts.map(p => ({ id: p.id, username: p.user.username, caption: p.caption, media_url: p.media[0]?.url })) : db.reels.map(r => ({ id: r.id, username: r.user.username, caption: r.caption, media_url: r.video })); };
-export const deleteAdminContent = async (type: 'post' | 'reel', id: string): Promise<void> => { await delay(200); console.log(`Deleting ${type} ${id}`); };
-export const getAdminReports = async (): Promise<Report[]> => { await delay(300); return db.reports; };
-export const updateAdminReportStatus = async (reportId: number, status: Report['status']): Promise<void> => { await delay(200); console.log(`Updating report ${reportId} to ${status}`); };
-export const getAdminSupportTickets = async (): Promise<SupportTicket[]> => { await delay(300); return db.supportTickets; };
-export const getAdminSupportTicketDetails = async (ticketId: number): Promise<SupportTicket> => { await delay(200); return db.supportTickets.find(t => t.id === ticketId)!; };
-export const replyToSupportTicket = async (ticketId: number, message: string): Promise<void> => { await delay(200); console.log(`Replying to ticket ${ticketId} with: ${message}`); };
-export const getAdminSponsoredContent = async (): Promise<SponsoredContent[]> => { await delay(200); return db.sponsored; };
-export const updateAdminSponsoredContent = async (id: number, data: any): Promise<void> => { await delay(200); console.log(`Updating ad ${id}`, data); };
-export const createAdminSponsoredContent = async (data: any): Promise<void> => { await delay(200); console.log('Creating ad', data); };
-export const deleteAdminSponsoredContent = async (id: number): Promise<void> => { await delay(200); console.log(`Deleting ad ${id}`); };
-export const getAdminTrendingTopics = async (): Promise<TrendingTopic[]> => { await delay(200); return db.trending; };
-export const createAdminTrendingTopic = async (topic: string, post_count: number): Promise<void> => { await delay(200); console.log(`Creating trend ${topic}`); };
-export const deleteAdminTrendingTopic = async (id: number): Promise<void> => { await delay(200); console.log(`Deleting trend ${id}`); };
-export const adminGetCarouselImages = async (): Promise<AuthCarouselImage[]> => { await delay(200); return db.carouselImages; };
-export const adminAddCarouselImage = async (formData: FormData): Promise<void> => { await delay(300); console.log('Uploading carousel image'); };
-export const adminDeleteCarouselImage = async (id: number): Promise<void> => { await delay(200); console.log(`Deleting carousel image ${id}`); };
-export const getAnnouncements = async (): Promise<Announcement[]> => { await delay(200); return db.announcements; };
-export const updateAnnouncement = async (id: number, data: any): Promise<void> => { await delay(200); console.log(`Updating announcement ${id}`, data); };
-export const createAnnouncement = async (data: any): Promise<void> => { await delay(200); console.log('Creating announcement', data); };
-export const deleteAnnouncement = async (id: number): Promise<void> => { await delay(200); console.log(`Deleting announcement ${id}`); };
-export const getAppSettings = async (): Promise<any> => { await delay(200); return db.settings; };
-export const updateAppSettings = async (settings: any): Promise<void> => { await delay(200); db.settings = { ...db.settings, ...settings }; };
+export const getAdminContent = (type: 'posts' | 'reels'): Promise<any[]> => apiRequest('GET', `/admin/content/${type}`); // Assuming endpoint
+export const deleteAdminContent = (type: string, id: string) => apiRequest('DELETE', `/admin/content/${type}/${id}`); // Assuming endpoint
+
+export const getAdminReports = (): Promise<Report[]> => apiRequest('GET', '/admin/reports');
+export const updateAdminReportStatus = (reportId: number, status: Report['status']) => apiRequest('PUT', `/admin/reports/${reportId}`, { status });
+
+export const getAdminSupportTickets = (): Promise<SupportTicket[]> => apiRequest('GET', '/admin/support'); // Assuming endpoint
+export const getAdminSupportTicketDetails = (ticketId: number): Promise<SupportTicket> => apiRequest('GET', `/admin/support/${ticketId}`); // Assuming endpoint
+export const replyToSupportTicket = (ticketId: number, message: string): Promise<void> => apiRequest('POST', `/admin/support/${ticketId}/reply`, { message }); // Assuming endpoint
+
+export const getAdminSponsoredContent = (): Promise<SponsoredContent[]> => apiRequest('GET', '/admin/sponsored'); // Assuming endpoint
+export const createAdminSponsoredContent = (adData: Omit<SponsoredContent, 'id'>) => apiRequest('POST', '/admin/sponsored', adData); // Assuming endpoint
+export const updateAdminSponsoredContent = (adId: number, adData: Partial<SponsoredContent>) => apiRequest('PUT', `/admin/sponsored/${adId}`, adData); // Assuming endpoint
+export const deleteAdminSponsoredContent = (adId: number) => apiRequest('DELETE', `/admin/sponsored/${adId}`); // Assuming endpoint
+
+export const getAdminTrendingTopics = (): Promise<TrendingTopic[]> => apiRequest('GET', '/admin/trending'); // Assuming endpoint
+export const createAdminTrendingTopic = (topic: string, post_count: number) => apiRequest('POST', '/admin/trending', { topic, post_count }); // Assuming endpoint
+export const deleteAdminTrendingTopic = (id: number) => apiRequest('DELETE', `/admin/trending/${id}`); // Assuming endpoint
+
+export const adminGetCarouselImages = (): Promise<AuthCarouselImage[]> => apiRequest('GET', '/admin/carousel');
+export const adminAddCarouselImage = (formData: FormData) => apiRequest('POST', '/admin/carousel', formData, true);
+export const adminDeleteCarouselImage = (id: number) => apiRequest('DELETE', `/admin/carousel/${id}`);
+
+export const getAnnouncements = (): Promise<Announcement[]> => apiRequest('GET', '/admin/announcements'); // Assuming endpoint
+export const createAnnouncement = (payload: any) => apiRequest('POST', '/admin/announcements', payload); // Assuming endpoint
+export const updateAnnouncement = (id: number, payload: any) => apiRequest('PUT', `/admin/announcements/${id}`, payload); // Assuming endpoint
+export const deleteAnnouncement = (id: number) => apiRequest('DELETE', `/admin/announcements/${id}`); // Assuming endpoint
+
+export const getAppSettings = (): Promise<Record<string, any>> => apiRequest('GET', '/admin/settings'); // Assuming endpoint
+export const updateAppSettings = (settings: Record<string, any>) => apiRequest('PUT', '/admin/settings', settings); // Assuming endpoint

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import * as api from '../../services/apiService.ts';
 import type { User } from '../../types.ts';
@@ -91,7 +92,7 @@ const UserManagement: React.FC = () => {
                         {filteredUsers.map(user => (
                             <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/30">
                                 <td className="px-4 py-3 font-medium flex items-center gap-3">
-                                    <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full" />
+                                    <img src={user.avatar_url} alt={user.username} className="w-8 h-8 rounded-full" />
                                     {user.username} {user.isVerified && <VerifiedBadge />}
                                 </td>
                                 <td className="px-4 py-3 hidden sm:table-cell">{user.email}</td>

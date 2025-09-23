@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { LiveStream } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -17,7 +18,7 @@ const LiveStreamsView: React.FC<LiveStreamsViewProps> = ({ streams, onJoinStream
             <div key={stream.id} className="relative aspect-video rounded-lg overflow-hidden group cursor-pointer" onClick={() => onJoinStream(stream)}>
               {/* Placeholder for video thumbnail */}
               <div className="bg-gray-700 w-full h-full flex items-center justify-center">
-                 <img src={stream.user.avatar} alt="streamer avatar" className="w-24 h-24 rounded-full opacity-50" />
+                 <img src={stream.user.avatar_url} alt="streamer avatar" className="w-24 h-24 rounded-full opacity-50" />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
               <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">LIVE</div>

@@ -1,1 +1,1 @@
-full contents of App.tsx
+full contents of AuthView.tsx

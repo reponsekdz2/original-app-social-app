@@ -29,7 +29,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversat
     : suggestedConversations;
 
   const handleCopyLink = () => {
-    const isReel = 'video' in content;
+    const isReel = 'video_url' in content;
     const postUrl = `${window.location.origin}/${isReel ? 'r' : 'p'}/${content.id}`;
     navigator.clipboard.writeText(postUrl);
     setLinkCopied(true);
@@ -37,14 +37,15 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversat
   };
 
   const handleShare = async (user: User) => {
-    const contentType = 'video' in content ? 'reel' : 'post';
-    const messageType = 'video' in content ? 'share_reel' : 'share_post';
+    const contentType = 'video_url' in content ? 'reel' : 'post';
+    const messageType = 'video_url' in content ? 'share_reel' : 'share_post';
     const contentId = content.id;
     
     setSentTo(prev => [...prev, user.id]);
 
     try {
-        await api.sendMessage(user.id, `Shared a ${contentType}`, messageType, contentId, contentType);
+        // Fix: Corrected arguments for sendMessage API call
+        await api.sendMessage(`Shared a ${contentType}`, messageType, undefined, user.id, contentId, contentType);
         onShareSuccess(user);
     } catch (error) {
         console.error("Failed to share", error);
@@ -86,7 +87,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversat
               <li key={convo.id}>
                 <div className="w-full flex items-center justify-between p-2 rounded-md text-left">
                    <div className="flex items-center gap-3">
-                      <img src={otherUser.avatar} alt={otherUser.username} className="w-11 h-11 rounded-full object-cover" />
+                      <img src={otherUser.avatar_url} alt={otherUser.username} className="w-11 h-11 rounded-full object-cover" />
                       <p className="font-semibold text-sm">{otherUser.username}</p>
                   </div>
                   <button 

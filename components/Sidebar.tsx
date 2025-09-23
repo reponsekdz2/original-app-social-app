@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {suggestedUsers.map(user => (
           <div key={user.id} className="flex items-center justify-between hover:bg-gray-800 p-2 rounded-md">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => onViewProfile(user)}>
-              <img src={user.avatar} alt={user.username} className="w-10 h-10 rounded-full" />
+              <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full" />
               <div>
                 <p className="font-semibold text-sm">{user.username}</p>
                 <p className="text-xs text-gray-500">{user.name}</p>

@@ -1,1 +1,224 @@
-full contents of backend/schema.txt
+
+-- Users Table: Core of the application
+CREATE TABLE `users` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `username` VARCHAR(50) NOT NULL UNIQUE,
+  `name` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(100) NOT NULL UNIQUE,
+  `password` VARCHAR(255) NOT NULL,
+  `phone` VARCHAR(20) DEFAULT NULL,
+  `dob` DATE DEFAULT NULL,
+  `avatar_url` VARCHAR(255) DEFAULT '/uploads/default_avatar.png',
+  `bio` TEXT,
+  `website` VARCHAR(255) DEFAULT NULL,
+  `gender` ENUM('Male','Female','Other','Prefer not to say') DEFAULT 'Prefer not to say',
+  `is_verified` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_premium` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_private` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_2fa_enabled` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_admin` TINYINT(1) NOT NULL DEFAULT 0,
+  `status` ENUM('active','suspended','banned') NOT NULL DEFAULT 'active',
+  `wallet_balance` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  `last_login` TIMESTAMP NULL DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_username` (`username`),
+  INDEX `idx_email` (`email`)
+);
+
+-- Followers/Following relationship table
+CREATE TABLE `followers` (
+  `follower_id` VARCHAR(36) NOT NULL,
+  `following_id` VARCHAR(36) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`follower_id`,`following_id`),
+  FOREIGN KEY (`follower_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`following_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Posts Table
+CREATE TABLE `posts` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `user_id` VARCHAR(36) NOT NULL,
+  `caption` TEXT,
+  `location` VARCHAR(255) DEFAULT NULL,
+  `is_archived` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  INDEX `idx_post_user_id` (`user_id`)
+);
+
+-- Post Media (for multi-image/video posts)
+CREATE TABLE `post_media` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `post_id` VARCHAR(36) NOT NULL,
+  `media_url` VARCHAR(255) NOT NULL,
+  `media_type` ENUM('image','video') NOT NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
+);
+
+-- Reels Table
+CREATE TABLE `reels` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `user_id` VARCHAR(36) NOT NULL,
+  `video_url` VARCHAR(255) NOT NULL,
+  `caption` TEXT,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Comments Table
+CREATE TABLE `comments` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `post_id` VARCHAR(36) DEFAULT NULL,
+  `reel_id` VARCHAR(36) DEFAULT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  `text` TEXT NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`reel_id`) REFERENCES `reels` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Post Likes (Join Table)
+CREATE TABLE `post_likes` (
+  `post_id` VARCHAR(36) NOT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`post_id`,`user_id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Reel Likes (Join Table)
+CREATE TABLE `reel_likes` (
+  `reel_id` VARCHAR(36) NOT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`reel_id`,`user_id`),
+  FOREIGN KEY (`reel_id`) REFERENCES `reels` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Post Saves (Bookmarks)
+CREATE TABLE `post_saves` (
+  `post_id` VARCHAR(36) NOT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`post_id`,`user_id`),
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Stories Table (acts as a container for items)
+CREATE TABLE `stories` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `user_id` VARCHAR(36) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Individual Story Items
+CREATE TABLE `story_items` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `story_id` INT NOT NULL,
+  `media_url` VARCHAR(255) NOT NULL,
+  `media_type` ENUM('image','video') NOT NULL,
+  `duration_ms` INT DEFAULT 7000,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`story_id`) REFERENCES `stories` (`id`) ON DELETE CASCADE
+);
+
+-- Messaging Conversations
+CREATE TABLE `conversations` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `is_group` TINYINT(1) NOT NULL DEFAULT 0,
+  `group_name` VARCHAR(100) DEFAULT NULL,
+  `theme` VARCHAR(20) DEFAULT 'default',
+  `vanish_mode_enabled` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Conversation Participants
+CREATE TABLE `conversation_participants` (
+  `conversation_id` VARCHAR(36) NOT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  PRIMARY KEY (`conversation_id`,`user_id`),
+  FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Messages Table
+CREATE TABLE `messages` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `conversation_id` VARCHAR(36) NOT NULL,
+  `sender_id` VARCHAR(36) NOT NULL,
+  `content` TEXT,
+  `message_type` ENUM('text','image','sticker','voicenote','share_post','share_reel', 'file') NOT NULL DEFAULT 'text',
+  `shared_content_id` VARCHAR(36) DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Notifications Table
+CREATE TABLE `notifications` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `user_id` VARCHAR(36) NOT NULL,
+  `actor_id` VARCHAR(36) NOT NULL,
+  `type` ENUM('like_post','comment_post','follow','like_reel','comment_reel', 'mention', 'collab_invite') NOT NULL,
+  `entity_id` VARCHAR(36) DEFAULT NULL,
+  `read_status` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Live Streams Table
+CREATE TABLE `livestreams` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `user_id` VARCHAR(36) NOT NULL,
+  `title` VARCHAR(255) DEFAULT NULL,
+  `status` ENUM('live','ended') NOT NULL DEFAULT 'live',
+  `started_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Reports Table
+CREATE TABLE `reports` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `reporter_id` VARCHAR(36) NOT NULL,
+  `reported_entity_id` VARCHAR(36) NOT NULL,
+  `entity_type` ENUM('user','post','comment','reel') NOT NULL,
+  `reason` VARCHAR(255) NOT NULL,
+  `details` TEXT,
+  `status` ENUM('pending','resolved','dismissed') NOT NULL DEFAULT 'pending',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`reporter_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- Support Tickets Table
+CREATE TABLE `support_tickets` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `user_id` VARCHAR(36) NOT NULL,
+  `subject` VARCHAR(255) NOT NULL,
+  `description` TEXT NOT NULL,
+  `status` ENUM('Open','Pending','Resolved') NOT NULL DEFAULT 'Open',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- For Login Carousel
+CREATE TABLE `auth_carousel_images` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `image_url` VARCHAR(255) NOT NULL,
+  `sort_order` INT DEFAULT 0
+);
+
+-- Session Table: Required by express-mysql-session
+CREATE TABLE `sessions` (
+  `session_id` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL PRIMARY KEY,
+  `expires` INT(11) UNSIGNED NOT NULL,
+  `data` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin
+);

@@ -29,7 +29,7 @@ const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({ accounts, c
           {accounts.map(account => (
             <button key={account.id} onClick={() => onSwitchAccount(account.id)} className="w-full flex items-center justify-between p-3 hover:bg-gray-700">
               <div className="flex items-center gap-3">
-                <img src={account.avatar} alt={account.username} className="w-11 h-11 rounded-full" />
+                <img src={account.avatar_url} alt={account.username} className="w-11 h-11 rounded-full" />
                 <span className="font-semibold">{account.username}</span>
               </div>
               {account.id === currentUser.id && (

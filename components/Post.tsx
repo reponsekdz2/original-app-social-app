@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import type { Post, User, Comment } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -45,7 +46,7 @@ const PostComponent: React.FC<PostProps> = (props) => {
         <article className="bg-black border border-gray-800 rounded-lg">
             {/* Post Header */}
             <div className="flex items-center p-3">
-                <img src={post.user.avatar} alt={post.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(post.user)} />
+                <img src={post.user.avatar_url} alt={post.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(post.user)} />
                 <div className="ml-3 flex-1">
                     <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-sm cursor-pointer" onClick={() => onViewProfile(post.user)}>{post.user.username}</span>

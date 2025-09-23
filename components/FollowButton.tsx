@@ -12,7 +12,8 @@ interface FollowButtonProps {
 
 const FollowButton: React.FC<FollowButtonProps> = ({ user, currentUser, onFollow, onUnfollow, className = '' }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const isFollowing = currentUser.following.some(u => u.id === user.id);
+  // FIX: Added optional chaining to prevent crash if currentUser.following is undefined.
+  const isFollowing = currentUser.following?.some(u => u.id === user.id) || false;
   const baseClasses = 'text-center font-semibold text-sm py-1.5 px-4 rounded-md transition-all duration-200 transform hover:scale-105';
   const widthClass = className.includes('w-') ? '' : 'w-24';
 

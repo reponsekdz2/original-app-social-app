@@ -24,7 +24,8 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
   const { post, currentUser, onClose, onUnfollow, onFollow, onEdit, onDelete, onArchive, onUnarchive, onReport, onShare, onCopyLink, onViewProfile, onGoToPost } = props;
 
   const isCurrentUserPost = post.user.id === currentUser.id;
-  const isFollowing = currentUser.following.some(u => u.id === post.user.id);
+  // FIX: Added optional chaining to prevent crash if currentUser.following is undefined.
+  const isFollowing = currentUser.following?.some(u => u.id === post.user.id) || false;
 
   const options = [
     // --- Destructive/Moderation Actions ---

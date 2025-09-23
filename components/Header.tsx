@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onNavigate, onSwitchAccoun
                         ))}
                         <div className="relative" ref={dropdownRef}>
                             <img 
-                                src={currentUser.avatar} 
+                                src={currentUser.avatar_url} 
                                 alt="Current user avatar" 
                                 className="w-9 h-9 rounded-full object-cover cursor-pointer"
                                 onClick={() => setDropdownOpen(prev => !prev)}

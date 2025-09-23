@@ -47,7 +47,7 @@ const Reel: React.FC<ReelProps> = ({ reel, currentUser, onLike, onComment, onSha
         className="w-full h-full object-cover"
         loop
         playsInline
-        src={reel.video}
+        src={reel.video_url}
       />
       {!isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" onClick={handleVideoPress}>
@@ -56,7 +56,7 @@ const Reel: React.FC<ReelProps> = ({ reel, currentUser, onLike, onComment, onSha
       )}
       <div className="absolute bottom-0 left-0 right-0 p-4 text-white bg-gradient-to-t from-black/50">
         <div className="flex items-center mb-2">
-          <img src={reel.user.avatar} alt={reel.user.username} className="w-8 h-8 rounded-full object-cover mr-2 border-2 border-white" />
+          <img src={reel.user.avatar_url} alt={reel.user.username} className="w-8 h-8 rounded-full object-cover mr-2 border-2 border-white" />
           <p className="font-semibold">{reel.user.username}</p>
         </div>
         <p className="text-sm">{reel.caption}</p>

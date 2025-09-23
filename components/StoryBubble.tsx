@@ -9,7 +9,7 @@ interface StoryBubbleProps {
 }
 
 const StoryBubble: React.FC<StoryBubbleProps> = ({ story, onView }) => {
-  const firstStory = story.stories[0];
+  const firstStory = story.items[0];
 
   if (!firstStory) {
     return null; // Don't render if there are no stories
@@ -22,14 +22,14 @@ const StoryBubble: React.FC<StoryBubbleProps> = ({ story, onView }) => {
           <div className="bg-black rounded-[10px] p-0.5 h-full w-full">
             {firstStory.mediaType === 'video' ? (
               <video
-                src={firstStory.media}
+                src={firstStory.media_url}
                 className="w-full h-full rounded-lg object-cover"
                 muted
                 playsInline
               />
             ) : (
               <img
-                src={firstStory.media}
+                src={firstStory.media_url}
                 alt={story.user.username}
                 className="w-full h-full rounded-lg object-cover"
               />

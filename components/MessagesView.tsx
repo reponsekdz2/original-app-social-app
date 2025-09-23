@@ -10,53 +10,48 @@ import * as api from '../services/apiService.ts';
 import CreateGroupModal from './CreateGroupModal.tsx';
 
 interface MessagesViewProps {
-  conversations: Conversation[];
   currentUser: User;
-  allUsers: User[];
   onNavigate: (view: 'profile', user: User) => void;
   onInitiateCall: (user: User, type: 'video' | 'audio') => void;
-  onUpdateConversation: (updatedConvo: Conversation) => void;
-  onUpdateUserRelationship: (targetUser: User, action: 'block' | 'unblock' | 'mute' | 'unmute') => void;
-  onReport: (user: User) => void;
   onViewMedia: (media: { url: string, type: 'image' | 'video' }) => void;
 }
 
-const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConversations, currentUser, allUsers, onNavigate, onInitiateCall, onUpdateConversation, onUpdateUserRelationship, onReport, onViewMedia }) => {
-  const [conversations, setConversations] = useState(initialConversations);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(initialConversations[0] || null);
+const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, onNavigate, onInitiateCall, onViewMedia }) => {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
   const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const messageAudioRef = useRef<HTMLAudioElement | null>(null);
 
    useEffect(() => {
         messageAudioRef.current = new Audio('/uploads/assets/message.mp3');
+        
+        const fetchData = async () => {
+            try {
+                const [convos, users] = await Promise.all([
+                    api.getConversations(),
+                    api.getAllUsers()
+                ]);
+                setConversations(convos);
+                setAllUsers(users);
+                if (convos.length > 0) {
+                    setSelectedConversation(convos[0]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch initial message data:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
     }, []);
   
-  useEffect(() => {
-    setConversations(initialConversations);
-    if (!selectedConversation && initialConversations.length > 0) {
-        setSelectedConversation(initialConversations[0]);
-    } else if (selectedConversation) {
-        // If the selected conversation is in the updated list, use the updated version
-        const updatedSelected = initialConversations.find(c => c.id === selectedConversation.id);
-        setSelectedConversation(updatedSelected || null);
-    }
-  }, [initialConversations, selectedConversation]);
-  
-  const updateConversationWithMessage = useCallback((conversationId: string, message: Message, isFinal: boolean = false) => {
+  const updateConversationWithMessage = useCallback((conversationId: string, message: Message) => {
     const updateFn = (convo: Conversation) => {
         if (convo.id === conversationId) {
-            let messages;
-            const existingMsgIndex = convo.messages.findIndex(m => m.id === message.id || m.id === `temp-${message.id}`);
-
-            if (existingMsgIndex > -1) {
-                // Update existing message (e.g., confirmation)
-                messages = [...convo.messages];
-                messages[existingMsgIndex] = message;
-            } else {
-                // Add new message
-                messages = [...convo.messages, message];
-            }
+            const messages = [...convo.messages, message];
             return { ...convo, messages };
         }
         return convo;
@@ -69,23 +64,16 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
   
   useEffect(() => {
     const handleNewMessage = ({ conversationId, message }: { conversationId: string; message: Message }) => {
-        updateConversationWithMessage(conversationId, message, true);
+        updateConversationWithMessage(conversationId, message);
         messageAudioRef.current?.play().catch(e => console.error("Message sound play failed", e));
     };
 
-    const handleMessageConfirmation = ({ conversationId, message }: { conversationId: string; message: Message }) => {
-        updateConversationWithMessage(conversationId, message, true);
-    }
-
     socketService.on('receive_message', handleNewMessage);
-    socketService.on('message_sent_confirmation', handleMessageConfirmation);
 
     return () => {
         socketService.off('receive_message', handleNewMessage);
-        socketService.off('message_sent_confirmation', handleMessageConfirmation);
     };
   }, [updateConversationWithMessage]);
-
 
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);
@@ -97,7 +85,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
       setSelectedConversation(existingConvo);
     } else {
       const tempConvo: Conversation = {
-        id: `temp-convo-${Date.now()}`,
+        id: `temp-convo-${user.id}`,
         participants: [currentUser, user],
         messages: [],
         isGroup: false,
@@ -111,43 +99,26 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
   
   const handleSendMessage = async (content: string | File, type: Message['type']) => {
     if (!selectedConversation) return;
-    const otherUser = selectedConversation.participants.find(p => p.id !== currentUser.id);
-    if (!otherUser && !selectedConversation.isGroup) return;
-
-    const tempId = `temp-msg-${Date.now()}`;
-    const optimisticContent = typeof content === 'string' ? content : URL.createObjectURL(content);
-
-    const newMessage: Message = {
-      id: tempId,
-      senderId: currentUser.id,
-      content: optimisticContent,
-      type,
-      timestamp: new Date().toISOString(),
-      read: false,
-    };
     
-    // Optimistic update
-    updateConversationWithMessage(selectedConversation.id, newMessage);
-    
-    const conversationId = selectedConversation.id.startsWith('temp-convo') ? undefined : selectedConversation.id;
+    const isTempConvo = selectedConversation.id.startsWith('temp-convo');
+    const conversationId = isTempConvo ? undefined : selectedConversation.id;
+    const recipientId = isTempConvo ? selectedConversation.participants.find(p => p.id !== currentUser.id)?.id : undefined;
 
     try {
-        await api.sendMessage(otherUser!.id, content, type, undefined, undefined, conversationId);
+        const newMessage = await api.sendMessage(content, type, conversationId, recipientId);
         
-        if (selectedConversation.id.startsWith('temp-convo')) {
+        if (isTempConvo) {
+            // After first message, conversation is created on backend, so we need to refresh
             const newConversations = await api.getConversations();
-            setConversations(newConversations); 
-            const newSelected = newConversations.find(c => c.participants.some(p => p.id === otherUser!.id));
+            setConversations(newConversations);
+            // Fix: Use conversation_id from the new message to find the new conversation
+            const newSelected = newConversations.find(c => c.id === newMessage.conversation_id);
             setSelectedConversation(newSelected || null);
+        } else {
+            updateConversationWithMessage(selectedConversation.id, newMessage);
         }
     } catch(error) {
         console.error("Failed to send message:", error);
-        setConversations(prev => prev.map(c => 
-            c.id === selectedConversation.id 
-                ? { ...c, messages: c.messages.filter(m => m.id !== tempId) } 
-                : c
-        ));
-         setSelectedConversation(prev => prev ? { ...prev, messages: prev.messages.filter(m => m.id !== tempId) } : null);
     }
   };
 
@@ -180,10 +151,12 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
                 onClick={() => handleSelectConversation(convo)}
                 className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-800 ${selectedConversation?.id === convo.id ? 'bg-gray-800' : ''}`}
               >
-                <img src={convo.isGroup ? '/uploads/group_avatar.png' : otherUser?.avatar} alt={convo.name || otherUser?.username} className="w-14 h-14 rounded-full object-cover" />
+                {/* FIX: Corrected group avatar path */}
+                <img src={convo.isGroup ? '/uploads/assets/group_avatar.png' : otherUser?.avatar_url} alt={convo.name || otherUser?.username} className="w-14 h-14 rounded-full object-cover" />
                 <div className="flex-1 overflow-hidden">
                   <div className="flex justify-between">
-                    <p className="font-semibold flex items-center">{convo.name || otherUser?.name} {otherUser?.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
+                    {/* FIX: Use username for consistency */}
+                    <p className="font-semibold flex items-center">{convo.name || otherUser?.username} {otherUser?.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
                     {lastMessage && <p className="text-xs text-gray-500">{new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
                   </div>
                   {lastMessage && <p className="text-sm text-gray-400 truncate">{lastMessage.content || 'Shared content'}</p>}
@@ -203,9 +176,9 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             onBack={() => setSelectedConversation(null)}
             onViewProfile={(user) => onNavigate('profile', user)}
             onInitiateCall={onInitiateCall}
-            onUpdateConversation={onUpdateConversation}
-            onUpdateUserRelationship={onUpdateUserRelationship}
-            onReport={onReport}
+            onUpdateConversation={() => {}} // Placeholder for now
+            onUpdateUserRelationship={() => {}} // Placeholder
+            onReport={() => {}} // Placeholder
             onViewMedia={onViewMedia}
           />
         ) : (
@@ -226,7 +199,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
       )}
       {isCreateGroupModalOpen && (
         <CreateGroupModal
-            followers={currentUser.followers}
+            followers={currentUser.followers || []}
             onClose={() => setCreateGroupModalOpen(false)}
             onCreateGroup={handleCreateGroup}
         />

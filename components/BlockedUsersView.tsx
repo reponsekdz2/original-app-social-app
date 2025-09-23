@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { User } from '../types.ts';
 import * as api from '../services/apiService.ts';
@@ -53,7 +54,7 @@ const BlockedUsersView: React.FC<BlockedUsersViewProps> = ({ onUnblockUser, onBa
             {blockedUsers.map(user => (
               <li key={user.id} className="p-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
+                  <img src={user.avatar_url} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
                   <div>
                     <p className="font-semibold text-sm flex items-center">{user.username} {user.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>
                     <p className="text-xs text-gray-400">{user.name}</p>

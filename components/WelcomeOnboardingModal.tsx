@@ -27,7 +27,8 @@ const WelcomeOnboardingModal: React.FC<WelcomeOnboardingModalProps> = ({ current
           {suggestedUsers.map(user => (
             <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-700/50 rounded-lg">
               <div className="flex items-center gap-3">
-                <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full" />
+                {/* Fix: Changed user.avatar to user.avatar_url */}
+                <img src={user.avatar_url} alt={user.username} className="w-11 h-11 rounded-full" />
                 <div>
                   <p className="font-semibold text-sm">{user.name}</p>
                   <p className="text-gray-400 text-sm">@{user.username}</p>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { LiveStream, User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -61,7 +62,7 @@ const LiveStreamView: React.FC<LiveStreamViewProps> = ({ stream, currentUser, on
         <video src="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" autoPlay controls className="max-h-full max-w-full" />
         <div className="absolute top-4 left-4 text-white p-4">
           <div className="flex items-center gap-3">
-            <img src={stream.user.avatar} alt={stream.user.username} className="w-12 h-12 rounded-full border-2 border-red-500" />
+            <img src={stream.user.avatar_url} alt={stream.user.username} className="w-12 h-12 rounded-full border-2 border-red-500" />
             <div>
                 <h2 className="font-bold text-lg">{stream.user.username}</h2>
                 <p className="text-sm text-gray-300">{stream.title}</p>

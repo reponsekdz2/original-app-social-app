@@ -20,10 +20,10 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialStoryIndex, o
   const progressRef = useRef<number>(0);
 
   const currentUserStory = stories[currentUserIndex];
-  const currentStoryItem = currentUserStory?.stories[currentStoryIndex];
+  const currentStoryItem = currentUserStory?.items[currentStoryIndex];
 
   const goToNextStory = () => {
-    if (currentStoryIndex < currentUserStory.stories.length - 1) {
+    if (currentStoryIndex < currentUserStory.items.length - 1) {
       setCurrentStoryIndex(prev => prev + 1);
     } else {
       if (currentUserIndex < stories.length - 1) {
@@ -44,7 +44,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialStoryIndex, o
         onPrevUser();
         setCurrentUserIndex(prev => prev - 1);
         // Go to the last story of the previous user
-        setCurrentStoryIndex(stories[currentUserIndex - 1].stories.length - 1);
+        setCurrentStoryIndex(stories[currentUserIndex - 1].items.length - 1);
       }
     }
   };
@@ -83,16 +83,16 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialStoryIndex, o
       <div className="relative w-full max-w-sm h-full max-h-screen aspect-[9/16] bg-gray-900 overflow-hidden">
         {/* Story Content */}
         {currentStoryItem.mediaType === 'video' ? (
-          <video src={currentStoryItem.media} autoPlay onEnded={goToNextStory} className="w-full h-full object-cover" />
+          <video src={currentStoryItem.media_url} autoPlay onEnded={goToNextStory} className="w-full h-full object-cover" />
         ) : (
-          <img src={currentStoryItem.media} alt="Story" className="w-full h-full object-cover" />
+          <img src={currentStoryItem.media_url} alt="Story" className="w-full h-full object-cover" />
         )}
 
         {/* Overlay UI */}
         <div className="absolute inset-0">
           {/* Progress Bars */}
           <div className="absolute top-2 left-2 right-2 flex gap-1">
-            {currentUserStory.stories.map((_, index) => (
+            {currentUserStory.items.map((_, index) => (
               <div key={index} className="flex-1 h-1 bg-white/30 rounded-full">
                 <div 
                     className="h-1 bg-white rounded-full" 
@@ -104,7 +104,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialStoryIndex, o
 
           {/* Header */}
           <div className="absolute top-5 left-4 flex items-center gap-3">
-            <img src={currentUserStory.user.avatar} alt={currentUserStory.user.username} className="w-9 h-9 rounded-full" />
+            <img src={currentUserStory.user.avatar_url} alt={currentUserStory.user.username} className="w-9 h-9 rounded-full" />
             <p className="font-semibold text-white text-shadow">{currentUserStory.user.username}</p>
           </div>
           

@@ -4,6 +4,7 @@ import type { Message, User, SharedContent, FileAttachment, Reaction } from '../
 import Icon from './Icon.tsx';
 import VoicenoteMessage from './VoicenoteMessage.tsx';
 import EmojiPicker from './EmojiPicker.tsx';
+import { formatTimestamp } from './utils.tsx';
 
 interface MessageProps {
   message: Message;
@@ -73,16 +74,16 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isCurrentUser, isFi
   const renderContent = () => {
     switch (message.type) {
       case 'text':
-        return <p className="py-2 px-3">{message.content}</p>;
+        return <p className="py-2 px-3 whitespace-pre-wrap break-words">{message.content}</p>;
       case 'image':
-        return <button onClick={() => onViewMedia({url: message.content, type: 'image'})}><img src={message.content} alt="sent" className="rounded-lg max-w-xs" /></button>;
+        return <button onClick={() => onViewMedia({url: message.content, type: 'image'})}><img src={message.content} alt="sent" className="rounded-lg max-w-xs cursor-pointer" /></button>;
       case 'sticker':
         return <img src={message.content} alt="sticker" className="w-32 h-32" />;
       case 'voicenote':
         return <VoicenoteMessage duration="0:15" isCurrentUser={isCurrentUser} />;
       case 'share_post':
       case 'share_reel':
-        return message.sharedContent ? <SharedContentMessage content={message.sharedContent} /> : null;
+        return message.sharedContent ? <SharedContentMessage content={message.sharedContent} /> : <p className="p-2 text-gray-400 italic">Content not available.</p>;
       case 'file':
         return message.fileAttachment ? <FileAttachmentMessage file={message.fileAttachment} /> : null;
       default:
@@ -96,32 +97,32 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isCurrentUser, isFi
   return (
     <div className={`flex items-end gap-2 group ${messageAlignment} ${groupMargin}`}>
       {!isCurrentUser && isLastInGroup && (
-        <img src={sender.avatar} alt={sender.username} className="w-7 h-7 rounded-full self-end" />
+        <img src={sender.avatar_url} alt={sender.username} className="w-7 h-7 rounded-full self-end flex-shrink-0" />
       )}
        {!isCurrentUser && !isLastInGroup && (
-        <div className="w-7"></div>
+        <div className="w-7 flex-shrink-0"></div>
       )}
 
       <div className="relative">
-          <div className={`relative max-w-md rounded-2xl ${message.type.startsWith('share') || message.type === 'file' ? '' : vanishModeClasses} ${roundingClasses}`}>
+          <div className={`relative max-w-sm sm:max-w-md rounded-2xl ${message.type.startsWith('share') || message.type === 'file' ? '' : vanishModeClasses} ${roundingClasses}`}>
             {renderContent()}
           </div>
           {uniqueReactions.length > 0 && (
-            <div className={`absolute -bottom-3 flex items-center bg-gray-900 border border-gray-700 rounded-full px-1 py-0.5 text-xs ${isCurrentUser ? 'right-2' : 'left-2'}`}>
+            <div className={`absolute -bottom-3 flex items-center bg-gray-900 border border-gray-700 rounded-full px-1 py-0.5 text-xs z-10 ${isCurrentUser ? 'right-2' : 'left-2'}`}>
                 {uniqueReactions.slice(0, 3).map((r: Reaction) => <span key={r.emoji}>{r.emoji}</span>)}
-                {uniqueReactions.length > 0 && <span className="ml-1 font-semibold">{message.reactions?.length}</span>}
+                {uniqueReactions.length > 0 && <span className="ml-1 font-semibold text-white">{message.reactions?.length}</span>}
             </div>
            )}
       </div>
 
-       <div className="relative flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+       <div className="relative flex items-center opacity-0 group-hover:opacity-100 transition-opacity self-center">
         {showReactionPicker && (
             <div className="absolute bottom-full right-0 mb-1 z-10">
                 <EmojiPicker onSelectEmoji={(emoji) => { onAddReaction(emoji); setShowReactionPicker(false); }} />
             </div>
         )}
         <button onClick={() => setShowReactionPicker(p => !p)} className="p-1 hover:bg-gray-700 rounded-full">
-            <Icon className="w-4 h-4 text-gray-400"><path d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 9.75a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75V9.75zm6 0a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V9.75z" /></Icon>
+            <Icon className="w-4 h-4 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 9.75a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75V9.75zm6 0a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V9.75z" /></Icon>
         </button>
         <button onClick={onReply} className="p-1 hover:bg-gray-700 rounded-full">
             <Icon className="w-4 h-4 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9l6-6m0 0l6 6m-6-6v12a6 6 0 01-12 0v-3" /></Icon>

@@ -12,7 +12,7 @@ interface IncomingCallModalProps {
 const IncomingCallModal: React.FC<IncomingCallModalProps> = ({ caller, onAccept, onDecline }) => {
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center text-white">
-      <img src={caller.avatar} alt={caller.username} className="w-32 h-32 rounded-full mb-4 border-4 border-gray-600 animate-pulse" />
+      <img src={caller.avatar_url} alt={caller.username} className="w-32 h-32 rounded-full mb-4 border-4 border-gray-600 animate-pulse" />
       <h2 className="text-2xl font-bold">{caller.username} is calling...</h2>
       
       <div className="absolute bottom-10 flex items-center gap-16">

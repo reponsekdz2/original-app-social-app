@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { User, Conversation } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -77,7 +78,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ followers, onClose,
             return (
               <div key={user.id} onClick={() => handleToggleUser(user.id)} className="flex items-center justify-between p-3 hover:bg-gray-700 cursor-pointer">
                 <div className="flex items-center gap-3">
-                  <img src={user.avatar} alt={user.username} className="w-10 h-10 rounded-full" />
+                  <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full" />
                   <p>{user.username}</p>
                 </div>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-red-500 border-red-500' : 'border-gray-500'}`}>
