@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 // Fix: Add .tsx extension to import to resolve module.

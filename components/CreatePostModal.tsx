@@ -16,6 +16,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
   const [caption, setCaption] = useState('');
   const [location, setLocation] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [activeTool, setActiveTool] = useState<'caption' | 'poll' | 'collab'>('caption');
 
@@ -36,7 +37,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting || mediaFiles.length === 0) return;
+    setIsSubmitting(true);
+
     const formData = new FormData();
     mediaFiles.forEach(file => formData.append('media', file));
     formData.append('caption', caption);
@@ -51,7 +55,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
         formData.append('collaborators', JSON.stringify(collaborators.map(c => c.id)));
     }
 
-    onCreatePost(formData);
+    await onCreatePost(formData);
+    setIsSubmitting(false);
   };
 
   const handlePollOptionChange = (index: number, value: string) => {
@@ -78,7 +83,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <button onClick={onClose} className="text-white text-sm">Cancel</button>
           <h2 className="text-lg font-semibold">Create new post</h2>
-          <button onClick={handleSubmit} disabled={mediaFiles.length === 0} className="font-semibold text-red-500 hover:text-red-400 text-sm disabled:opacity-50">Share</button>
+          <button onClick={handleSubmit} disabled={mediaFiles.length === 0 || isSubmitting} className="font-semibold text-red-500 hover:text-red-400 text-sm disabled:opacity-50">
+            {isSubmitting ? 'Sharing...' : 'Share'}
+          </button>
         </div>
         
         <div className="flex flex-col md:flex-row flex-1 min-h-0">

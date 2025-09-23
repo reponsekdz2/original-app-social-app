@@ -1,6 +1,3 @@
-
-
-
 import React, { useState } from 'react';
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -16,9 +13,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
   const [bio, setBio] = useState(user.bio || '');
   const [website, setWebsite] = useState(user.website || '');
   const [gender, setGender] = useState((user as any).gender || 'Prefer not to say');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    onSave({ name, bio, website, gender });
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onSave({ name, bio, website, gender });
+    setIsSaving(false);
   };
   
   return (
@@ -30,7 +30,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <button onClick={onClose} className="text-sm">Cancel</button>
           <h2 className="text-lg font-semibold">Edit Profile</h2>
-          <button onClick={handleSave} className="text-sm font-semibold text-red-500">Done</button>
+          <button onClick={handleSave} disabled={isSaving} className="text-sm font-semibold text-red-500 disabled:opacity-50">
+            {isSaving ? 'Saving...' : 'Done'}
+          </button>
         </div>
 
         <div className="p-6 space-y-4 overflow-y-auto">

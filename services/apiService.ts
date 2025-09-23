@@ -1,7 +1,7 @@
 import type { 
     User, Post, Reel, Story, Conversation, Message, Notification, 
     FeedActivity, SponsoredContent, TrendingTopic, Testimonial, 
-    HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report, Announcement, AuthCarouselImage 
+    HelpArticle, SupportTicket, LiveStream, AdminStats, AnalyticsData, Report, Announcement, AuthCarouselImage, AccountStatusInfo 
 } from '../types';
 
 const API_URL = 'http://localhost:3001/api';
@@ -82,6 +82,7 @@ export const getExplorePosts = (): Promise<{ posts: Post[] }> => apiFetch('/post
 export const getReels = (): Promise<Reel[]> => apiFetch('/reels');
 export const getStories = (): Promise<{ stories: Story[] }> => apiFetch('/stories/feed');
 export const createPost = (formData: FormData): Promise<Post> => apiFetch('/posts', { method: 'POST', body: formData });
+export const createReel = (formData: FormData): Promise<Reel> => apiFetch('/reels', { method: 'POST', body: formData });
 export const createStory = (formData: FormData): Promise<void> => apiFetch('/stories', { method: 'POST', body: formData });
 
 
@@ -96,6 +97,8 @@ export const getNotifications = (): Promise<Notification[]> => apiFetch('/misc/n
 export const voteOnPoll = (optionId: number): Promise<void> => apiFetch(`/posts/polls/${optionId}/vote`, { method: 'POST' });
 export const submitReport = (entityId: string, entityType: 'user' | 'post' | 'comment' | 'reel', reason: string, details: string): Promise<void> =>
     apiFetch('/reports', { method: 'POST', body: JSON.stringify({ entityId, entityType, reason, details }) });
+export const acceptCollab = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/collaborations/accept`, { method: 'POST' });
+export const declineCollab = (postId: string): Promise<void> => apiFetch(`/posts/${postId}/collaborations/decline`, { method: 'POST' });
 
 
 // --- Post Management ---
@@ -115,10 +118,12 @@ export const updateProfile = (data: any): Promise<void> => apiFetch('/users/prof
 export const updateUserSettings = (settings: any): Promise<void> => apiFetch('/users/settings', { method: 'PUT', body: JSON.stringify(settings) });
 export const createHighlight = (title: string, storyIds: string[]): Promise<void> => apiFetch('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
 export const muteUser = (userId: string): Promise<void> => apiFetch(`/users/${userId}/mute`, { method: 'POST' });
+export const getAccountStatus = (): Promise<AccountStatusInfo> => apiFetch('/users/account-status');
+
 
 // --- Messaging ---
 export const getConversations = (): Promise<Conversation[]> => apiFetch('/messages');
-export const sendMessage = (recipientId: string, content: string | File, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel', conversationId?: string): Promise<Message> => {
+export const sendMessage = (recipientId: string | undefined, content: string | File, type: Message['type'], sharedContentId?: string, contentType?: 'post' | 'reel', conversationId?: string): Promise<Message> => {
     const formData = new FormData();
     if (recipientId) formData.append('recipientId', recipientId);
     if (conversationId) formData.append('conversationId', conversationId);

@@ -49,7 +49,9 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ followers, onClose,
         <div className="p-3 border-b border-gray-700 text-center relative">
           <h2 className="text-lg font-semibold">New Group Chat</h2>
           <button className="absolute top-3 left-3 text-sm" onClick={onClose}>Cancel</button>
-          <button onClick={handleCreate} disabled={isLoading || !groupName.trim() || selectedUserIds.length === 0} className="absolute top-3 right-3 text-red-500 font-semibold disabled:text-gray-500 text-sm">Create</button>
+          <button onClick={handleCreate} disabled={isLoading || !groupName.trim() || selectedUserIds.length === 0} className="absolute top-3 right-3 text-red-500 font-semibold disabled:text-gray-500 text-sm">
+            {isLoading ? 'Creating...' : 'Create'}
+          </button>
         </div>
         <div className="p-4 border-b border-gray-700">
           <input

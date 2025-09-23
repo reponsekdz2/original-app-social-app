@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Conversation, User, Message } from './types';
 import Icon from './components/Icon.tsx';
 import ChatWindow from './components/ChatWindow.tsx';
@@ -25,6 +25,11 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(initialConversations[0] || null);
   const [isNewMessageModalOpen, setNewMessageModalOpen] = useState(false);
   const [isCreateGroupModalOpen, setCreateGroupModalOpen] = useState(false);
+  const messageAudioRef = useRef<HTMLAudioElement | null>(null);
+
+   useEffect(() => {
+        messageAudioRef.current = new Audio('/uploads/assets/message.mp3');
+    }, []);
   
   useEffect(() => {
     setConversations(initialConversations);
@@ -64,6 +69,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
   useEffect(() => {
     const handleNewMessage = ({ conversationId, message }: { conversationId: string; message: Message }) => {
         updateConversationWithMessage(conversationId, message, true);
+        messageAudioRef.current?.play().catch(e => console.error("Message sound play failed", e));
     };
 
     const handleMessageConfirmation = ({ conversationId, message }: { conversationId: string; message: Message }) => {
@@ -125,7 +131,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
     const conversationId = selectedConversation.id.startsWith('temp-convo') ? undefined : selectedConversation.id;
 
     try {
-        await api.sendMessage(otherUser!.id, content, type, undefined, undefined, conversationId);
+        await api.sendMessage(otherUser?.id, content, type, undefined, undefined, conversationId);
         
         if (selectedConversation.id.startsWith('temp-convo')) {
             const newConversations = await api.getConversations();
@@ -199,7 +205,6 @@ const MessagesView: React.FC<MessagesViewProps> = ({ conversations: initialConve
             onUpdateConversation={onUpdateConversation}
             onUpdateUserRelationship={onUpdateUserRelationship}
             onReport={onReport}
-            // Fix: Pass the 'onViewMedia' prop to the ChatWindow component.
             onViewMedia={onViewMedia}
           />
         ) : (

@@ -8,14 +8,14 @@ interface LeftSidebarProps {
   onNavigate: (view: View) => void;
   onShowSearch: () => void;
   onShowNotifications: () => void;
-  onCreatePost: () => void;
+  onCreate: () => void;
   onSwitchAccount: () => void;
   onLogout: () => void;
   onGoLive: () => void;
 }
 
 const LeftSidebar: React.FC<LeftSidebarProps> = (props) => {
-    const { currentUser, currentView, onNavigate, onShowSearch, onShowNotifications, onCreatePost, onSwitchAccount, onLogout, onGoLive } = props;
+    const { currentUser, currentView, onNavigate, onShowSearch, onShowNotifications, onCreate, onSwitchAccount, onLogout, onGoLive } = props;
     const [isMoreMenuOpen, setMoreMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -66,8 +66,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = (props) => {
                 </li>
             ))}
         </ul>
-        <button onClick={onCreatePost} className="w-full bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg lg:flex items-center justify-center transition-all transform hover:scale-105">
-            <span className="hidden lg:block">Post</span>
+        <button onClick={onCreate} className="w-full bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-3 px-4 rounded-full mt-4 text-lg lg:flex items-center justify-center transition-all transform hover:scale-105">
+            <span className="hidden lg:block">Create</span>
             <Icon className="w-7 h-7 block lg:hidden"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></Icon>
         </button>
        </nav>

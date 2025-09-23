@@ -51,6 +51,10 @@ import IncomingCallModal from './components/IncomingCallModal.tsx';
 import AnnouncementBanner from './components/AnnouncementBanner.tsx';
 import BlockedUsersView from './components/BlockedUsersView.tsx';
 import ReelViewerModal from './components/ReelViewerModal.tsx';
+import CreateChoiceModal from './components/CreateChoiceModal.tsx';
+import CreateReelModal from './components/CreateReelModal.tsx';
+import AccountStatusView from './components/AccountStatusView.tsx';
+
 
 import * as api from './services/apiService.ts';
 import { socketService } from './services/socketService.ts';
@@ -236,6 +240,15 @@ export const App: React.FC = () => {
         setNotificationsVisible(false);
     };
 
+    // --- Creation Flow ---
+    const handleOpenCreate = (type: 'post' | 'reel' | 'story' | 'live') => {
+        closeModal('createChoice');
+        if (type === 'post') openModal('createPost');
+        if (type === 'reel') openModal('createReel');
+        if (type === 'story') openModal('createStory');
+        if (type === 'live') openModal('goLive');
+    };
+
     // --- Content Interaction Handlers ---
     const handleToggleLike = async (postId: string) => {
         const originalPosts = [...feedPosts];
@@ -295,6 +308,19 @@ export const App: React.FC = () => {
             console.error("Failed to create post", error);
         }
     };
+
+    const handleCreateReel = async (formData: FormData) => {
+        try {
+            await api.createReel(formData);
+            closeModal('createReel');
+            await fetchData();
+            handleNavigate('reels');
+            showToast("Reel posted successfully!");
+        } catch (error) {
+            console.error("Failed to create reel", error);
+        }
+    };
+
 
     const handleEditPost = (post: Post) => openModal('editPost', { post });
     const handleUpdatePost = async (updatedPost: Post) => {
@@ -453,6 +479,17 @@ export const App: React.FC = () => {
             console.error("Failed to update settings", error);
             setCurrentUser(currentUser); // Revert on failure
             showToast("Failed to update settings.");
+        }
+    };
+    
+    const handleCollaborationResponse = async (postId: string, action: 'accept' | 'decline') => {
+        try {
+            if (action === 'accept') await api.acceptCollab(postId);
+            else await api.declineCollab(postId);
+            showToast(`Collaboration invitation ${action}ed.`);
+            await fetchData(); // Refresh data to remove notification and update post
+        } catch (error) {
+            console.error(`Failed to ${action} collaboration:`, error);
         }
     };
 
@@ -778,6 +815,7 @@ export const App: React.FC = () => {
             case 'saved': return <SavedView posts={feedPosts.filter(p => p.isSaved)} onViewPost={(post) => openModal('post', { post })} />;
             case 'archive': return <ArchiveView posts={feedPosts.filter(p => p.isArchived)} onViewPost={(post) => openModal('post', { post })} onUnarchivePost={handleUnarchivePost}/>;
             case 'blocked': return <BlockedUsersView onUnblockUser={handleUnblockUser} onBack={() => handleNavigate('settings')} />;
+            case 'account-status': return <AccountStatusView onBack={() => handleNavigate('settings')} />;
             case 'admin': return <AdminView />;
             case 'premium': return <PremiumView onSubscribe={() => openModal('payment')} testimonials={[]}/>;
             case 'premium-welcome': return <PremiumWelcomeView onNavigate={handleNavigate} />;
@@ -798,7 +836,7 @@ export const App: React.FC = () => {
                     onNavigate={handleNavigate} 
                     onShowSearch={() => setSearchVisible(true)}
                     onShowNotifications={() => setNotificationsVisible(true)}
-                    onCreatePost={() => openModal('createPost')}
+                    onCreate={() => openModal('createChoice')}
                     onSwitchAccount={() => openModal('accountSwitcher')}
                     onLogout={handleLogout}
                     onGoLive={() => openModal('goLive')}
@@ -820,7 +858,7 @@ export const App: React.FC = () => {
                     </main>
                 </div>
             </div>
-            <BottomNav currentUser={currentUser} currentView={currentView} onNavigate={handleNavigate} onCreatePost={() => openModal('createPost')} />
+            <BottomNav currentUser={currentUser} currentView={currentView} onNavigate={handleNavigate} onCreate={() => openModal('createChoice')} />
             
             {/* --- Global Modals & Panels --- */}
             {viewedStory && <StoryViewer stories={stories} initialStoryIndex={stories.findIndex(s => s.id === viewedStory.id)} onClose={() => setViewedStory(null)} onNextUser={() => {}} onPrevUser={() => {}}/>}
@@ -828,8 +866,10 @@ export const App: React.FC = () => {
             {viewedLiveStream && <LiveStreamView stream={viewedLiveStream} currentUser={currentUser} onClose={() => setViewedLiveStream(null)}/>}
             {viewedMedia && <MediaViewerModal mediaUrl={viewedMedia.url} mediaType={viewedMedia.type} onClose={() => setViewedMedia(null)} />}
             
+            {activeModals.createChoice && <CreateChoiceModal onChoice={handleOpenCreate} onClose={() => closeModal('createChoice')} />}
             {activeModals.post && <PostModal post={activeModals.post.post} currentUser={currentUser} onClose={() => closeModal('post')} onToggleLike={handleToggleLike} onToggleSave={handleToggleSave} onComment={handleComment} onShare={(post) => openModal('share', { content: post })} onViewLikes={(users) => openModal('viewLikes', { users })} onViewProfile={(user) => handleNavigate('profile', user)} onOptions={(post) => openModal('options', { post })} onFollow={handleFollow} onUnfollow={handleUnfollow} onTip={(post) => openModal('tip', {post})} onToggleCommentLike={handleToggleCommentLike} />}
             {activeModals.createPost && <CreatePostModal onClose={() => closeModal('createPost')} onCreatePost={handleCreatePost} allUsers={allUsers} currentUser={currentUser} />}
+            {activeModals.createReel && <CreateReelModal onClose={() => closeModal('createReel')} onCreateReel={handleCreateReel} />}
             {activeModals.createStory && <CreateStoryModal onClose={() => closeModal('createStory')} onCreateStory={handleCreateStory} />}
             {activeModals.accountSwitcher && <AccountSwitcherModal accounts={[currentUser]} currentUser={currentUser} onClose={() => closeModal('accountSwitcher')} onSwitchAccount={() => {}} onAddAccount={handleLogout} />}
             {activeModals.share && <ShareModal content={activeModals.share.content} currentUser={currentUser} conversations={conversations} onClose={() => closeModal('share')} onShareSuccess={() => showToast("Shared successfully!")} />}
@@ -855,7 +895,7 @@ export const App: React.FC = () => {
             {activeModals.goLive && <GoLiveModal onClose={() => closeModal('goLive')} onStartStream={handleStartStream}/>}
             
             {isSearchVisible && <SearchView users={allUsers} onClose={() => setSearchVisible(false)} onViewProfile={(user) => handleNavigate('profile', user)} />}
-            {isNotificationsVisible && <NotificationsPanel notifications={notifications} onClose={() => setNotificationsVisible(false)} onViewProfile={(user) => handleNavigate('profile', user)} onMarkAsRead={() => {}} />}
+            {isNotificationsVisible && <NotificationsPanel notifications={notifications} onClose={() => setNotificationsVisible(false)} onViewProfile={(user) => handleNavigate('profile', user)} onMarkAsRead={() => {}} onCollaborationResponse={handleCollaborationResponse} />}
 
             {callState && callState.status !== 'incoming' && (
                 <CallModal 

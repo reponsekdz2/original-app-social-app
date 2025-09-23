@@ -1,6 +1,6 @@
 // This file defines all the shared types used across the application.
 
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'admin' | 'premium' | 'premium-welcome' | 'activity' | 'help' | 'support' | 'live' | 'post' | 'blocked';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'admin' | 'premium' | 'premium-welcome' | 'activity' | 'help' | 'support' | 'live' | 'post' | 'blocked' | 'account-status';
 
 export interface User {
   id: string;
@@ -260,4 +260,16 @@ export interface AuthCarouselImage {
     id: number;
     image_url: string;
     sort_order: number;
+}
+
+export interface UserWarning {
+    id: number;
+    reason: string;
+    created_at: string;
+    admin_user_id: string;
+}
+
+export interface AccountStatusInfo {
+    status: User['status'];
+    warnings: UserWarning[];
 }

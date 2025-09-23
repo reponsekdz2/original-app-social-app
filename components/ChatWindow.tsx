@@ -124,7 +124,7 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
   }
   
   const headerDetails = conversation.isGroup ? {
-      avatar: '/uploads/group_avatar.png',
+      avatar: '/uploads/assets/group_avatar.png',
       name: conversation.name,
       status: `${conversation.participants.length} members`
   } : {

@@ -99,6 +99,7 @@ router.get('/explore', protect, async (req, res) => {
 router.post('/', protect, upload.array('media', 10), async (req, res) => {
     const { caption, location, pollQuestion, pollOptions, collaborators } = req.body;
     const userId = req.user.id;
+    const io = req.app.get('io');
     
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ message: "At least one media file is required." });
@@ -149,14 +150,24 @@ router.post('/', protect, upload.array('media', 10), async (req, res) => {
                 'INSERT INTO post_collaborators (post_id, user_id, status) VALUES (?, ?, ?)',
                 [postId, userId, 'accepted']
             );
-            const collabPromises = collabIds.map((id: string) => 
-                connection.query(
+            
+            // Send notifications to collaborators
+            for (const collabUserId of collabIds) {
+                 await connection.query(
                     'INSERT INTO post_collaborators (post_id, user_id, status) VALUES (?, ?, ?)',
-                    [postId, id, 'pending']
-                )
-            );
-            await Promise.all(collabPromises);
-            // TODO: Send notifications to collaborators
+                    [postId, collabUserId, 'pending']
+                );
+
+                const [notifResult] = await connection.query(
+                    'INSERT INTO notifications (user_id, actor_id, type, entity_id) VALUES (?, ?, ?, ?)',
+                    [collabUserId, userId, 'collab_invite', postId]
+                );
+                // In a real app, you would format the notification object properly before emitting
+                const targetSocket = getSocketFromUserId(collabUserId);
+                if (targetSocket) {
+                    targetSocket.emit('new_notification', { id: notifResult.insertId, /* ... more details */ });
+                }
+            }
         }
 
 
@@ -171,6 +182,53 @@ router.post('/', protect, upload.array('media', 10), async (req, res) => {
         connection.release();
     }
 });
+
+// @desc    Accept a collaboration invite
+// @route   POST /api/posts/:id/collaborations/accept
+// @access  Private
+router.post('/:id/collaborations/accept', protect, async (req, res) => {
+    const postId = req.params.id;
+    const userId = req.user.id;
+    try {
+        await pool.query(
+            "UPDATE post_collaborators SET status = 'accepted' WHERE post_id = ? AND user_id = ?",
+            [postId, userId]
+        );
+        // Also remove the notification
+        await pool.query(
+            "DELETE FROM notifications WHERE user_id = ? AND type = 'collab_invite' AND entity_id = ?",
+            [userId, postId]
+        );
+        res.json({ message: 'Collaboration accepted.' });
+    } catch (error) {
+        console.error("Accept Collab Error:", error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// @desc    Decline a collaboration invite
+// @route   POST /api/posts/:id/collaborations/decline
+// @access  Private
+router.post('/:id/collaborations/decline', protect, async (req, res) => {
+    const postId = req.params.id;
+    const userId = req.user.id;
+    try {
+        await pool.query(
+            "DELETE FROM post_collaborators WHERE post_id = ? AND user_id = ?",
+            [postId, userId]
+        );
+         // Also remove the notification
+        await pool.query(
+            "DELETE FROM notifications WHERE user_id = ? AND type = 'collab_invite' AND entity_id = ?",
+            [userId, postId]
+        );
+        res.json({ message: 'Collaboration declined.' });
+    } catch (error) {
+        console.error("Decline Collab Error:", error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 
 // @desc    Vote on a poll
 // @route   POST /api/posts/polls/:optionId/vote

@@ -2,8 +2,22 @@ import { Router } from 'express';
 import pool from './db.js';
 import { protect } from './middleware/authMiddleware.js';
 import { getSocketFromUserId } from './socket.js';
+import multer from 'multer';
+import path from 'path';
 
 const router = Router();
+
+// --- Multer Setup ---
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'backend/uploads/reels/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, `reel-${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
+    }
+});
+const upload = multer({ storage: storage });
+
 
 // @desc    Get reels for the feed
 // @route   GET /api/reels
@@ -41,6 +55,33 @@ router.get('/', protect, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+// @desc    Create a new reel
+// @route   POST /api/reels
+// @access  Private
+router.post('/', protect, upload.single('video'), async (req, res) => {
+    const { caption } = req.body;
+    const userId = req.user.id;
+
+    if (!req.file) {
+        return res.status(400).json({ message: 'A video file is required.' });
+    }
+
+    try {
+        const videoUrl = `/uploads/reels/${req.file.filename}`;
+        const [result] = await pool.query(
+            'INSERT INTO reels (user_id, video_url, caption) VALUES (?, ?, ?)',
+            [userId, videoUrl, caption]
+        );
+        const reelId = result.insertId;
+        const [[newReel]] = await pool.query('SELECT * FROM reels WHERE id = ?', [reelId]);
+        res.status(201).json(newReel);
+    } catch (error) {
+        console.error('Create Reel Error:', error);
+        res.status(500).json({ message: 'Server error while creating reel.' });
+    }
+});
+
 
 // @desc    Toggle like on a reel
 // @route   POST /api/reels/:id/like

@@ -1,6 +1,3 @@
-
-
-
 import React from 'react';
 import type { Notification, User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -10,9 +7,10 @@ interface NotificationsPanelProps {
   onClose: () => void;
   onViewProfile: (user: User) => void;
   onMarkAsRead: () => void;
+  onCollaborationResponse: (postId: string, action: 'accept' | 'decline') => void;
 }
 
-const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose, onViewProfile, onMarkAsRead }) => {
+const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose, onViewProfile, onMarkAsRead, onCollaborationResponse }) => {
   const renderNotificationText = (notification: Notification) => {
     switch (notification.type) {
       case 'like':
@@ -23,6 +21,8 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, 
         return <>started following you.</>;
       case 'mention':
         return <>mentioned you in a comment.</>;
+      case 'collab_invite':
+        return <>invited you to collaborate on a post.</>;
       default:
         return null;
     }
@@ -40,15 +40,23 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, 
             {notifications.length > 0 ? (
               <div className="py-2">
                 {notifications.map(notification => (
-                  <div key={notification.id} className="flex items-start gap-3 p-4 hover:bg-gray-800/50 cursor-pointer" onClick={() => onViewProfile(notification.user)}>
-                    <img src={notification.user.avatar} alt={notification.user.username} className="w-10 h-10 rounded-full object-cover" />
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        <span className="font-semibold">{notification.user.username}</span> {renderNotificationText(notification)}
-                      </p>
-                      <p className="text-xs text-gray-500">{notification.timestamp}</p>
+                  <div key={notification.id} className="p-4 hover:bg-gray-800/50">
+                    <div className="flex items-start gap-3 cursor-pointer" onClick={() => onViewProfile(notification.user)}>
+                        <img src={notification.user.avatar} alt={notification.user.username} className="w-10 h-10 rounded-full object-cover" />
+                        <div className="flex-1">
+                          <p className="text-sm">
+                            <span className="font-semibold">{notification.user.username}</span> {renderNotificationText(notification)}
+                          </p>
+                          <p className="text-xs text-gray-500">{notification.timestamp}</p>
+                        </div>
+                        {notification.post && <img src={notification.post.media[0].url} alt="post" className="w-11 h-11 rounded-md object-cover" />}
                     </div>
-                    {notification.post && <img src={notification.post.media[0].url} alt="post" className="w-11 h-11 rounded-md object-cover" />}
+                    {notification.type === 'collab_invite' && notification.post && (
+                        <div className="mt-2 flex items-center gap-2 pl-12">
+                            <button onClick={() => onCollaborationResponse(notification.post!.id, 'accept')} className="bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-md hover:bg-red-700">Accept</button>
+                            <button onClick={() => onCollaborationResponse(notification.post!.id, 'decline')} className="bg-gray-700 text-white text-xs font-bold px-4 py-1.5 rounded-md hover:bg-gray-600">Decline</button>
+                        </div>
+                    )}
                   </div>
                 ))}
               </div>

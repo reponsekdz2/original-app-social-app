@@ -9,6 +9,7 @@ interface CreateStoryModalProps {
 const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateStory }) => {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,10 +21,12 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
   };
   
   const handleSubmit = async () => {
-    if (!mediaFile) return;
+    if (!mediaFile || isSubmitting) return;
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append('media', mediaFile);
     await onCreateStory(formData);
+    setIsSubmitting(false);
   };
 
   return (
@@ -32,7 +35,9 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
            <button onClick={onClose}><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
           <h2 className="text-lg font-semibold">Create story</h2>
-          <button onClick={handleSubmit} className="font-semibold text-red-500 hover:text-red-400 disabled:opacity-50" disabled={!mediaFile}>Share</button>
+          <button onClick={handleSubmit} className="font-semibold text-red-500 hover:text-red-400 disabled:opacity-50" disabled={!mediaFile || isSubmitting}>
+            {isSubmitting ? 'Sharing...' : 'Share'}
+          </button>
         </div>
         
         <div className="p-4 flex-1 flex flex-col">

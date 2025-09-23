@@ -1,6 +1,4 @@
-// Fix: Create the MediaViewerModal component.
 import React from 'react';
-// Fix: Add .tsx extension to Icon import.
 import Icon from './Icon.tsx';
 
 interface MediaViewerModalProps {

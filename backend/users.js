@@ -17,6 +17,28 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+// @desc    Get current user's account status and warnings
+// @route   GET /api/users/account-status
+// @access  Private
+router.get('/account-status', protect, async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const [[user]] = await pool.query('SELECT status FROM users WHERE id = ?', [userId]);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+        const [warnings] = await pool.query('SELECT id, reason, created_at, admin_user_id FROM user_warnings WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+        res.json({
+            status: user.status,
+            warnings: warnings
+        });
+    } catch (error) {
+        console.error("Get Account Status Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+
 // @desc    Follow a user
 // @route   POST /api/users/:id/follow
 // @access  Private
