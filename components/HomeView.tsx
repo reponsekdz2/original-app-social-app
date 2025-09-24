@@ -27,7 +27,7 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
   const { posts, stories, onViewStory } = props;
 
   return (
-    <div className="flex-1 w-full max-w-3xl mx-auto py-4">
+    <div className="flex-1 w-full max-w-3xl mx-auto py-4 pb-16 sm:pb-4">
       {/* Stories Reel */}
       <div className="mb-4 border-b border-gray-800 pb-4">
         <div className="flex space-x-4 overflow-x-auto scrollbar-hide px-4">

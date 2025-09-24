@@ -20,20 +20,20 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 overflow-hidden">
-      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center justify-center w-full">
+      <div className="container mx-auto grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-8 items-center justify-center w-full">
         
         {/* Welcome Content (Left) - Visible on large screens */}
         <div className="hidden lg:flex justify-center lg:col-span-4">
           <AuthWelcomeContent />
         </div>
 
-        {/* Carousel (Middle) - Visible on large screens */}
-        <div className="hidden lg:flex justify-center lg:col-span-4">
+        {/* Carousel (Middle) - Visible on medium+ screens */}
+        <div className="hidden md:flex justify-center md:col-span-4 lg:col-span-4">
           <AuthImageCarousel />
         </div>
 
-        {/* Form (Right) - Spans all columns on mobile, 1/3 on lg */}
-        <div className="w-full max-w-sm mx-auto col-span-1 lg:col-span-4">
+        {/* Form (Right) */}
+        <div className="w-full max-w-sm mx-auto col-span-1 md:col-span-4 lg:col-span-4">
           <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-xl backdrop-blur-sm">
             <div className="relative min-h-[520px]">
               <div className={`transition-opacity duration-500 ease-in-out absolute inset-0 ${isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>

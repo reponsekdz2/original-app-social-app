@@ -40,9 +40,9 @@ const PostModal: React.FC<PostModalProps> = (props) => {
         <button className="absolute top-4 right-4 text-white z-10" onClick={onClose}>
             <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></Icon>
         </button>
-        <div className="bg-black w-full max-w-5xl max-h-[90vh] flex rounded-lg" onClick={e => e.stopPropagation()}>
+        <div className="bg-black w-full max-w-5xl max-h-[90vh] flex flex-col md:flex-row rounded-lg" onClick={e => e.stopPropagation()}>
             {/* Media Side */}
-            <div className="relative w-1/2 bg-black flex items-center justify-center rounded-l-lg">
+            <div className="relative w-full md:w-1/2 bg-black flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-t-none aspect-square md:aspect-auto">
                 {post.media[currentMediaIndex].type === 'video' ? (
                     <video src={post.media[currentMediaIndex].url} controls className="max-h-full max-w-full object-contain" />
                 ) : (
@@ -57,7 +57,7 @@ const PostModal: React.FC<PostModalProps> = (props) => {
             </div>
 
             {/* Info and Comments Side */}
-            <div className="w-1/2 flex flex-col border-l border-gray-800">
+            <div className="w-full md:w-1/2 flex flex-col border-t md:border-t-0 md:border-l border-gray-800">
                 {/* Header */}
                 <div className="flex items-center p-4 border-b border-gray-800">
                     <img src={post.user.avatar_url} alt={post.user.username} className="w-9 h-9 rounded-full cursor-pointer" onClick={() => onViewProfile(post.user)} />

@@ -60,6 +60,18 @@ export default (upload) => {
 
                 const [[isSaved]] = await pool.query('SELECT COUNT(*) as count FROM post_saves WHERE post_id = ? AND user_id = ?', [post.id, req.session.userId]);
                 
+                const [[poll]] = await pool.query('SELECT * FROM polls WHERE post_id = ?', [post.id]);
+                if (poll) {
+                    const [options] = await pool.query('SELECT id, text, (SELECT COUNT(*) FROM poll_votes WHERE option_id = po.id) as votes FROM poll_options po WHERE poll_id = ?', [poll.id]);
+                    const [[userVote]] = await pool.query('SELECT option_id FROM poll_votes WHERE poll_id = ? AND user_id = ?', [poll.id, req.session.userId]);
+                    post.poll = {
+                        id: poll.id,
+                        question: poll.question,
+                        options: options,
+                        userVote: userVote ? userVote.option_id : null,
+                    };
+                }
+
                 post.media = media;
                 post.comments = comments.map(c => ({
                     id: c.id,

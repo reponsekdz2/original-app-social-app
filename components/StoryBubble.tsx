@@ -16,9 +16,9 @@ const StoryBubble: React.FC<StoryBubbleProps> = ({ story, onView }) => {
   }
 
   return (
-    <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0 group" onClick={() => onView(story)}>
+    <div className="flex flex-col items-center space-y-2 cursor-pointer flex-shrink-0 group w-24 sm:w-28" onClick={() => onView(story)}>
       <div className="relative transform group-hover:scale-105 transition-transform duration-300">
-        <div className="w-28 h-40 rounded-xl p-0.5 animate-gradient-pulse">
+        <div className="w-24 h-36 sm:w-28 sm:h-40 rounded-xl p-0.5 animate-gradient-pulse">
           <div className="bg-black rounded-[10px] p-0.5 h-full w-full">
             {firstStory.mediaType === 'video' ? (
               <video
@@ -37,7 +37,7 @@ const StoryBubble: React.FC<StoryBubbleProps> = ({ story, onView }) => {
           </div>
         </div>
       </div>
-      <p className="text-xs w-28 truncate text-center">{story.user.username}</p>
+      <p className="text-xs w-full truncate text-center">{story.user.username}</p>
     </div>
   );
 };

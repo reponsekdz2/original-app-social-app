@@ -30,6 +30,7 @@ const PostComponent: React.FC<PostProps> = (props) => {
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
     const isLiked = post.likedBy.some(u => u.id === currentUser.id);
+    const isCurrentUserPost = post.user.id === currentUser.id;
 
     const handleNextMedia = () => setCurrentMediaIndex(p => Math.min(p + 1, post.media.length - 1));
     const handlePrevMedia = () => setCurrentMediaIndex(p => Math.max(p - 1, 0));
@@ -96,6 +97,11 @@ const PostComponent: React.FC<PostProps> = (props) => {
                          <button onClick={() => onShare(post)}>
                              <Icon className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.875L6 12z" /></Icon>
                          </button>
+                          {!isCurrentUserPost && (
+                             <button onClick={() => onTip(post)}>
+                                <Icon className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182.553-.44 1.278-.659 2.003-.659.768 0 1.536.219 2.121.659l.879.659m0-2.218a.375.375 0 00.495-.595l-1.328-1.328a.375.375 0 00-.595.495l1.428 1.428z" /></Icon>
+                            </button>
+                         )}
                     </div>
                     <button onClick={() => onToggleSave(post.id)}>
                         <Icon className={`w-7 h-7 ${post.isSaved ? 'text-white' : ''}`} fill={post.isSaved ? 'currentColor' : 'none'}>
