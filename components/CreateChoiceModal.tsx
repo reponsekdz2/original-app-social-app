@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Icon from './Icon.tsx';
 
@@ -6,7 +7,8 @@ interface CreateChoiceModalProps {
   onChoice: (type: 'post' | 'reel' | 'story' | 'live') => void;
 }
 
-const ChoiceButton: React.FC<{ icon: JSX.Element, label: string, onClick: () => void }> = ({ icon, label, onClick }) => (
+// Fix: Replaced JSX.Element with React.ReactNode to resolve namespace error.
+const ChoiceButton: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void }> = ({ icon, label, onClick }) => (
     <button onClick={onClick} className="flex flex-col items-center justify-center p-6 bg-gray-800 hover:bg-gray-700 rounded-lg aspect-square transition-all transform hover:scale-105">
         <div className="w-12 h-12 text-red-500">{icon}</div>
         <span className="mt-2 font-semibold">{label}</span>

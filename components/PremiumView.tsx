@@ -1,8 +1,10 @@
 
+
 import React from 'react';
 import Icon from './Icon.tsx';
 
-const PremiumFeature: React.FC<{ title: string; description: string; icon: JSX.Element }> = ({ title, description, icon }) => (
+// Fix: Replaced JSX.Element with React.ReactNode to resolve namespace error.
+const PremiumFeature: React.FC<{ title: string; description: string; icon: React.ReactNode }> = ({ title, description, icon }) => (
   <div className="flex items-start gap-4">
     <div className="bg-red-500/10 text-red-400 p-3 rounded-lg">{icon}</div>
     <div>

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
 // Fix: Add .ts extension to types import
@@ -32,7 +33,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files);
+      // Fix: Explicitly type `files` as `File[]` to resolve type inference issue.
+      const files: File[] = Array.from(e.target.files);
       setMediaFiles(files);
       const newPreviews = files.map(file => URL.createObjectURL(file));
       setPreviews(newPreviews);

@@ -1,3 +1,4 @@
+
 // services/apiService.ts
 
 import type {
@@ -67,11 +68,16 @@ export const editPost = (postId: string, caption: string, location: string): Pro
 export const deletePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}`, { method: 'DELETE' });
 export const archivePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}/archive`, { method: 'POST' });
 export const unarchivePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}/unarchive`, { method: 'POST' });
+export const sendTip = (postId: string, amount: number): Promise<void> => fetchWrapper(`/posts/${postId}/tip`, { method: 'POST', body: JSON.stringify({ amount }) });
+export const voteOnPoll = (pollId: string, optionId: number): Promise<void> => fetchWrapper(`/posts/poll/${pollId}/vote`, { method: 'POST', body: JSON.stringify({ optionId }) });
 
 
 // Reels
 export const getReels = (): Promise<Reel[]> => fetchWrapper('/reels');
 export const createReel = (formData: FormData): Promise<Reel> => fetchWrapper('/reels', { method: 'POST', body: formData });
+export const toggleReelLike = (reelId: string): Promise<{ likes: number }> => fetchWrapper(`/reels/${reelId}/like`, { method: 'POST' });
+export const addReelComment = (reelId: string, text: string): Promise<Comment> => fetchWrapper(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+
 
 // Stories
 export const getStories = (): Promise<Story[]> => fetchWrapper('/stories');
@@ -114,6 +120,9 @@ export const createGroupChat = (name: string, userIds: string[]): Promise<Conver
 export const addMessageReaction = (messageId: string, emoji: string): Promise<void> => fetchWrapper(`/messages/${messageId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) });
 export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => fetchWrapper(`/messages/conversations/${conversationId}/settings`, { method: 'PUT', body: JSON.stringify(settings) });
 
+// Fix: Added missing getNotifications function.
+// Notifications
+export const getNotifications = (): Promise<Notification[]> => fetchWrapper('/notifications');
 
 // Misc
 export const getSponsoredContent = (): Promise<SponsoredContent[]> => fetchWrapper('/misc/sponsored');
@@ -131,6 +140,8 @@ export const submitReport = (content: Post | User, reason: string, details: stri
 
 // Admin
 export const getAdminStats = (): Promise<AdminStats> => fetchWrapper('/admin/stats');
+export const getAdminUserGrowthData = (): Promise<AnalyticsData> => fetchWrapper('/admin/analytics/user-growth');
+export const getAdminContentTrendsData = (): Promise<any> => fetchWrapper('/admin/analytics/content-trends');
 export const getAdminUsers = (searchTerm: string): Promise<User[]> => fetchWrapper(`/admin/users?search=${searchTerm}`);
 export const updateAdminUser = (userId: string, updates: any): Promise<void> => fetchWrapper(`/admin/users/${userId}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteAdminUser = (userId: string): Promise<void> => fetchWrapper(`/admin/users/${userId}`, { method: 'DELETE' });

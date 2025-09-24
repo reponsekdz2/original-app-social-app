@@ -1,7 +1,9 @@
+
 import React from 'react';
 import Icon from './Icon.tsx';
 
-const WelcomeFeature: React.FC<{ icon: JSX.Element; title: string; description: string }> = ({ icon, title, description }) => (
+// Fix: Replaced JSX.Element with React.ReactNode to resolve namespace error.
+const WelcomeFeature: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
   <div className="flex items-start gap-4">
     <div className="text-red-500 flex-shrink-0 mt-1">
       {icon}

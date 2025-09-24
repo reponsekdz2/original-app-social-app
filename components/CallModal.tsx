@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import Icon from './Icon.tsx';
 import type { User } from '../types.ts';
@@ -19,7 +20,8 @@ const CallModal: React.FC<CallModalProps> = ({ user, status, type, onHangUp, rem
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
-        let timer: NodeJS.Timeout;
+        // Fix: Replaced NodeJS.Timeout with ReturnType<typeof setInterval> for browser compatibility.
+        let timer: ReturnType<typeof setInterval>;
         if (status === 'connected') {
             timer = setInterval(() => {
                 setCallDuration(prev => prev + 1);

@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import * as api from '../../services/apiService.ts';
 import type { AdminStats, AnalyticsData } from '../../types.ts';
 import Icon from '../Icon.tsx';
 import BarChart from './BarChart.tsx';
 
-const StatCard: React.FC<{ title: string, value: string | number, icon: JSX.Element }> = ({ title, value, icon }) => (
+// Fix: Replaced JSX.Element with React.ReactNode to resolve namespace error.
+const StatCard: React.FC<{ title: string, value: string | number, icon: React.ReactNode }> = ({ title, value, icon }) => (
     <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
         <div className="flex items-center">
             <div className="p-3 rounded-full bg-red-500/20 text-red-400 mr-4">
