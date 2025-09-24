@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
@@ -135,7 +134,7 @@ export default (upload) => {
         if (!req.file) {
             return res.status(400).json({ message: 'No image file uploaded.' });
         }
-        const imageUrl = `/uploads/${req.file.filename}`;
+        const imageUrl = `/uploads/carousel/${req.file.filename}`;
         try {
             await pool.query('INSERT INTO auth_carousel_images (image_url) VALUES (?)', [imageUrl]);
             res.status(201).json({ message: 'Image uploaded successfully.' });

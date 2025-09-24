@@ -55,7 +55,8 @@ router.get('/carousel', async (req, res) => {
         const [images] = await pool.query('SELECT * FROM auth_carousel_images ORDER BY sort_order ASC, id DESC');
         res.json(images);
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Failed to fetch carousel images:', error);
+        res.status(500).json({ message: 'An unknown error occurred' });
     }
 });
 

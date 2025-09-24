@@ -19,45 +19,49 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
-      <div className="container mx-auto flex flex-col lg:flex-row items-center justify-center gap-16">
-        {/* Left Side: Visuals - hidden on small screens */}
-        <div className="hidden lg:flex flex-col items-center justify-center gap-8">
-          <AuthImageCarousel />
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 overflow-hidden">
+      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center justify-center w-full">
+        
+        {/* Welcome Content (Left) - Visible on large screens */}
+        <div className="hidden lg:flex justify-center lg:col-span-4">
           <AuthWelcomeContent />
         </div>
 
-        {/* Right Side: Forms */}
-        <div className="w-full max-w-sm flex items-center justify-center py-8">
-          <div className="w-full">
-            <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-xl backdrop-blur-sm">
-              <div className="relative min-h-[520px]">
-                <div className={`transition-opacity duration-500 ease-in-out absolute inset-0 ${isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
-                   <LoginForm 
-                    onLoginSuccess={onLoginSuccess} 
-                    onSwitchToRegister={() => setIsLoginView(false)} 
-                    onForgotPassword={() => setForgotPasswordOpen(true)}
-                  />
-                </div>
-                 <div className={`transition-opacity duration-500 ease-in-out absolute inset-0 ${!isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
-                    <RegisterForm 
-                      onRegisterSuccess={onLoginSuccess} 
-                      onSwitchToLogin={() => setIsLoginView(true)}
-                    />
-                 </div>
+        {/* Carousel (Middle) - Visible on large screens */}
+        <div className="hidden lg:flex justify-center lg:col-span-4">
+          <AuthImageCarousel />
+        </div>
+
+        {/* Form (Right) - Spans all columns on mobile, 1/3 on lg */}
+        <div className="w-full max-w-sm mx-auto col-span-1 lg:col-span-4">
+          <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-xl backdrop-blur-sm">
+            <div className="relative min-h-[520px]">
+              <div className={`transition-opacity duration-500 ease-in-out absolute inset-0 ${isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
+                 <LoginForm 
+                  onLoginSuccess={onLoginSuccess} 
+                  onSwitchToRegister={() => setIsLoginView(false)} 
+                  onForgotPassword={() => setForgotPasswordOpen(true)}
+                />
               </div>
-            </div>
-            
-             <div className="mt-4 bg-gray-900/50 border border-gray-800 p-4 rounded-xl backdrop-blur-sm text-center text-sm">
-                <p>
-                  {isLoginView ? "Don't have an account?" : "Have an account?"}{' '}
-                  <button onClick={() => setIsLoginView(!isLoginView)} className="font-semibold text-red-500 hover:underline">
-                    {isLoginView ? "Sign up" : "Log in"}
-                  </button>
-                </p>
+               <div className={`transition-opacity duration-500 ease-in-out absolute inset-0 ${!isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
+                  <RegisterForm 
+                    onRegisterSuccess={onLoginSuccess} 
+                    onSwitchToLogin={() => setIsLoginView(true)}
+                  />
+               </div>
             </div>
           </div>
+          
+           <div className="mt-4 bg-gray-900/50 border border-gray-800 p-4 rounded-xl backdrop-blur-sm text-center text-sm">
+              <p>
+                {isLoginView ? "Don't have an account?" : "Have an account?"}{' '}
+                <button onClick={() => setIsLoginView(!isLoginView)} className="font-semibold text-red-500 hover:underline">
+                  {isLoginView ? "Sign up" : "Log in"}
+                </button>
+              </p>
+          </div>
         </div>
+
       </div>
 
       {isForgotPasswordOpen && (
