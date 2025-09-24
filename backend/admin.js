@@ -2,8 +2,6 @@ import { Router } from 'express';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
 
-const router = Router();
-
 // Middleware to check if user is admin
 const isAdmin = async (req, res, next) => {
     if (!req.session.userId) {
@@ -21,10 +19,11 @@ const isAdmin = async (req, res, next) => {
     }
 };
 
-// All routes in this file are protected by isAdmin
-router.use(isAdmin);
-
 export default (upload) => {
+    const router = Router();
+    // All routes in this file are protected by isAdmin
+    router.use(isAdmin);
+
     // GET /api/admin/stats
     router.get('/stats', async (req, res) => {
         try {

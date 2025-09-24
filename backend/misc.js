@@ -52,11 +52,11 @@ router.get('/stickers', isAuthenticated, async (req, res) => {
 // GET /api/misc/carousel
 router.get('/carousel', async (req, res) => {
     try {
-        const [images] = await pool.query('SELECT * FROM auth_carousel_images ORDER BY sort_order ASC, id DESC');
-        res.json(images);
+        const [images] = await pool.query('SELECT `id`, `image_url`, `sort_order` FROM `auth_carousel_images` ORDER BY `sort_order` ASC, `id` DESC');
+        res.json(images || []);
     } catch (error) {
         console.error('Failed to fetch carousel images:', error);
-        res.status(500).json({ message: 'An unknown error occurred' });
+        res.status(500).json({ message: 'An internal server error occurred while fetching carousel images.' });
     }
 });
 
