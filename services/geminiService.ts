@@ -11,7 +11,6 @@ export const getComposeSuggestions = async (prompt: string): Promise<string[]> =
             config: {
                 temperature: 0.8,
                 maxOutputTokens: 100,
-                // Fix: Added thinkingConfig as maxOutputTokens is set. This reserves tokens for the final output.
                 thinkingConfig: { thinkingBudget: 25 },
             }
         });

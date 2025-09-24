@@ -1,4 +1,3 @@
-
 // services/apiService.ts
 
 import type {
@@ -21,6 +20,8 @@ import type {
   AccountStatusInfo,
   LiveStream,
   StoryItem,
+  // Fix: Add Comment to type imports to avoid conflict with global DOM Comment type.
+  Comment,
 } from '../types.ts';
 
 const API_BASE_URL = '/api';
@@ -120,7 +121,6 @@ export const createGroupChat = (name: string, userIds: string[]): Promise<Conver
 export const addMessageReaction = (messageId: string, emoji: string): Promise<void> => fetchWrapper(`/messages/${messageId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) });
 export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => fetchWrapper(`/messages/conversations/${conversationId}/settings`, { method: 'PUT', body: JSON.stringify(settings) });
 
-// Fix: Added missing getNotifications function.
 // Notifications
 export const getNotifications = (): Promise<Notification[]> => fetchWrapper('/notifications');
 

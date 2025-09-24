@@ -4,6 +4,22 @@ import { isAuthenticated } from './middleware/authMiddleware.js';
 
 const router = Router();
 
+const hydrateUserObject = (userRow) => ({
+    id: userRow.id || userRow.user_id,
+    username: userRow.username,
+    name: userRow.name,
+    avatar_url: userRow.avatar_url,
+    bio: userRow.bio,
+    website: userRow.website,
+    isVerified: !!userRow.is_verified,
+    isPrivate: !!userRow.is_private,
+    isPremium: !!userRow.is_premium,
+    isAdmin: !!userRow.is_admin,
+    status: userRow.status,
+    created_at: userRow.created_at || userRow.user_created_at,
+});
+
+
 export default (upload) => {
     // GET /api/posts - Get posts for the user's feed
     router.get('/', isAuthenticated, async (req, res) => {
@@ -11,7 +27,8 @@ export default (upload) => {
             const [posts] = await pool.query(`
                 SELECT 
                     p.id, p.caption, p.location, p.created_at as timestamp,
-                    u.id as user_id, u.username, u.avatar_url, u.is_verified,
+                    u.id as user_id, u.username, u.name, u.avatar_url, u.bio, u.website, u.is_verified, 
+                    u.is_private, u.is_premium, u.is_admin, u.status, u.created_at as user_created_at,
                     (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count
                 FROM posts p
                 JOIN users u ON p.user_id = u.id
@@ -22,16 +39,40 @@ export default (upload) => {
 
             for (const post of posts) {
                 const [media] = await pool.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [post.id]);
-                const [comments] = await pool.query('SELECT c.id, c.text, c.created_at as timestamp, u.id as user_id, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? ORDER BY c.created_at DESC LIMIT 2', [post.id]);
-                const [likedBy] = await pool.query('SELECT user_id FROM post_likes WHERE post_id = ?', [post.id]);
+                const [comments] = await pool.query(`
+                    SELECT 
+                        c.id, c.text, c.created_at as timestamp, 
+                        u.id as user_id, u.username, u.name, u.avatar_url, u.bio, u.website, u.is_verified, 
+                        u.is_private, u.is_premium, u.is_admin, u.status, u.created_at as user_created_at
+                    FROM comments c 
+                    JOIN users u ON c.user_id = u.id 
+                    WHERE c.post_id = ? 
+                    ORDER BY c.created_at DESC 
+                    LIMIT 2
+                `, [post.id]);
+                
+                const [likedByUsers] = await pool.query(`
+                    SELECT u.* 
+                    FROM post_likes pl 
+                    JOIN users u ON pl.user_id = u.id 
+                    WHERE pl.post_id = ?
+                `, [post.id]);
+
                 const [[isSaved]] = await pool.query('SELECT COUNT(*) as count FROM post_saves WHERE post_id = ? AND user_id = ?', [post.id, req.session.userId]);
                 
                 post.media = media;
-                post.comments = comments.map(c => ({...c, user: {id: c.user_id, username: c.username, avatar_url: c.avatar_url}}));
+                post.comments = comments.map(c => ({
+                    id: c.id,
+                    text: c.text,
+                    timestamp: c.timestamp,
+                    likes: 0, // Mocked as comment likes are not tracked in detail here
+                    likedBy: [], // Mocked
+                    user: hydrateUserObject({ ...c, id: c.user_id, created_at: c.user_created_at })
+                }));
                 post.likes = post.likes_count;
-                post.likedBy = likedBy.map(l => ({ id: l.user_id }));
+                post.likedBy = likedByUsers.map(hydrateUserObject);
                 post.isSaved = isSaved.count > 0;
-                post.user = { id: post.user_id, username: post.username, avatar_url: post.avatar_url, isVerified: post.is_verified };
+                post.user = hydrateUserObject({ id: post.user_id, ...post });
             }
             
             res.json(posts);
@@ -130,9 +171,27 @@ export default (upload) => {
         const { text } = req.body;
         try {
             const [result] = await pool.query('INSERT INTO comments (post_id, user_id, text) VALUES (?, ?, ?)', [postId, req.session.userId, text]);
-            const [[newComment]] = await pool.query('SELECT c.*, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id = ?', [result.insertId]);
+            const [[commentData]] = await pool.query(`
+                SELECT 
+                    c.id, c.text, c.created_at as timestamp, 
+                    u.*
+                FROM comments c 
+                JOIN users u ON c.user_id = u.id 
+                WHERE c.id = ?
+            `, [result.insertId]);
+
+            const newComment = {
+                id: commentData.id,
+                text: commentData.text,
+                timestamp: commentData.timestamp,
+                likes: 0,
+                likedBy: [],
+                user: hydrateUserObject(commentData)
+            };
+            
             res.status(201).json(newComment);
         } catch (error) {
+            console.error('Error adding comment:', error);
             res.status(500).json({ message: "Internal server error" });
         }
     });
