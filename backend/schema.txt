@@ -46,6 +46,31 @@ CREATE TABLE `posts` (
   INDEX `idx_post_user_id` (`user_id`)
 );
 
+-- Polls for Posts
+CREATE TABLE `polls` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `post_id` VARCHAR(36) NOT NULL,
+  `question` VARCHAR(255) NOT NULL,
+  FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `poll_options` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `poll_id` VARCHAR(36) NOT NULL,
+  `text` VARCHAR(100) NOT NULL,
+  FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `poll_votes` (
+  `user_id` VARCHAR(36) NOT NULL,
+  `poll_id` VARCHAR(36) NOT NULL,
+  `option_id` INT NOT NULL,
+  PRIMARY KEY (`user_id`, `poll_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`option_id`) REFERENCES `poll_options` (`id`) ON DELETE CASCADE
+);
+
 -- Post Media (for multi-image/video posts)
 CREATE TABLE `post_media` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
@@ -76,6 +101,16 @@ CREATE TABLE `comments` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`reel_id`) REFERENCES `reels` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Comment Likes Table
+CREATE TABLE `comment_likes` (
+  `comment_id` VARCHAR(36) NOT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`comment_id`,`user_id`),
+  FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
@@ -127,6 +162,25 @@ CREATE TABLE `story_items` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`story_id`) REFERENCES `stories` (`id`) ON DELETE CASCADE
 );
+
+-- Story Highlights
+CREATE TABLE `story_highlights` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `user_id` VARCHAR(36) NOT NULL,
+  `title` VARCHAR(100) NOT NULL,
+  `cover_image_url` VARCHAR(255) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `story_highlight_items` (
+  `highlight_id` VARCHAR(36) NOT NULL,
+  `story_item_id` VARCHAR(36) NOT NULL,
+  PRIMARY KEY (`highlight_id`, `story_item_id`),
+  FOREIGN KEY (`highlight_id`) REFERENCES `story_highlights` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`story_item_id`) REFERENCES `story_items` (`id`) ON DELETE CASCADE
+);
+
 
 -- Messaging Conversations
 CREATE TABLE `conversations` (
@@ -235,4 +289,22 @@ CREATE TABLE `sessions` (
   `session_id` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL PRIMARY KEY,
   `expires` INT(11) UNSIGNED NOT NULL,
   `data` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin
+);
+
+-- Blocked Users
+CREATE TABLE `blocked_users` (
+  `user_id` VARCHAR(36) NOT NULL,
+  `blocked_user_id` VARCHAR(36) NOT NULL,
+  PRIMARY KEY (`user_id`, `blocked_user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`blocked_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+-- Muted Users
+CREATE TABLE `muted_users` (
+  `user_id` VARCHAR(36) NOT NULL,
+  `muted_user_id` VARCHAR(36) NOT NULL,
+  PRIMARY KEY (`user_id`, `muted_user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`muted_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );

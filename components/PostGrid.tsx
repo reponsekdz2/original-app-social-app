@@ -22,8 +22,7 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, onViewPost }) => {
             )}
              {post.media.length > 1 && (
                 <div className="absolute top-2 right-2 text-white z-10">
-                    {/* FIX: Corrected SVG path data from 7.5 to .75 */}
-                    <Icon className="w-5 h-5 drop-shadow-md" fill="currentColor"><path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></Icon>
+                    <Icon className="w-5 h-5 drop-shadow-md"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5-.124m7.5 10.375h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.521-.124H6.75c-.621 0-1.125.504-1.125 1.125V17.25m7.5-10.375h-7.5" /></Icon>
                 </div>
               )}
               {firstMedia.type === 'video' && (

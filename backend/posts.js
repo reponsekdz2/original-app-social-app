@@ -21,9 +21,10 @@ const hydrateUserObject = (userRow) => ({
 
 
 export default (upload) => {
-    // GET /api/posts - Get posts for the user's feed
+    // GET /api/posts - Get posts for the user's feed (Optimized)
     router.get('/', isAuthenticated, async (req, res) => {
         try {
+            const userId = req.session.userId;
             const [posts] = await pool.query(`
                 SELECT 
                     p.id, p.caption, p.location, p.created_at as timestamp,
@@ -35,59 +36,56 @@ export default (upload) => {
                 WHERE p.user_id = ? OR p.user_id IN (SELECT following_id FROM followers WHERE follower_id = ?)
                 ORDER BY p.created_at DESC
                 LIMIT 25;
-            `, [req.session.userId, req.session.userId]);
+            `, [userId, userId]);
 
-            for (const post of posts) {
-                const [media] = await pool.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [post.id]);
-                const [comments] = await pool.query(`
-                    SELECT 
-                        c.id, c.text, c.created_at as timestamp, 
-                        u.id as user_id, u.username, u.name, u.avatar_url, u.bio, u.website, u.is_verified, 
-                        u.is_private, u.is_premium, u.is_admin, u.status, u.created_at as user_created_at
-                    FROM comments c 
-                    JOIN users u ON c.user_id = u.id 
-                    WHERE c.post_id = ? 
-                    ORDER BY c.created_at DESC 
-                    LIMIT 2
-                `, [post.id]);
-                
-                const [likedByUsers] = await pool.query(`
-                    SELECT u.* 
-                    FROM post_likes pl 
-                    JOIN users u ON pl.user_id = u.id 
-                    WHERE pl.post_id = ?
-                `, [post.id]);
-
-                const [[isSaved]] = await pool.query('SELECT COUNT(*) as count FROM post_saves WHERE post_id = ? AND user_id = ?', [post.id, req.session.userId]);
-                
-                const [[poll]] = await pool.query('SELECT * FROM polls WHERE post_id = ?', [post.id]);
-                if (poll) {
-                    const [options] = await pool.query('SELECT id, text, (SELECT COUNT(*) FROM poll_votes WHERE option_id = po.id) as votes FROM poll_options po WHERE poll_id = ?', [poll.id]);
-                    const [[userVote]] = await pool.query('SELECT option_id FROM poll_votes WHERE poll_id = ? AND user_id = ?', [poll.id, req.session.userId]);
-                    post.poll = {
-                        id: poll.id,
-                        question: poll.question,
-                        options: options,
-                        userVote: userVote ? userVote.option_id : null,
-                    };
-                }
-
-                post.media = media;
-                post.comments = comments.map(c => ({
-                    id: c.id,
-                    text: c.text,
-                    timestamp: c.timestamp,
-                    likes: 0, // Mocked as comment likes are not tracked in detail here
-                    likedBy: [], // Mocked
-                    user: hydrateUserObject({ ...c, id: c.user_id, created_at: c.user_created_at })
-                }));
-                post.likes = post.likes_count;
-                post.likedBy = likedByUsers.map(hydrateUserObject);
-                post.isSaved = isSaved.count > 0;
-                post.user = hydrateUserObject({ id: post.user_id, ...post });
+            if (posts.length === 0) {
+                return res.json([]);
             }
-            
-            res.json(posts);
+
+            const postIds = posts.map(p => p.id);
+
+            // Fetch all related data in bulk
+            const [media] = await pool.query('SELECT post_id, id, media_url as url, media_type as type FROM post_media WHERE post_id IN (?) ORDER BY sort_order ASC', [postIds]);
+            const [comments] = await pool.query(`
+                SELECT c.post_id, c.id, c.text, c.created_at as timestamp, 
+                       u.id as user_id, u.username, u.name, u.avatar_url, u.is_verified
+                FROM comments c JOIN users u ON c.user_id = u.id
+                WHERE c.post_id IN (?) ORDER BY c.created_at DESC`, [postIds]);
+            const [likedByUsers] = await pool.query('SELECT pl.post_id, u.id, u.username, u.name, u.avatar_url, u.is_verified FROM post_likes pl JOIN users u ON pl.user_id = u.id WHERE pl.post_id IN (?)', [postIds]);
+            const [savedPosts] = await pool.query('SELECT post_id FROM post_saves WHERE user_id = ? AND post_id IN (?)', [userId, postIds]);
+            const [polls] = await pool.query('SELECT * FROM polls WHERE post_id IN (?)', [postIds]);
+            const pollIds = polls.map(p => p.id);
+            const pollOptions = pollIds.length > 0 ? (await pool.query('SELECT po.poll_id, po.id, po.text, (SELECT COUNT(*) FROM poll_votes WHERE option_id = po.id) as votes FROM poll_options po WHERE po.poll_id IN (?)', [pollIds]))[0] : [];
+            const userVotes = pollIds.length > 0 ? (await pool.query('SELECT poll_id, option_id FROM poll_votes WHERE user_id = ? AND poll_id IN (?)', [userId, pollIds]))[0] : [];
+
+
+            // Map data back to posts
+            const savedPostIds = new Set(savedPosts.map(s => s.post_id));
+            const userVotesMap = new Map(userVotes.map(v => [v.poll_id, v.option_id]));
+
+            const postsWithData = posts.map(post => {
+                const postPoll = polls.find(p => p.post_id === post.id);
+                return {
+                    ...post,
+                    user: hydrateUserObject({ id: post.user_id, ...post }),
+                    media: media.filter(m => m.post_id === post.id),
+                    comments: comments.filter(c => c.post_id === post.id).slice(0, 2).map(c => ({
+                        id: c.id, text: c.text, timestamp: c.timestamp, likes: 0, likedBy: [],
+                        user: hydrateUserObject({ ...c, id: c.user_id })
+                    })),
+                    likes: post.likes_count,
+                    likedBy: likedByUsers.filter(u => u.post_id === post.id).map(hydrateUserObject),
+                    isSaved: savedPostIds.has(post.id),
+                    poll: postPoll ? {
+                        id: postPoll.id,
+                        question: postPoll.question,
+                        options: pollOptions.filter(o => o.poll_id === postPoll.id),
+                        userVote: userVotesMap.get(postPoll.id) || null
+                    } : null
+                };
+            });
+
+            res.json(postsWithData);
         } catch (error) {
             console.error('Error fetching posts:', error);
             res.status(500).json({ message: "Internal server error." });
@@ -238,6 +236,60 @@ export default (upload) => {
             res.status(500).json({ message: "Transaction failed." });
         } finally {
             connection.release();
+        }
+    });
+
+    // PUT /api/posts/:id - Edit a post
+    router.put('/:id', isAuthenticated, async (req, res) => {
+        const { id: postId } = req.params;
+        const { caption, location } = req.body;
+        try {
+            await pool.query(
+                'UPDATE posts SET caption = ?, location = ? WHERE id = ? AND user_id = ?',
+                [caption, location, postId, req.session.userId]
+            );
+            res.sendStatus(200);
+        } catch (error) {
+            res.status(500).json({ message: "Internal server error" });
+        }
+    });
+
+    // POST /api/posts/:id/archive
+    router.post('/:id/archive', isAuthenticated, async (req, res) => {
+        const { id: postId } = req.params;
+        try {
+            await pool.query('UPDATE posts SET is_archived = 1 WHERE id = ? AND user_id = ?', [postId, req.session.userId]);
+            res.sendStatus(200);
+        } catch (error) {
+            res.status(500).json({ message: "Internal server error" });
+        }
+    });
+
+    // POST /api/posts/:id/unarchive
+    router.post('/:id/unarchive', isAuthenticated, async (req, res) => {
+        const { id: postId } = req.params;
+        try {
+            await pool.query('UPDATE posts SET is_archived = 0 WHERE id = ? AND user_id = ?', [postId, req.session.userId]);
+            res.sendStatus(200);
+        } catch (error) {
+            res.status(500).json({ message: "Internal server error" });
+        }
+    });
+
+    // POST /api/posts/poll/:pollId/vote
+    router.post('/poll/:pollId/vote', isAuthenticated, async (req, res) => {
+        const { pollId } = req.params;
+        const { optionId } = req.body;
+        const userId = req.session.userId;
+        try {
+            // Use INSERT ... ON DUPLICATE KEY UPDATE to handle new votes and vote changes
+            await pool.query(
+                'INSERT INTO poll_votes (user_id, poll_id, option_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE option_id = ?',
+                [userId, pollId, optionId, optionId]
+            );
+            res.sendStatus(200);
+        } catch (error) {
+             res.status(500).json({ message: "Internal server error" });
         }
     });
 

@@ -22,6 +22,10 @@ export default (upload) => {
                     JOIN conversation_participants cp ON u.id = cp.user_id 
                     WHERE cp.conversation_id = ?`, [convo.id]);
                 convo.participants = participants;
+                convo.settings = {
+                    theme: convo.theme,
+                    vanish_mode_enabled: !!convo.vanish_mode_enabled
+                };
 
                 const [messages] = await pool.query(`
                     SELECT m.*, m.sender_id as senderId, m.message_type as type, m.created_at as timestamp, m.file_attachment 
@@ -170,6 +174,36 @@ export default (upload) => {
             res.status(500).json({ message: "Internal server error" });
         } finally {
             connection.release();
+        }
+    });
+    
+    // PUT /api/messages/conversations/:id/settings
+    router.put('/conversations/:id/settings', isAuthenticated, async (req, res) => {
+        const { id } = req.params;
+        const { theme, vanish_mode_enabled } = req.body;
+        
+        try {
+            const fieldsToUpdate = [];
+            const values = [];
+            if (theme !== undefined) {
+                fieldsToUpdate.push('theme = ?');
+                values.push(theme);
+            }
+            if (vanish_mode_enabled !== undefined) {
+                fieldsToUpdate.push('vanish_mode_enabled = ?');
+                values.push(vanish_mode_enabled);
+            }
+
+            if (fieldsToUpdate.length === 0) {
+                return res.status(400).json({ message: "No settings provided to update." });
+            }
+
+            values.push(id);
+            // We should also verify user is part of this conversation
+            await pool.query(`UPDATE conversations SET ${fieldsToUpdate.join(', ')} WHERE id = ?`, values);
+            res.sendStatus(200);
+        } catch(error) {
+            res.status(500).json({ message: "Internal server error" });
         }
     });
 

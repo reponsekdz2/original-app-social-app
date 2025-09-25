@@ -34,7 +34,7 @@ router.get('/suggestions', isAuthenticated, async (req, res) => {
 // GET /api/users/:username - Get a specific user's profile
 router.get('/:username', isAuthenticated, async (req, res) => {
     try {
-        const [[user]] = await pool.query('SELECT id, username, name, avatar_url, bio, website, is_verified, is_private FROM users WHERE username = ?', [req.params.username]);
+        const [[user]] = await pool.query('SELECT * FROM users WHERE username = ?', [req.params.username]);
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
@@ -49,6 +49,11 @@ router.get('/:username', isAuthenticated, async (req, res) => {
         user.post_count = counts.post_count;
         user.follower_count = counts.follower_count;
         user.following_count = counts.following_count;
+        
+        const [followers] = await pool.query('SELECT follower_id FROM followers WHERE following_id = ?', [user.id]);
+        const [following] = await pool.query('SELECT following_id FROM followers WHERE follower_id = ?', [user.id]);
+        user.followers = followers.map(f => ({ id: f.follower_id }));
+        user.following = following.map(f => ({ id: f.following_id }));
 
         // In a real app, you'd check for privacy settings before returning posts
         const [posts] = await pool.query('SELECT id, (SELECT media_url FROM post_media WHERE post_id = p.id LIMIT 1) as media_url, (SELECT media_type FROM post_media WHERE post_id = p.id LIMIT 1) as media_type FROM posts p WHERE user_id = ? AND is_archived = 0', [user.id]);
@@ -109,5 +114,74 @@ router.put('/me', isAuthenticated, async (req, res) => {
     }
 });
 
+// GET /api/users/me/stories/archived
+router.get('/me/stories/archived', isAuthenticated, async (req, res) => {
+    try {
+        const [stories] = await pool.query(
+            `SELECT si.id, si.media_url, si.media_type as mediaType 
+             FROM story_items si 
+             JOIN stories s ON si.story_id = s.id 
+             WHERE s.user_id = ? ORDER BY s.created_at DESC`, 
+             [req.session.userId]
+        );
+        res.json(stories);
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// POST /api/users/me/highlights
+router.post('/me/highlights', isAuthenticated, async (req, res) => {
+    const { title, storyIds } = req.body;
+    if (!title || !storyIds || storyIds.length === 0) {
+        return res.status(400).json({ message: "Title and at least one story are required." });
+    }
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        const [[firstStoryItem]] = await connection.query('SELECT media_url FROM story_items WHERE id = ?', [storyIds[0]]);
+        
+        const [result] = await connection.query(
+            'INSERT INTO story_highlights (user_id, title, cover_image_url) VALUES (?, ?, ?)',
+            [req.session.userId, title, firstStoryItem.media_url]
+        );
+        const highlightId = result.insertId;
+
+        const highlightItems = storyIds.map(storyId => [highlightId, storyId]);
+        await connection.query('INSERT INTO story_highlight_items (highlight_id, story_item_id) VALUES ?', [highlightItems]);
+        
+        await connection.commit();
+        res.sendStatus(201);
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ message: "Internal server error" });
+    } finally {
+        connection.release();
+    }
+});
+
+// POST /api/users/:id/block
+router.post('/:id/block', isAuthenticated, async (req, res) => {
+    await pool.query('INSERT IGNORE INTO blocked_users (user_id, blocked_user_id) VALUES (?, ?)', [req.session.userId, req.params.id]);
+    res.sendStatus(200);
+});
+
+// POST /api/users/:id/unblock
+router.post('/:id/unblock', isAuthenticated, async (req, res) => {
+    await pool.query('DELETE FROM blocked_users WHERE user_id = ? AND blocked_user_id = ?', [req.session.userId, req.params.id]);
+    res.sendStatus(200);
+});
+
+// POST /api/users/:id/mute
+router.post('/:id/mute', isAuthenticated, async (req, res) => {
+    await pool.query('INSERT IGNORE INTO muted_users (user_id, muted_user_id) VALUES (?, ?)', [req.session.userId, req.params.id]);
+    res.sendStatus(200);
+});
+
+// POST /api/users/:id/unmute
+router.post('/:id/unmute', isAuthenticated, async (req, res) => {
+    await pool.query('DELETE FROM muted_users WHERE user_id = ? AND muted_user_id = ?', [req.session.userId, req.params.id]);
+    res.sendStatus(200);
+});
 
 export default router;
