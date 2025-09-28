@@ -66,12 +66,10 @@ export const unarchivePost = (postId: string) => request(`/posts/${postId}/unarc
 export const deletePost = (postId: string) => request(`/posts/${postId}`, { method: 'DELETE' });
 export const createComment = (postId: string, text: string) => request('/posts/comment', { method: 'POST', body: JSON.stringify({ postId, text }) });
 
-// FIX: Add missing likeComment function
 export const likeComment = (commentId: string) => {
     return request(`/comments/${commentId}/like`, { method: 'POST' });
 };
 
-// FIX: Add missing voteOnPoll function
 export const voteOnPoll = (pollId: string, optionId: number) => request(`/posts/poll/vote`, { method: 'POST', body: JSON.stringify({ pollId, optionId }) });
 
 // --- Reels ---
@@ -108,7 +106,6 @@ export const getFeedActivity = () => request('/misc/activity');
 export const getSponsoredContent = () => request('/misc/sponsored');
 export const getCarouselImages = () => request('/misc/carousel');
 export const getStickers = () => request('/misc/stickers');
-// FIX: Add missing getActiveAnnouncement function
 export const getActiveAnnouncement = () => request('/misc/announcements/active');
 
 // --- Settings & Privacy ---
@@ -121,6 +118,11 @@ export const updateUserRelationship = (targetUserId: string, action: 'block' | '
 // --- Help & Support ---
 export const getSupportTickets = () => request('/support/tickets');
 export const createSupportTicket = (subject: string, description: string) => request('/support/tickets', { method: 'POST', body: JSON.stringify({ subject, description }) });
+export const submitReport = (content: any, reason: string, details: string) => {
+    const entity_type = 'username' in content ? 'user' : 'post';
+    const reported_entity_id = content.id;
+    return request('/reports', { method: 'POST', body: JSON.stringify({ reported_entity_id, entity_type, reason, details }) });
+};
 
 // --- Notifications ---
 export const getNotifications = () => request('/notifications');
@@ -154,16 +156,13 @@ export const updateAnnouncement = (id: number, data: any) => request(`/admin/ann
 export const deleteAnnouncement = (id: number) => request(`/admin/announcements/${id}`, { method: 'DELETE' });
 export const getAppSettings = () => request('/admin/settings');
 export const updateAppSettings = (settings: any) => request('/admin/settings', { method: 'PUT', body: JSON.stringify(settings) });
-// FIX: Add missing admin analytics functions (mocked)
 export const getAdminUserGrowthData = async () => {
-    // Mock data
     return Promise.resolve({
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
         values: [120, 150, 180, 220, 250, 300]
     });
 };
 export const getAdminContentTrendsData = async () => {
-    // Mock data
     return Promise.resolve({
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
         postValues: [500, 550, 600, 620, 680, 750],

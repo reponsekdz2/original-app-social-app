@@ -22,6 +22,24 @@ interface HomeViewProps {
   onViewTag: (tag: string) => void;
 }
 
+const PostSkeleton: React.FC = () => (
+    <div className="border-b border-gray-800 py-4 animate-pulse">
+        <div className="flex items-center px-4 pb-3">
+            <div className="w-9 h-9 rounded-full bg-gray-700"></div>
+            <div className="ml-3 space-y-2">
+                <div className="h-4 w-24 bg-gray-700 rounded"></div>
+                <div className="h-3 w-16 bg-gray-700 rounded"></div>
+            </div>
+        </div>
+        <div className="w-full aspect-square bg-gray-700"></div>
+        <div className="px-4 pt-3 space-y-2">
+            <div className="h-4 w-1/4 bg-gray-700 rounded"></div>
+            <div className="h-4 w-full bg-gray-700 rounded"></div>
+            <div className="h-4 w-3/4 bg-gray-700 rounded"></div>
+        </div>
+    </div>
+);
+
 const HomeView: React.FC<HomeViewProps> = (props) => {
   const {
     stories,
@@ -52,7 +70,7 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
 
       {/* Posts */}
       <div className="divide-y divide-gray-800">
-        {posts.map(post => (
+        {posts.length > 0 ? posts.map(post => (
           <PostComponent
             key={post.id}
             post={post}
@@ -68,7 +86,7 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
             onVote={onVote}
             onViewTag={onViewTag}
           />
-        ))}
+        )) : Array.from({ length: 3 }).map((_, i) => <PostSkeleton key={i} />)}
       </div>
     </div>
   );

@@ -36,9 +36,7 @@ const PostModal: React.FC<PostModalProps> = (props) => {
   };
 
   const handleLikeComment = async (commentId: string) => {
-      // Placeholder for optimistic update
       console.log(`Liking comment ${commentId}`);
-      // FIX: Correctly call the likeComment API function
       await api.likeComment(commentId);
   };
   

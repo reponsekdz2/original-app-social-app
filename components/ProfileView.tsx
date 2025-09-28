@@ -48,8 +48,12 @@ const ProfileView: React.FC<ProfileViewProps> = (props) => {
         fetchProfile();
     }, [initialUser?.username]);
 
-  if (!user) {
+  if (!user && isLoading) {
     return <div className="flex items-center justify-center h-full"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>;
+  }
+  
+  if (!user) {
+      return <div className="text-center p-12">User not found.</div>
   }
 
   const renderContent = () => {

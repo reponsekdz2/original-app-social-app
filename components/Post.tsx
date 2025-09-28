@@ -16,12 +16,11 @@ interface PostProps {
   onOptions: (post: PostType) => void;
   onViewProfile: (user: User) => void;
   onViewLikes: (users: User[]) => void;
-  // FIX: Changed pollId to string to match type
   onVote: (pollId: string, optionId: number) => void;
   onViewTag: (tag: string) => void;
 }
 
-const PostComponent: React.FC<PostProps> = (props) => {
+const Post: React.FC<PostProps> = (props) => {
     const { post, currentUser, onLike, onUnlike, onSave, onComment, onShare, onOptions, onViewProfile, onViewLikes, onVote, onViewTag } = props;
     
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -32,6 +31,7 @@ const PostComponent: React.FC<PostProps> = (props) => {
     const doubleTapTimeout = useRef<number | null>(null);
 
     const handleLikeToggle = () => {
+        // Optimistic Update
         if (isLiked) {
             onUnlike(post.id);
             setIsLiked(false);
@@ -44,6 +44,7 @@ const PostComponent: React.FC<PostProps> = (props) => {
     };
 
     const handleSaveToggle = () => {
+        // Optimistic Update
         onSave(post.id);
         setIsSaved(prev => !prev);
     };
@@ -134,4 +135,4 @@ const PostComponent: React.FC<PostProps> = (props) => {
   );
 };
 
-export default PostComponent;
+export default Post;
