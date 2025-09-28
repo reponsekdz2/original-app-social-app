@@ -95,6 +95,101 @@
             background-size: 400% 400%;
             animation: gradient-pulse 5s ease infinite;
         }
+        
+        /* Advanced Auth Page Background */
+        .auth-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: #000;
+            overflow: hidden;
+            z-index: -1;
+        }
+        .aurora {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            filter: blur(100px);
+            mix-blend-mode: screen;
+            opacity: 0.4;
+        }
+        .aurora-1 {
+            background: radial-gradient(circle, #b122e2, transparent 60%);
+            top: -20%;
+            left: -20%;
+            animation: move1 25s infinite alternate;
+        }
+        .aurora-2 {
+            background: radial-gradient(circle, #ff5757, transparent 60%);
+            top: 20%;
+            right: -30%;
+            animation: move2 30s infinite alternate;
+        }
+        .aurora-3 {
+            background: radial-gradient(circle, #57a7ff, transparent 60%);
+            bottom: -20%;
+            left: 20%;
+            animation: move3 28s infinite alternate;
+        }
+        @keyframes move1 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(100px, 150px) scale(1.2); }
+        }
+        @keyframes move2 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-150px, -100px) scale(0.8); }
+        }
+        @keyframes move3 {
+            0% { transform: translate(0, 0) scale(1.2); }
+            100% { transform: translate(50px, -150px) scale(1); }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        /* Form input animation */
+        @keyframes slide-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-slide-fade-in {
+            animation: slide-fade-in 0.5s ease-out forwards;
+        }
+
+        /* Double-tap like animation */
+        @keyframes heart-pulse {
+            0% { transform: scale(0); opacity: 0; }
+            30% { transform: scale(1.2); opacity: 1; }
+            60% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .animate-heart-pulse {
+            animation: heart-pulse 0.8s ease-in-out forwards;
+        }
+        
+        .social-btn-google {
+            background-color: #4285F4;
+            color: white;
+        }
+        .social-btn-apple {
+            background-color: #FFFFFF;
+            color: #000000;
+        }
     </style>
 </head>
 <body>

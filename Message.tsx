@@ -79,7 +79,8 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isCurrentUser, isFi
       case 'sticker':
         return <img src={message.content} alt="sticker" className="w-32 h-32" />;
       case 'voicenote':
-        return <VoicenoteMessage duration="0:15" isCurrentUser={isCurrentUser} />;
+        // FIX: The `VoicenoteMessage` component expects an `audioUrl` prop, not `duration`. The URL is available in `message.fileAttachment.fileUrl`.
+        return message.fileAttachment ? <VoicenoteMessage audioUrl={message.fileAttachment.fileUrl} isCurrentUser={isCurrentUser} /> : null;
       case 'share_post':
       case 'share_reel':
         return message.sharedContent ? <SharedContentMessage content={message.sharedContent} /> : <p className="p-2 text-gray-400 italic">Content not available.</p>;

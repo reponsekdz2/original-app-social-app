@@ -1,4 +1,3 @@
-
 // services/apiService.ts
 
 import type {
@@ -23,6 +22,7 @@ import type {
   StoryItem,
   // Fix: Add Comment to type imports to avoid conflict with global DOM Comment type.
   Comment,
+  Call,
 } from '../types.ts';
 
 const API_BASE_URL = '/api';
@@ -63,8 +63,9 @@ export const register = (
     phone: string,
     dob: string,
     gender: string,
-    country: string
-): Promise<{ user: User }> => fetchWrapper('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password, name, phone, dob, gender, country }) });
+    country: string,
+    avatarUrl: string
+): Promise<{ user: User }> => fetchWrapper('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password, name, phone, dob, gender, country, avatar_url: avatarUrl }) });
 export const logout = (): Promise<void> => fetchWrapper('/auth/logout', { method: 'POST' });
 export const getSession = (): Promise<{ user: User }> => fetchWrapper('/auth/session');
 
@@ -81,6 +82,7 @@ export const archivePost = (postId: string): Promise<void> => fetchWrapper(`/pos
 export const unarchivePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}/unarchive`, { method: 'POST' });
 export const sendTip = (postId: string, amount: number): Promise<void> => fetchWrapper(`/posts/${postId}/tip`, { method: 'POST', body: JSON.stringify({ amount }) });
 export const voteOnPoll = (pollId: string, optionId: number): Promise<void> => fetchWrapper(`/posts/poll/${pollId}/vote`, { method: 'POST', body: JSON.stringify({ optionId }) });
+export const toggleCommentLike = (commentId: string): Promise<void> => fetchWrapper(`/comments/${commentId}/like`, { method: 'POST' });
 
 
 // Reels
@@ -111,13 +113,14 @@ export const getSuggestedUsers = (): Promise<User[]> => fetchWrapper('/users/sug
 
 // Messages
 export const getConversations = (): Promise<Conversation[]> => fetchWrapper('/messages/conversations');
-export const sendMessage = (content: string | File, type: Message['type'], conversationId?: string, recipientId?: string, sharedContentId?: string, sharedContentType?: 'post' | 'reel'): Promise<Message> => {
+export const sendMessage = (content: string | File, type: Message['type'], conversationId?: string, recipientId?: string, sharedContentId?: string, sharedContentType?: 'post' | 'reel', replyToMessageId?: string): Promise<Message> => {
     const formData = new FormData();
     formData.append('type', type);
     if (conversationId) formData.append('conversationId', conversationId);
     if (recipientId) formData.append('recipientId', recipientId);
     if (sharedContentId) formData.append('sharedContentId', sharedContentId);
     if (sharedContentType) formData.append('sharedContentType', sharedContentType);
+    if (replyToMessageId) formData.append('replyToMessageId', replyToMessageId);
 
     if (typeof content === 'string') {
         formData.append('content', content);
@@ -130,6 +133,11 @@ export const sendMessage = (content: string | File, type: Message['type'], conve
 export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => fetchWrapper('/messages/conversations/group', { method: 'POST', body: JSON.stringify({ name, userIds }) });
 export const addMessageReaction = (messageId: string, emoji: string): Promise<void> => fetchWrapper(`/messages/${messageId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) });
 export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => fetchWrapper(`/messages/conversations/${conversationId}/settings`, { method: 'PUT', body: JSON.stringify(settings) });
+
+// Calls
+export const getCallHistory = (): Promise<Call[]> => fetchWrapper('/calls/history');
+export const logCall = (receiverId: string, type: 'video' | 'audio', status: 'completed' | 'missed' | 'declined', duration: number): Promise<void> => fetchWrapper('/calls/log', { method: 'POST', body: JSON.stringify({ receiverId, type, status, duration }) });
+
 
 // Notifications
 export const getNotifications = (): Promise<Notification[]> => fetchWrapper('/notifications');

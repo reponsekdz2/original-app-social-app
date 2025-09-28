@@ -1,5 +1,3 @@
-
-
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import pool from './db.js';
@@ -10,7 +8,7 @@ const saltRounds = 10;
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-    const { username, email, password, name, phone, dob, gender, country } = req.body;
+    const { username, email, password, name, phone, dob, gender, country, avatar_url } = req.body;
 
     if (!username || !email || !password || !name || !dob) {
         return res.status(400).json({ message: 'Username, email, password, name, and date of birth are required.' });
@@ -41,8 +39,8 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const [result] = await pool.query(
-            'INSERT INTO users (username, name, email, password, phone, dob, gender, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [username, name, email, hashedPassword, phone || null, dob, gender || 'Prefer not to say', country || null]
+            'INSERT INTO users (username, name, email, password, phone, dob, gender, country, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [username, name, email, hashedPassword, phone || null, dob, gender || 'Prefer not to say', country || null, avatar_url || '/uploads/default_avatar.png']
         );
         
         const userId = result.insertId;

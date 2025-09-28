@@ -40,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onNavigate, onSwitchAccoun
     ];
 
     return (
-        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md hidden sm:block">
+        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md hidden md:block">
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-end h-16 border-b border-gray-800">
                     <div className="flex items-center gap-4">

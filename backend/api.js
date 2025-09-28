@@ -10,9 +10,9 @@ import searchRouter from './search.js';
 import miscRouter from './misc.js';
 import livestreamsRouter from './livestreams.js';
 import adminRouter from './admin.js';
-import aiRouter from './ai.js';
 import commentsRouter from './comments.js';
 import notificationsRouter from './notifications.js';
+import callsRouter from './calls.js';
 
 
 export default (upload) => {
@@ -29,9 +29,9 @@ export default (upload) => {
     router.use('/misc', miscRouter);
     router.use('/livestreams', livestreamsRouter);
     router.use('/admin', adminRouter(upload));
-    router.use('/ai', aiRouter);
     router.use('/comments', commentsRouter);
     router.use('/notifications', notificationsRouter);
+    router.use('/calls', callsRouter);
 
 
     return router;

@@ -152,10 +152,13 @@ export interface Message {
     timestamp: string;
     type: 'text' | 'image' | 'sticker' | 'voicenote' | 'share_post' | 'share_reel' | 'file';
     read: boolean;
-    reactions?: Reaction[];
+    reactions: Reaction[];
     sharedContent?: SharedContent;
     fileAttachment?: FileAttachment;
-    // Fix: Add conversation_id to Message type
+    replyTo?: {
+        content: string;
+        sender: string;
+    } | null;
     conversation_id?: string;
 }
 
@@ -263,4 +266,15 @@ export interface Report {
     details?: string;
     status: 'pending' | 'resolved' | 'dismissed';
     created_at: string;
+}
+
+export interface Call {
+    id: string;
+    type: 'audio' | 'video';
+    status: 'completed' | 'missed' | 'declined';
+    started_at: string;
+    duration_seconds: number;
+    other_user_username: string;
+    other_user_avatar_url: string;
+    was_outgoing: boolean;
 }

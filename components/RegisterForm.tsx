@@ -26,12 +26,26 @@ const PasswordStrengthIndicator: React.FC<{ strength: number }> = ({ strength })
     );
 };
 
+const StepIndicator: React.FC<{ step: number, currentStep: number, label: string}> = ({ step, currentStep, label }) => {
+    const isActive = step === currentStep;
+    const isCompleted = step < currentStep;
+
+    return (
+        <div className="flex items-center gap-2">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${isCompleted ? 'bg-red-500 text-white' : isActive ? 'bg-red-700 text-white' : 'bg-gray-600 text-gray-300'}`}>
+                {isCompleted ? <Icon className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></Icon> : step}
+            </div>
+            <span className={`font-semibold text-xs transition-colors ${isActive || isCompleted ? 'text-white' : 'text-gray-400'}`}>{label}</span>
+        </div>
+    );
+}
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitchToLogin }) => {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -93,7 +107,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
     
     setIsLoading(true);
     try {
-      const data = await api.register(username, email, password, name, phone, dob, gender || 'Prefer not to say', country);
+      const data = await api.register(username, email, password, name, phone, dob, gender || 'Prefer not to say', country, avatarUrl);
       onRegisterSuccess(data);
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
@@ -104,30 +118,35 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
       setIsLoading(false);
     }
   };
+  
+   const SocialButton: React.FC<{ provider: 'Google' | 'Apple' }> = ({ provider }) => (
+        <button type="button" className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-md font-semibold text-sm border border-gray-700 hover:bg-gray-800 transition-colors`}>
+           {provider}
+        </button>
+    );
 
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-4xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400">InstaFire</h2>
       <p className="text-center text-gray-400 mb-4 text-sm">Sign up to see photos and videos from your friends.</p>
       
-      <div className="mb-4">
-        <div className="flex justify-between text-xs text-gray-400 px-2">
-            <span>Account</span>
-            <span>Details</span>
-            <span>Finish</span>
+       <div className="mb-4 px-2">
+            <div className="flex items-center">
+                <StepIndicator step={1} currentStep={step} label="Account" />
+                <div className={`flex-1 h-0.5 mx-2 transition-colors ${step > 1 ? 'bg-red-500' : 'bg-gray-600'}`} />
+                <StepIndicator step={2} currentStep={step} label="Details" />
+                <div className={`flex-1 h-0.5 mx-2 transition-colors ${step > 2 ? 'bg-red-500' : 'bg-gray-600'}`} />
+                <StepIndicator step={3} currentStep={step} label="Finish" />
+            </div>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-1">
-            <div className="bg-red-500 h-1 rounded-full transition-all duration-500" style={{width: `${((step - 1) / 2) * 100}%`}}></div>
-        </div>
-      </div>
 
       <form onSubmit={handleSubmit} className="space-y-3 flex-grow flex flex-col">
         {error && <p className="text-red-500 text-sm bg-red-500/10 p-2 rounded-md text-center">{error}</p>}
         
         <div className="flex-grow">
             {step === 1 && (
-                <div className="space-y-3 animate-modal-intro">
-                    <h3 className="font-semibold text-center text-lg">Create your account</h3>
+                <div className="space-y-3 animate-slide-fade-in">
+                    <h3 className="font-semibold text-center text-lg mt-2">Create your account</h3>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3"><Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243c0 .384.128.753.36 1.06l.995 1.493a.75.75 0 01-.26 1.06l-1.636 1.09a.75.75 0 00-.26 1.06l.995 1.493c.232.348.359.726.359 1.112v.243m-13.5-9.75h9" /></Icon></span>
                         <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-md pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-500" required autoFocus/>
@@ -140,11 +159,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             )}
 
             {step === 2 && (
-                <div className="space-y-3 animate-modal-intro">
-                    <h3 className="font-semibold text-center text-lg">Profile & Security</h3>
+                <div className="space-y-3 animate-slide-fade-in">
+                    <h3 className="font-semibold text-center text-lg mt-2">Profile & Security</h3>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3"><Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm-2.25-6h3.75a.75.75 0 01.75.75v3.75a.75.75 0 01-.75.75h-3.75a.75.75 0 01-.75-.75v-3.75a.75.75 0 01.75-.75z" /></Icon></span>
                         <input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-md pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-500" required autoFocus/>
+                    </div>
+                     <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3"><Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></Icon></span>
+                        <input type="url" placeholder="Avatar URL (Optional)" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-md pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-500" />
                     </div>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3"><Icon className="w-5 h-5 text-gray-400"><path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></Icon></span>
@@ -161,8 +184,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             )}
             
             {step === 3 && (
-                <div className="space-y-3 animate-modal-intro">
-                    <h3 className="font-semibold text-center text-lg">Final Details</h3>
+                <div className="space-y-3 animate-slide-fade-in">
+                    <h3 className="font-semibold text-center text-lg mt-2">Final Details</h3>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3"><Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 6.75z" /></Icon></span>
                         <input type="tel" placeholder="Phone Number (Optional)" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-md pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-500" />

@@ -3,49 +3,69 @@ import LoginForm from './LoginForm.tsx';
 import RegisterForm from './RegisterForm.tsx';
 import ForgotPasswordModal from './ForgotPasswordModal.tsx';
 import AuthImageCarousel from './AuthImageCarousel.tsx';
-import AuthWelcomeContent from './AuthWelcomeContent.tsx';
+import type { User } from '../types.ts';
+import TwoFactorAuthLoginModal from './TwoFactorAuthLoginModal.tsx';
 
 interface AuthViewProps {
-  onLoginSuccess: (data: { user: any }) => void;
+  onLoginSuccess: (data: { user: User, isNewUser?: boolean }) => void;
 }
 
 const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [isForgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [is2FAModalOpen, set2FAModalOpen] = useState(false);
+  const [userFor2FA, setUserFor2FA] = useState<User | null>(null);
 
   const handleForgotPasswordSubmit = async (email: string) => {
     // In a real app, this would call an API
     console.log('Password reset requested for:', email);
+    setForgotPasswordOpen(false);
+  };
+
+  const handleLoginNeeds2FA = (user: User) => {
+    setUserFor2FA(user);
+    set2FAModalOpen(true);
+  };
+  
+  const handle2FASubmit = (code: string) => {
+    // In a real app, verify the code
+    console.log(`Verifying 2FA code ${code} for user ${userFor2FA?.username}`);
+    if(userFor2FA) {
+        onLoginSuccess({ user: userFor2FA });
+    }
+    set2FAModalOpen(false);
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 overflow-hidden">
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-8 items-center justify-center w-full">
-        
-        {/* Welcome Content (Left) - Visible on large screens */}
-        <div className="hidden lg:flex justify-center lg:col-span-4">
-          <AuthWelcomeContent />
-        </div>
+    <div className="min-h-screen text-white flex items-center justify-center p-4 overflow-hidden">
+      <div className="auth-bg">
+        <div className="aurora aurora-1"></div>
+        <div className="aurora aurora-2"></div>
+        <div className="aurora aurora-3"></div>
+      </div>
 
-        {/* Carousel (Middle) - Visible on medium+ screens */}
-        <div className="hidden md:flex justify-center md:col-span-4 lg:col-span-4">
+      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center justify-center w-full">
+        
+        {/* Carousel (Left) - Visible on large screens */}
+        <div className="hidden lg:flex justify-center">
           <AuthImageCarousel />
         </div>
 
         {/* Form (Right) */}
-        <div className="w-full max-w-sm mx-auto col-span-1 md:col-span-4 lg:col-span-4">
-          <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-xl backdrop-blur-sm">
-            <div className="relative h-[480px]">
-              <div className={`transition-opacity duration-500 ease-in-out absolute inset-0 ${isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
+        <div className="w-full max-w-md mx-auto animate-float">
+          <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-xl backdrop-blur-sm max-h-[95vh] h-auto overflow-y-auto scrollbar-hide">
+            <div className="relative h-auto">
+              <div className={`transition-opacity duration-500 ease-in-out ${isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
                  <LoginForm 
                   onLoginSuccess={onLoginSuccess} 
+                  onLoginNeeds2FA={handleLoginNeeds2FA}
                   onSwitchToRegister={() => setIsLoginView(false)} 
                   onForgotPassword={() => setForgotPasswordOpen(true)}
                 />
               </div>
                <div className={`transition-opacity duration-500 ease-in-out absolute inset-0 ${!isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
                   <RegisterForm 
-                    onRegisterSuccess={onLoginSuccess} 
+                    onRegisterSuccess={(data) => onLoginSuccess({...data, isNewUser: true})} 
                     onSwitchToLogin={() => setIsLoginView(true)}
                   />
                </div>
@@ -68,6 +88,12 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
         <ForgotPasswordModal
           onClose={() => setForgotPasswordOpen(false)}
           onSubmit={handleForgotPasswordSubmit}
+        />
+      )}
+      {is2FAModalOpen && (
+        <TwoFactorAuthLoginModal
+            onClose={() => set2FAModalOpen(false)}
+            onSubmit={handle2FASubmit}
         />
       )}
     </div>

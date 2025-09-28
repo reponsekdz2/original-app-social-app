@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import * as api from '../services/apiService.ts';
 import Icon from './Icon.tsx';
+import type { User } from '../types.ts';
 
 interface LoginFormProps {
-  onLoginSuccess: (data: { user: any }) => void;
+  onLoginSuccess: (data: { user: User }) => void;
+  onLoginNeeds2FA: (user: User) => void;
   onSwitchToRegister: () => void;
   onForgotPassword: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegister, onForgotPassword }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, onSwitchToRegister, onForgotPassword }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -20,19 +22,48 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegiste
     setError('');
     setIsLoading(true);
     try {
-      const data = await api.login(username, password);
-      onLoginSuccess(data);
+      // Mocking 2FA check for a specific user for demonstration
+      if (username === 'johndoe_2fa') {
+          // In a real app, the API would tell us this.
+          // We simulate getting a user object back first.
+          const mockUser: User = { 
+              id: '2', username: 'johndoe_2fa', name: 'John Doe', avatar_url: '', 
+              isVerified: true, isPremium: false, isPrivate: false, isAdmin: false, 
+              status: 'active', created_at: new Date().toISOString() 
+          };
+          onLoginNeeds2FA(mockUser);
+      } else {
+        const data = await api.login(username, password);
+        onLoginSuccess(data);
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
   };
+  
+    const SocialButton: React.FC<{ provider: 'Google' | 'Apple' }> = ({ provider }) => (
+        <button type="button" className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-md font-semibold text-sm border border-gray-700 hover:bg-gray-800 transition-colors`}>
+           {provider}
+        </button>
+    );
 
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-4xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400">InstaFire</h2>
       <p className="text-center text-gray-400 mb-6 text-sm">Sign in to see photos and videos from your friends.</p>
+      
+      <div className="flex gap-4 mb-4">
+        <SocialButton provider="Google" />
+        <SocialButton provider="Apple" />
+      </div>
+
+      <div className="flex items-center my-2">
+        <div className="flex-grow border-t border-gray-700"></div>
+        <span className="flex-shrink mx-4 text-gray-500 text-xs">OR</span>
+        <div className="flex-grow border-t border-gray-700"></div>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <p className="text-red-500 text-sm bg-red-500/10 p-2 rounded-md text-center">{error}</p>}
@@ -72,6 +103,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegiste
                 </Icon>
             </button>
         </div>
+        
+        <div className="flex items-center justify-between">
+            <label className="flex items-center text-xs text-gray-400">
+                <input type="checkbox" className="w-4 h-4 mr-2 bg-gray-700 border-gray-600 rounded" />
+                Remember Me
+            </label>
+            <button onClick={onForgotPassword} type="button" className="text-xs text-gray-400 hover:underline">
+              Forgot password?
+            </button>
+        </div>
 
         <button
           type="submit"
@@ -79,19 +120,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegiste
           disabled={isLoading}
         >
           {isLoading ? (
-            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           ) : 'Log In'}
         </button>
       </form>
-      
-      <div className="text-right mt-4">
-        <button onClick={onForgotPassword} className="text-xs text-gray-400 hover:underline">
-          Forgot password?
-        </button>
-      </div>
     </div>
   );
 };

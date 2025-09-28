@@ -43,6 +43,7 @@ import MediaViewerModal from './components/MediaViewerModal.tsx';
 import ReelViewerModal from './components/ReelViewerModal.tsx';
 import ReelCommentsModal from './components/ReelCommentsModal.tsx';
 import GoLiveModal from './components/GoLiveModal.tsx';
+import WelcomeOnboardingModal from './components/WelcomeOnboardingModal.tsx';
 
 
 const App: React.FC = () => {
@@ -146,9 +147,12 @@ const App: React.FC = () => {
         }
     }, [allUsers]);
 
-    const handleLoginSuccess = (data: { user: User }) => {
+    const handleLoginSuccess = (data: { user: User, isNewUser?: boolean }) => {
         setCurrentUser(data.user);
         socketService.connect('/');
+        if (data.isNewUser) {
+            setActiveModal('welcomeOnboarding');
+        }
     };
     
     const handleLogout = async () => {
@@ -317,7 +321,7 @@ const App: React.FC = () => {
                     onShowSearch={() => setSearchOpen(true)}
                     onLogout={handleLogout}
                 />
-                <main className="flex-1">
+                <main className="flex-1 md:ml-20 xl:ml-64">
                     <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => setActiveModal('accountSwitcher')} onCreatePost={() => setActiveModal('createChoice')} onShowNotifications={() => setNotificationsPanelOpen(p => !p)} onLogout={handleLogout} />
                     {renderView()}
                 </main>
@@ -346,6 +350,7 @@ const App: React.FC = () => {
             {activeModal === 'reelViewer' && modalContent && <ReelViewerModal reel={modalContent} currentUser={currentUser} onClose={() => setActiveModal(null)} onLikeReel={(id) => api.toggleReelLike(id)} onCommentOnReel={(reel) => { setModalContent(reel); setActiveModal('reelComments'); }} onShareReel={(reel) => { setModalContent(reel); setActiveModal('share'); }} />}
             {activeModal === 'reelComments' && modalContent && <ReelCommentsModal reel={modalContent} currentUser={currentUser} onClose={() => setActiveModal(null)} onComment={async (reelId, text) => { await api.addReelComment(reelId, text); fetchData(); }} />}
             {activeModal === 'goLive' && <GoLiveModal onClose={() => setActiveModal(null)} onStartStream={async (title) => { const stream = await api.startLiveStream(title); setActiveModal(null); setActiveLiveStream(stream); }} />}
+            {activeModal === 'welcomeOnboarding' && <WelcomeOnboardingModal currentUser={currentUser} suggestedUsers={allUsers.filter(u => u.id !== currentUser.id).slice(0, 10)} onClose={() => setActiveModal(null)} onFollow={handleFollow} onUnfollow={handleUnfollow} />}
 
 
             {/* Call Modals */}

@@ -38,10 +38,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   return (
     <header className="p-4 sm:p-6 md:p-8">
-      <div className="flex flex-col sm:flex-row items-center">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start">
         <img src={user.avatar_url} alt={user.username} className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 rounded-full object-cover flex-shrink-0" />
-        <div className="ml-0 mt-4 sm:mt-0 sm:ml-6 md:ml-10 flex-1 w-full">
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mb-4">
+        <div className="ml-0 mt-4 sm:mt-0 sm:ml-6 md:ml-10 flex-1 w-full text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row items-center sm:justify-start justify-center gap-2 sm:gap-4 mb-4">
             <h1 className="text-xl sm:text-2xl">{user.username}</h1>
             <div className="flex items-center gap-2">
                 {user.isVerified && <VerifiedBadge />}
@@ -75,7 +75,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </div>
         </div>
       </div>
-      <div className="sm:hidden mt-4">
+      <div className="sm:hidden mt-4 text-center">
         <p className="font-semibold text-sm">{user.name}</p>
         <p className="text-gray-400 whitespace-pre-line text-sm">{user.bio}</p>
         {user.website && <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-red-400 font-semibold text-sm">{user.website}</a>}

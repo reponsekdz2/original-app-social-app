@@ -28,6 +28,7 @@ const PostComponent: React.FC<PostProps> = (props) => {
     const { post, currentUser, onToggleLike, onToggleSave, onComment, onShare, onViewLikes, onViewProfile, onViewPost, onOptions, onFollow, onUnfollow, onTip, onVote } = props;
     const [commentText, setCommentText] = useState('');
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+    const [showLikeAnimation, setShowLikeAnimation] = useState(false);
 
     const isLiked = post.likedBy.some(u => u.id === currentUser.id);
     const isCurrentUserPost = post.user.id === currentUser.id;
@@ -41,6 +42,14 @@ const PostComponent: React.FC<PostProps> = (props) => {
             onComment(post.id, commentText);
             setCommentText('');
         }
+    };
+
+    const handleDoubleClickLike = () => {
+        if (!isLiked) {
+            onToggleLike(post.id);
+        }
+        setShowLikeAnimation(true);
+        setTimeout(() => setShowLikeAnimation(false), 800);
     };
     
     return (
@@ -61,7 +70,7 @@ const PostComponent: React.FC<PostProps> = (props) => {
             </div>
 
             {/* Post Media */}
-            <div className="relative aspect-square bg-black">
+            <div className="relative aspect-square bg-black" onDoubleClick={handleDoubleClickLike}>
                 {post.media.map((item, index) => (
                     <div key={item.id} className={`absolute inset-0 transition-opacity duration-300 ${index === currentMediaIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                         {item.type === 'video' ? (
@@ -71,6 +80,13 @@ const PostComponent: React.FC<PostProps> = (props) => {
                         )}
                     </div>
                 ))}
+                 {showLikeAnimation && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <Icon className="w-24 h-24 text-white drop-shadow-lg animate-heart-pulse" fill="currentColor">
+                            <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                        </Icon>
+                    </div>
+                )}
                 {post.media.length > 1 && (
                     <>
                         {currentMediaIndex > 0 && <button onClick={handlePrevMedia} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 p-1 rounded-full text-white"><Icon className="w-5 h-5"><path d="M15.75 19.5L8.25 12l7.5-7.5" /></Icon></button>}

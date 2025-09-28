@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { Message, User, SharedContent, FileAttachment, Reaction } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -52,34 +53,36 @@ const FileAttachmentMessage: React.FC<{ file: FileAttachment }> = ({ file }) => 
     )
 }
 
+const ReplySnippet: React.FC<{ replyTo: Message['replyTo']}> = ({ replyTo }) => {
+    if (!replyTo) return null;
+    return (
+        <div className="border-l-2 border-red-400 pl-2 mb-1 opacity-80">
+            <p className="text-xs font-semibold">{replyTo.sender}</p>
+            <p className="text-xs truncate">{replyTo.content}</p>
+        </div>
+    )
+}
+
 
 const MessageComponent: React.FC<MessageProps> = ({ message, isCurrentUser, isFirstInGroup, isLastInGroup, sender, onReply, onAddReaction, isVanishMode, onViewMedia }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const messageAlignment = isCurrentUser ? 'justify-end' : 'justify-start';
-  
-  const bubbleStyles = isCurrentUser
-    ? 'bg-red-600 text-white'
-    : 'bg-gray-700 text-white';
-
+  const bubbleStyles = isCurrentUser ? 'bg-red-600 text-white' : 'bg-gray-700 text-white';
   const groupMargin = isFirstInGroup ? 'mt-3' : 'mt-0.5';
-
-  const roundingClasses = isCurrentUser
-    ? `${isFirstInGroup ? 'rounded-tr-2xl' : 'rounded-tr-md'} ${isLastInGroup ? 'rounded-br-none' : 'rounded-br-lg'}`
-    : `${isFirstInGroup ? 'rounded-tl-2xl' : 'rounded-tl-md'} ${isLastInGroup ? 'rounded-bl-none' : 'rounded-bl-lg'}`;
-    
+  const roundingClasses = isCurrentUser ? 'rounded-tr-2xl' : 'rounded-tr-md';
   const vanishModeClasses = isVanishMode ? 'border-2 border-dashed border-gray-500 bg-transparent opacity-80' : bubbleStyles;
 
   const renderContent = () => {
     switch (message.type) {
       case 'text':
-        return <p className="py-2 px-3 whitespace-pre-wrap break-words">{message.content}</p>;
+        return <p className="whitespace-pre-wrap break-words">{message.content}</p>;
       case 'image':
         return <button onClick={() => onViewMedia({url: message.content, type: 'image'})}><img src={message.content} alt="sent" className="rounded-lg max-w-xs cursor-pointer" /></button>;
       case 'sticker':
         return <img src={message.content} alt="sticker" className="w-32 h-32" />;
       case 'voicenote':
-        return <VoicenoteMessage duration="0:15" isCurrentUser={isCurrentUser} />;
+        return message.fileAttachment ? <VoicenoteMessage audioUrl={message.fileAttachment.fileUrl} isCurrentUser={isCurrentUser} /> : null;
       case 'share_post':
       case 'share_reel':
         return message.sharedContent ? <SharedContentMessage content={message.sharedContent} /> : <p className="p-2 text-gray-400 italic">Content not available.</p>;
@@ -92,7 +95,6 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isCurrentUser, isFi
   
   const uniqueReactions = message.reactions ? [...new Map(message.reactions.map(item => [item.emoji, item])).values()] : [];
 
-
   return (
     <div className={`flex items-end gap-2 group ${messageAlignment} ${groupMargin}`}>
       {!isCurrentUser && isLastInGroup && (
@@ -103,7 +105,8 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isCurrentUser, isFi
       )}
 
       <div className="relative">
-          <div className={`relative max-w-sm sm:max-w-md rounded-2xl ${message.type.startsWith('share') || message.type === 'file' ? '' : vanishModeClasses} ${roundingClasses}`}>
+          <div className={`relative max-w-sm sm:max-w-md rounded-2xl ${message.type.startsWith('share') || message.type === 'file' ? '' : `${vanishModeClasses} ${roundingClasses} p-2`}`}>
+            <ReplySnippet replyTo={message.replyTo} />
             {renderContent()}
           </div>
           {uniqueReactions.length > 0 && (

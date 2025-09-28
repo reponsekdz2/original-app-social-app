@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 // Fix: Add .ts extension to types import
 import type { Conversation, User, Message } from '../types.ts';
@@ -15,7 +16,7 @@ import * as api from '../services/apiService.ts';
 interface ChatWindowProps {
   conversation: Conversation;
   currentUser: User;
-  onSendMessage: (content: string | File, type: Message['type']) => void;
+  onSendMessage: (content: string | File, type: Message['type'], replyToMessageId?: string) => void;
   onBack: () => void;
   onViewProfile: (user: User) => void;
   onInitiateCall: (user: User, type: 'video' | 'audio') => void;
@@ -74,28 +75,21 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
   }, [conversation.id]);
   
   const handleAddReaction = (messageId: string, emoji: string) => {
-    // Optimistic Update
     setMessages(currentMessages => currentMessages.map(msg => {
       if (msg.id === messageId) {
         const reactions = msg.reactions || [];
         const existingReactionIndex = reactions.findIndex(r => r.user.id === currentUser.id);
         
         if (existingReactionIndex > -1) {
-            // User is changing or removing their reaction
             const existingReaction = reactions[existingReactionIndex];
-            if (existingReaction.emoji === emoji) {
-                // Same emoji clicked, remove it
+            if (existingReaction.emoji === emoji) { // Toggling off
                 return { ...msg, reactions: reactions.filter(r => r.user.id !== currentUser.id) };
-            } else {
-                // Different emoji, update it
+            } else { // Changing reaction
                 const updatedReactions = [...reactions];
-                // FIX: Removed unnecessary `as any` cast as currentUser is of type User.
                 updatedReactions[existingReactionIndex] = { emoji, user: currentUser };
                 return { ...msg, reactions: updatedReactions };
             }
-        } else {
-            // New reaction
-            // FIX: Removed unnecessary `as any` cast as currentUser is of type User.
+        } else { // New reaction
             const newReaction = { emoji, user: currentUser };
             return { ...msg, reactions: [...reactions, newReaction] };
         }
@@ -103,22 +97,20 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
       return msg;
     }));
     
-    // API Call
     api.addMessageReaction(messageId, emoji).catch(err => {
         console.error("Failed to add reaction", err);
-        // Revert optimistic update on failure
         setMessages(conversation.messages); 
     });
   };
   
   const handleUpdateSettings = async (settings: Partial<Conversation['settings']>) => {
     const optimisticConvo = { ...conversation, settings: { ...conversation.settings, ...settings } };
-    onUpdateConversation(optimisticConvo); // Optimistic update
+    onUpdateConversation(optimisticConvo);
     try {
         await api.updateConversationSettings(conversation.id, settings);
     } catch (error) {
         console.error("Failed to update settings:", error);
-        onUpdateConversation(conversation); // Revert on failure
+        onUpdateConversation(conversation);
     }
   };
 
@@ -171,16 +163,14 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
           const sender = conversation.participants.find(p => p.id === message.senderId);
           if (!sender) return null;
           const prevMessage = messages[index - 1];
-          const nextMessage = messages[index + 1];
-          const isFirstInGroup = !prevMessage || prevMessage.senderId !== message.senderId;
-          const isLastInGroup = !nextMessage || nextMessage.senderId !== message.senderId;
+          const isFirstInGroup = !prevMessage || prevMessage.senderId !== message.senderId || !!message.replyTo;
           return (
             <MessageComponent
               key={message.id}
               message={message}
               isCurrentUser={message.senderId === currentUser.id}
               isFirstInGroup={isFirstInGroup}
-              isLastInGroup={isLastInGroup}
+              isLastInGroup={true} // Simplified for now
               sender={sender}
               onReply={() => setReplyingTo(message)}
               onAddReaction={(emoji) => handleAddReaction(message.id, emoji)}
@@ -199,7 +189,7 @@ const ChatWindow: React.FC<ChatWindowProps> = (props) => {
       </div>
       <div className="p-3 bg-black/20">
         <MessageInput 
-            onSend={onSendMessage}
+            onSend={(content, type) => onSendMessage(content, type, replyingTo?.id)}
             replyingTo={replyingTo}
             onCancelReply={() => setReplyingTo(null)}
             conversationId={conversation.id}

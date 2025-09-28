@@ -1,5 +1,6 @@
 
-import React from 'react';
+
+import React, { useEffect, useRef } from 'react';
 import Icon from './Icon.tsx';
 import type { User } from '../types.ts';
 
@@ -10,6 +11,18 @@ interface IncomingCallModalProps {
 }
 
 const IncomingCallModal: React.FC<IncomingCallModalProps> = ({ caller, onAccept, onDecline }) => {
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        audioRef.current = new Audio('/uploads/assets/ringtone.mp3');
+        audioRef.current.loop = true;
+        audioRef.current.play().catch(e => console.error("Ringtone play failed", e));
+        
+        return () => {
+            audioRef.current?.pause();
+        }
+    }, []);
+
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center text-white">
       <img src={caller.avatar_url} alt={caller.username} className="w-32 h-32 rounded-full mb-4 border-4 border-gray-600 animate-pulse" />
