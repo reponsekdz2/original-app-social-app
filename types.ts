@@ -27,6 +27,7 @@ export interface User {
   phone?: string;
   dob?: string;
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
+  country?: string;
   wallet_balance?: number;
   last_login?: string;
   created_at: string;

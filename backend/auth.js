@@ -1,4 +1,5 @@
 
+
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import pool from './db.js';
@@ -9,24 +10,39 @@ const saltRounds = 10;
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, name, phone, dob, gender, country } = req.body;
 
-    if (!username || !email || !password) {
-        return res.status(400).json({ message: 'Username, email, and password are required.' });
+    if (!username || !email || !password || !name || !dob) {
+        return res.status(400).json({ message: 'Username, email, password, name, and date of birth are required.' });
+    }
+    
+    if (password.length < 8) {
+        return res.status(400).json({ message: 'Password must be at least 8 characters long.'});
+    }
+    const dobRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dobRegex.test(dob)) {
+        return res.status(400).json({ message: 'Invalid date of birth format. Please use YYYY-MM-DD.'});
     }
 
     try {
-        // Check if user already exists
-        const [existingUsers] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
+        const queryParams = [username, email];
+        let queryStr = 'SELECT * FROM users WHERE username = ? OR email = ?';
+        if (phone) {
+            queryStr += ' OR phone = ?';
+            queryParams.push(phone);
+        }
+
+        const [existingUsers] = await pool.query(queryStr, queryParams);
+
         if (existingUsers.length > 0) {
-            return res.status(409).json({ message: 'Username or email already in use.' });
+            return res.status(409).json({ message: 'Username, email, or phone number already in use.' });
         }
 
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const [result] = await pool.query(
-            'INSERT INTO users (username, name, email, password) VALUES (?, ?, ?, ?)',
-            [username, username, email, hashedPassword]
+            'INSERT INTO users (username, name, email, password, phone, dob, gender, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [username, name, email, hashedPassword, phone || null, dob, gender || 'Prefer not to say', country || null]
         );
         
         const userId = result.insertId;
@@ -45,14 +61,14 @@ router.post('/register', async (req, res) => {
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { username: identifier, password } = req.body;
 
-    if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required.' });
+    if (!identifier || !password) {
+        return res.status(400).json({ message: 'Identifier and password are required.' });
     }
 
     try {
-        const [users] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, username]);
+        const [users] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ? OR phone = ?', [identifier, identifier, identifier]);
         if (users.length === 0) {
             return res.status(401).json({ message: 'Invalid credentials.' });
         }

@@ -1,3 +1,4 @@
+
 // services/apiService.ts
 
 import type {
@@ -54,7 +55,16 @@ async function fetchWrapper<T>(endpoint: string, options: RequestInit = {}): Pro
 
 // Auth
 export const login = (username: string, password: string): Promise<{ user: User }> => fetchWrapper('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
-export const register = (username: string, email: string, password: string): Promise<{ user: User }> => fetchWrapper('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password }) });
+export const register = (
+    username: string, 
+    email: string, 
+    password: string,
+    name: string,
+    phone: string,
+    dob: string,
+    gender: string,
+    country: string
+): Promise<{ user: User }> => fetchWrapper('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password, name, phone, dob, gender, country }) });
 export const logout = (): Promise<void> => fetchWrapper('/auth/logout', { method: 'POST' });
 export const getSession = (): Promise<{ user: User }> => fetchWrapper('/auth/session');
 
