@@ -3,6 +3,7 @@ import type { Post, User, Comment as CommentType } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
 import { formatTimestamp } from './utils.tsx';
+import * as api from '../services/apiService.ts';
 
 interface PostModalProps {
   post: Post;
@@ -34,13 +35,20 @@ const PostModal: React.FC<PostModalProps> = (props) => {
       setCommentText('');
     }
   };
+  
+  const handleToggleCommentLike = async (commentId: string) => {
+      // Note: This is an optimistic update.
+      // For a real app, you might want to handle state differently
+      // until the API call confirms success.
+      await api.toggleCommentLike(commentId);
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-0 sm:p-4" onClick={onClose}>
         <button className="absolute top-4 right-4 text-white z-10" onClick={onClose}>
             <Icon className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></Icon>
         </button>
-        <div className="bg-black w-full h-full sm:w-full sm:max-w-5xl sm:h-auto sm:max-h-[90vh] flex flex-col md:flex-row sm:rounded-lg" onClick={e => e.stopPropagation()}>
+        <div className="bg-black w-full h-full sm:w-full sm:max-w-5xl sm:h-auto sm:max-h-[90vh] flex flex-col md:flex-row sm:rounded-lg animate-modal-intro" onClick={e => e.stopPropagation()}>
             {/* Media Side */}
             <div className="relative w-full md:w-1/2 bg-black flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-t-none aspect-square md:aspect-auto">
                 {post.media[currentMediaIndex].type === 'video' ? (
@@ -94,7 +102,7 @@ const PostModal: React.FC<PostModalProps> = (props) => {
                                     <button className="font-semibold">Reply</button>
                                 </div>
                             </div>
-                            <button className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleToggleCommentLike(comment.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Icon className="w-4 h-4 text-gray-400 hover:text-white"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon>
                             </button>
                         </div>

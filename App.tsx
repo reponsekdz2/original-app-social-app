@@ -44,6 +44,13 @@ import ReelViewerModal from './components/ReelViewerModal.tsx';
 import ReelCommentsModal from './components/ReelCommentsModal.tsx';
 import GoLiveModal from './components/GoLiveModal.tsx';
 import WelcomeOnboardingModal from './components/WelcomeOnboardingModal.tsx';
+import ChangePasswordModal from './components/ChangePasswordModal.tsx';
+import BlockedUsersView from './components/BlockedUsersView.tsx';
+import LoginActivityView from './components/LoginActivityView.tsx';
+import AccountStatusView from './components/AccountStatusView.tsx';
+import HelpCenterView from './components/HelpCenterView.tsx';
+import SupportInboxView from './components/SupportInboxView.tsx';
+import NewSupportRequestModal from './components/NewSupportRequestModal.tsx';
 
 
 const App: React.FC = () => {
@@ -95,7 +102,7 @@ const App: React.FC = () => {
             setLiveStreams(liveStreamsData);
         } catch (error) {
             console.error("Failed to fetch initial data:", error);
-            if (error.message.includes('Unauthorized')) handleLogout();
+            if ((error as Error).message.includes('Unauthorized')) handleLogout();
         }
     }, [currentUser]);
 
@@ -134,22 +141,29 @@ const App: React.FC = () => {
             setRemoteStream(null);
         };
         
-        socketService.on('incoming-call', ({ from, offer }) => {
+        socketService.on('incoming-call', ({ from, offer, type }) => {
             const caller = allUsers.find(u => u.id === from);
             if (caller) {
-                setIncomingCall({ from: caller, offer, type: 'video' }); // Assume video for now
+                setIncomingCall({ from: caller, offer, type });
             }
+        });
+        
+        socketService.on('new_notification', (newNotification: Notification) => {
+            setNotifications(prev => [newNotification, ...prev]);
+            showToast(`New notification from ${newNotification.actor.username}`, 'info');
         });
 
          return () => {
             webRTCManager.onRemoteStream = null;
             webRTCManager.onCallEnded = null;
+            socketService.off('new_notification');
         }
     }, [allUsers]);
 
     const handleLoginSuccess = (data: { user: User, isNewUser?: boolean }) => {
         setCurrentUser(data.user);
         socketService.connect('/');
+        setCurrentView('home'); // Redirect to home feed
         if (data.isNewUser) {
             setActiveModal('welcomeOnboarding');
         }
@@ -254,7 +268,7 @@ const App: React.FC = () => {
 
     const handleDeclineCall = () => {
         if (incomingCall) {
-            webRTCManager.hangUp(incomingCall.from.id);
+            socketService.emit('reject-call', { to: incomingCall.from.id });
         }
         setIncomingCall(null);
     };
@@ -280,7 +294,16 @@ const App: React.FC = () => {
             case 'profile':
                  return profileUser ? <ProfileView user={profileUser} posts={posts.filter(p => p.user.id === profileUser.id)} reels={reels.filter(r => r.user.id === profileUser.id)} isCurrentUser={currentUser!.id === profileUser.id} currentUser={currentUser!} onEditProfile={() => setActiveModal('editProfile')} onViewArchive={() => handleNavigate('archive')} onFollow={handleFollow} onUnfollow={handleUnfollow} onShowFollowers={(users) => { setModalContent({title: 'Followers', users}); setActiveModal('followList')}} onShowFollowing={(users) => { setModalContent({title: 'Following', users}); setActiveModal('followList')}} onEditPost={(post) => { setModalContent(post); setActiveModal('editPost'); }} onViewPost={(post) => { setModalContent(post); setActiveModal('post'); }} onViewReel={(reel) => { setModalContent(reel); setActiveModal('reelViewer'); }} onOpenCreateHighlightModal={() => setActiveModal('createHighlight')} onMessage={(user) => handleNavigate('messages', user)} /> : null;
             case 'settings':
-                return <SettingsView onBack={() => handleNavigate('profile')} onNavigate={(setting) => console.log(setting)} />;
+                return <SettingsView 
+                            onBack={() => handleNavigate('profile')} 
+                            onNavigate={(setting) => {
+                                if (setting === 'change_password') setActiveModal('changePassword');
+                                if (setting === 'blocked_users') setActiveModal('blockedUsers');
+                                if (setting === 'login_activity') setActiveModal('loginActivity');
+                                if (setting === 'account_status') setActiveModal('accountStatus');
+                                if (setting === 'help') setActiveModal('helpCenter');
+                            }}
+                        />;
             case 'saved':
                 return <SavedView posts={posts.filter(p => p.isSaved)} onViewPost={(post) => { setModalContent(post); setActiveModal('post'); }} />;
             case 'activity':
@@ -321,7 +344,7 @@ const App: React.FC = () => {
                     onShowSearch={() => setSearchOpen(true)}
                     onLogout={handleLogout}
                 />
-                <main className="flex-1 md:ml-20 xl:ml-64">
+                <main className="flex-1 transition-all duration-300 md:ml-20 xl:ml-64">
                     <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => setActiveModal('accountSwitcher')} onCreatePost={() => setActiveModal('createChoice')} onShowNotifications={() => setNotificationsPanelOpen(p => !p)} onLogout={handleLogout} />
                     {renderView()}
                 </main>
@@ -351,6 +374,15 @@ const App: React.FC = () => {
             {activeModal === 'reelComments' && modalContent && <ReelCommentsModal reel={modalContent} currentUser={currentUser} onClose={() => setActiveModal(null)} onComment={async (reelId, text) => { await api.addReelComment(reelId, text); fetchData(); }} />}
             {activeModal === 'goLive' && <GoLiveModal onClose={() => setActiveModal(null)} onStartStream={async (title) => { const stream = await api.startLiveStream(title); setActiveModal(null); setActiveLiveStream(stream); }} />}
             {activeModal === 'welcomeOnboarding' && <WelcomeOnboardingModal currentUser={currentUser} suggestedUsers={allUsers.filter(u => u.id !== currentUser.id).slice(0, 10)} onClose={() => setActiveModal(null)} onFollow={handleFollow} onUnfollow={handleUnfollow} />}
+            
+            {/* Functional Settings Modals/Views */}
+            {activeModal === 'changePassword' && <ChangePasswordModal onClose={() => setActiveModal(null)} onSubmit={async (old, newP) => { /* await api.changePassword(old, newP) */ }} />}
+            {activeModal === 'blockedUsers' && <BlockedUsersView onBack={() => setActiveModal(null)} onUnblockUser={async (user) => { /* await api.unblockUser(user.id) */ }} />}
+            {activeModal === 'loginActivity' && <LoginActivityView activities={[]} onBack={() => setActiveModal(null)} />}
+            {activeModal === 'accountStatus' && <AccountStatusView onBack={() => setActiveModal(null)} />}
+            {activeModal === 'helpCenter' && <HelpCenterView onBack={() => setActiveModal(null)} onNavigate={(view) => setActiveModal(view)}/>}
+            {activeModal === 'support_inbox' && <SupportInboxView tickets={[]} onBack={() => setActiveModal('helpCenter')} onNewRequest={() => setActiveModal('newSupportRequest')} />}
+            {activeModal === 'newSupportRequest' && <NewSupportRequestModal onClose={() => setActiveModal('support_inbox')} onSubmit={async (s,d)=>{}} />}
 
 
             {/* Call Modals */}

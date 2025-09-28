@@ -42,7 +42,7 @@ const VoicenoteMessage: React.FC<VoicenoteMessageProps> = ({ audioUrl, isCurrent
         if (isPlaying) {
             audio.pause();
         } else {
-            audio.play();
+            audio.play().catch(e => console.error("Audio playback failed:", e));
         }
         setIsPlaying(!isPlaying);
     };

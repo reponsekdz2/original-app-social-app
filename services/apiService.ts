@@ -20,7 +20,6 @@ import type {
   AccountStatusInfo,
   LiveStream,
   StoryItem,
-  // Fix: Add Comment to type imports to avoid conflict with global DOM Comment type.
   Comment,
   Call,
 } from '../types.ts';
@@ -68,6 +67,10 @@ export const register = (
 ): Promise<{ user: User }> => fetchWrapper('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password, name, phone, dob, gender, country, avatar_url: avatarUrl }) });
 export const logout = (): Promise<void> => fetchWrapper('/auth/logout', { method: 'POST' });
 export const getSession = (): Promise<{ user: User }> => fetchWrapper('/auth/session');
+export const changePassword = (oldPassword: string, newPassword: string): Promise<void> => fetchWrapper('/auth/change-password', { method: 'POST', body: JSON.stringify({ oldPassword, newPassword }) });
+
+// Search
+export const search = (query: string): Promise<{users: User[], posts: Post[]}> => fetchWrapper(`/search?q=${encodeURIComponent(query)}`);
 
 // Posts
 export const getPosts = (): Promise<Post[]> => fetchWrapper('/posts');
