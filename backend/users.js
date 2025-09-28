@@ -1,186 +1,175 @@
 import { Router } from 'express';
+import bcrypt from 'bcrypt';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
 
 const router = Router();
+const saltRounds = 10;
 
-// GET /api/users - Get all users (for search/tagging)
-router.get('/', isAuthenticated, async (req, res) => {
+// GET /api/users/profile/:username
+router.get('/profile/:username', isAuthenticated, async (req, res) => {
+    const { username } = req.params;
     try {
-        const [users] = await pool.query('SELECT id, username, name, avatar_url, is_verified FROM users');
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
-    }
-});
-
-// GET /api/users/suggestions
-router.get('/suggestions', isAuthenticated, async (req, res) => {
-    try {
-        const [users] = await pool.query(`
-            SELECT id, username, name, avatar_url, is_verified 
-            FROM users 
-            WHERE id != ? AND id NOT IN (SELECT following_id FROM followers WHERE follower_id = ?)
-            ORDER BY RAND()
-            LIMIT 10
-        `, [req.session.userId, req.session.userId]);
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
-    }
-});
-
-
-// GET /api/users/:username - Get a specific user's profile
-router.get('/:username', isAuthenticated, async (req, res) => {
-    try {
-        const [[user]] = await pool.query('SELECT * FROM users WHERE username = ?', [req.params.username]);
-        if (!user) {
-            return res.status(404).json({ message: "User not found." });
-        }
-
-        const [[counts]] = await pool.query(`
-            SELECT 
+        const [[user]] = await pool.query('SELECT id, username, name, avatar_url, bio, website, is_verified, is_private FROM users WHERE username = ?', [username]);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        
+        // Fetch counts
+        const [[[counts]]] = await pool.query(`
+            SELECT
                 (SELECT COUNT(*) FROM posts WHERE user_id = ? AND is_archived = 0) as post_count,
                 (SELECT COUNT(*) FROM followers WHERE following_id = ?) as follower_count,
                 (SELECT COUNT(*) FROM followers WHERE follower_id = ?) as following_count
         `, [user.id, user.id, user.id]);
 
-        user.post_count = counts.post_count;
-        user.follower_count = counts.follower_count;
-        user.following_count = counts.following_count;
+        // Fetch posts, reels, highlights etc.
+        const [posts] = await pool.query('SELECT p.*, (SELECT media_url FROM post_media WHERE post_id = p.id LIMIT 1) as media_url FROM posts p WHERE user_id = ? AND is_archived = 0 ORDER BY created_at DESC', [user.id]);
+        user.posts = posts;
+        // ... fetch other details as needed
         
-        const [followers] = await pool.query('SELECT follower_id FROM followers WHERE following_id = ?', [user.id]);
-        const [following] = await pool.query('SELECT following_id FROM followers WHERE follower_id = ?', [user.id]);
-        user.followers = followers.map(f => ({ id: f.follower_id }));
-        user.following = following.map(f => ({ id: f.following_id }));
-
-        // In a real app, you'd check for privacy settings before returning posts
-        const [posts] = await pool.query('SELECT id, (SELECT media_url FROM post_media WHERE post_id = p.id LIMIT 1) as media_url, (SELECT media_type FROM post_media WHERE post_id = p.id LIMIT 1) as media_type FROM posts p WHERE user_id = ? AND is_archived = 0', [user.id]);
-        const [reels] = await pool.query('SELECT id, video_url FROM reels WHERE user_id = ?', [user.id]);
-        
-        user.posts = posts.map(p => ({ id: p.id, media: [{ url: p.media_url, type: p.media_type }]}));
-        user.reels = reels;
-
-        res.json(user);
+        res.json({ ...user, ...counts });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 });
 
+// GET /api/users/suggested
+router.get('/suggested', isAuthenticated, async (req, res) => {
+    const [users] = await pool.query(`
+        SELECT id, username, name, avatar_url, is_verified 
+        FROM users 
+        WHERE id != ? AND id NOT IN (SELECT following_id FROM followers WHERE follower_id = ?) 
+        ORDER BY RAND() LIMIT 10`, [req.session.userId, req.session.userId]);
+    res.json(users);
+});
+
+// GET /api/users/all
+router.get('/all', isAuthenticated, async (req, res) => {
+    const [users] = await pool.query('SELECT id, username, name, avatar_url FROM users');
+    res.json(users);
+});
+
+
 // POST /api/users/:id/follow
 router.post('/:id/follow', isAuthenticated, async (req, res) => {
+    const { id: followingId } = req.params;
     const followerId = req.session.userId;
-    const followingId = req.params.id;
-
-    if (followerId === followingId) return res.status(400).json({ message: "Cannot follow yourself." });
-
     try {
         await pool.query('INSERT INTO followers (follower_id, following_id) VALUES (?, ?)', [followerId, followingId]);
+        // Create notification
+        await pool.query('INSERT INTO notifications (user_id, actor_id, type) VALUES (?, ?, "follow")', [followingId, followerId]);
         res.sendStatus(200);
     } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(200).json({ message: "Already following." });
-        }
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: 'Could not follow user' });
     }
 });
 
 // POST /api/users/:id/unfollow
 router.post('/:id/unfollow', isAuthenticated, async (req, res) => {
+    const { id: followingId } = req.params;
     const followerId = req.session.userId;
-    const followingId = req.params.id;
-
     try {
         await pool.query('DELETE FROM followers WHERE follower_id = ? AND following_id = ?', [followerId, followingId]);
         res.sendStatus(200);
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: 'Could not unfollow user' });
     }
 });
 
-// PUT /api/users/me - Update current user profile
-router.put('/me', isAuthenticated, async (req, res) => {
+// PUT /api/users/profile
+router.put('/profile', isAuthenticated, async (req, res) => {
     const { name, bio, website, gender } = req.body;
     try {
-        await pool.query(
-            'UPDATE users SET name = ?, bio = ?, website = ?, gender = ? WHERE id = ?',
-            [name, bio, website, gender, req.session.userId]
-        );
-        const [[updatedUser]] = await pool.query('SELECT id, username, name, avatar_url, bio, website, gender FROM users WHERE id = ?', [req.session.userId]);
-        res.json(updatedUser);
-    } catch(error) {
-         res.status(500).json({ message: "Internal server error" });
-    }
-});
-
-// GET /api/users/me/stories/archived
-router.get('/me/stories/archived', isAuthenticated, async (req, res) => {
-    try {
-        const [stories] = await pool.query(
-            `SELECT si.id, si.media_url, si.media_type as mediaType 
-             FROM story_items si 
-             JOIN stories s ON si.story_id = s.id 
-             WHERE s.user_id = ? ORDER BY s.created_at DESC`, 
-             [req.session.userId]
-        );
-        res.json(stories);
+        await pool.query('UPDATE users SET name = ?, bio = ?, website = ?, gender = ? WHERE id = ?',
+        [name, bio, website, gender, req.session.userId]);
+        const [[user]] = await pool.query('SELECT id, username, name, avatar_url, bio, website, is_verified, is_private, gender FROM users WHERE id = ?', [req.session.userId]);
+        res.json({ user });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+         res.status(500).json({ message: 'Could not update profile' });
     }
 });
 
-// POST /api/users/me/highlights
-router.post('/me/highlights', isAuthenticated, async (req, res) => {
+// GET /api/users/stories/archived
+router.get('/stories/archived', isAuthenticated, async (req, res) => {
+    const [stories] = await pool.query(`
+        SELECT si.id, si.media_url, si.media_type as mediaType 
+        FROM story_items si 
+        JOIN stories s ON si.story_id = s.id 
+        WHERE s.user_id = ?`, 
+    [req.session.userId]);
+    res.json(stories);
+});
+
+// POST /api/users/highlights
+router.post('/highlights', isAuthenticated, async (req, res) => {
     const { title, storyIds } = req.body;
-    if (!title || !storyIds || storyIds.length === 0) {
-        return res.status(400).json({ message: "Title and at least one story are required." });
-    }
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
-        const [[firstStoryItem]] = await connection.query('SELECT media_url FROM story_items WHERE id = ?', [storyIds[0]]);
-        
+        const [[coverStory]] = await connection.query('SELECT media_url FROM story_items WHERE id = ?', [storyIds[0]]);
         const [result] = await connection.query(
             'INSERT INTO story_highlights (user_id, title, cover_image_url) VALUES (?, ?, ?)',
-            [req.session.userId, title, firstStoryItem.media_url]
+            [req.session.userId, title, coverStory.media_url]
         );
         const highlightId = result.insertId;
-
         const highlightItems = storyIds.map(storyId => [highlightId, storyId]);
         await connection.query('INSERT INTO story_highlight_items (highlight_id, story_item_id) VALUES ?', [highlightItems]);
-        
         await connection.commit();
         res.sendStatus(201);
     } catch (error) {
         await connection.rollback();
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: 'Could not create highlight' });
     } finally {
         connection.release();
     }
 });
 
-// POST /api/users/:id/block
-router.post('/:id/block', isAuthenticated, async (req, res) => {
-    await pool.query('INSERT IGNORE INTO blocked_users (user_id, blocked_user_id) VALUES (?, ?)', [req.session.userId, req.params.id]);
-    res.sendStatus(200);
+// POST /api/users/relationship
+router.post('/relationship', isAuthenticated, async (req, res) => {
+    const { targetUserId, action } = req.body; // action: 'block' | 'unblock' | 'mute' | 'unmute'
+    const currentUserId = req.session.userId;
+    const tableName = action.includes('block') ? 'blocked_users' : 'muted_users';
+    const field1 = action.includes('block') ? 'blocker_id' : 'muter_id';
+    const field2 = action.includes('block') ? 'blocked_id' : 'muted_id';
+
+    try {
+        if (action === 'block' || action === 'mute') {
+            await pool.query(`INSERT INTO ${tableName} (${field1}, ${field2}) VALUES (?, ?)`, [currentUserId, targetUserId]);
+        } else { // unblock or unmute
+            await pool.query(`DELETE FROM ${tableName} WHERE ${field1} = ? AND ${field2} = ?`, [currentUserId, targetUserId]);
+        }
+        res.sendStatus(200);
+    } catch (error) {
+        res.status(500).json({ message: 'Action failed' });
+    }
 });
 
-// POST /api/users/:id/unblock
-router.post('/:id/unblock', isAuthenticated, async (req, res) => {
-    await pool.query('DELETE FROM blocked_users WHERE user_id = ? AND blocked_user_id = ?', [req.session.userId, req.params.id]);
-    res.sendStatus(200);
+// GET /api/users/blocked
+router.get('/blocked', isAuthenticated, async (req, res) => {
+    const [users] = await pool.query(`
+        SELECT u.id, u.username, u.name, u.avatar_url 
+        FROM users u 
+        JOIN blocked_users bu ON u.id = bu.blocked_id 
+        WHERE bu.blocker_id = ?`,
+    [req.session.userId]);
+    res.json(users);
 });
 
-// POST /api/users/:id/mute
-router.post('/:id/mute', isAuthenticated, async (req, res) => {
-    await pool.query('INSERT IGNORE INTO muted_users (user_id, muted_user_id) VALUES (?, ?)', [req.session.userId, req.params.id]);
-    res.sendStatus(200);
+// GET /api/users/activity
+router.get('/activity', isAuthenticated, async (req, res) => {
+    const [activity] = await pool.query('SELECT * FROM login_activity WHERE user_id = ? ORDER BY login_time DESC LIMIT 10', [req.session.userId]);
+    res.json(activity);
 });
 
-// POST /api/users/:id/unmute
-router.post('/:id/unmute', isAuthenticated, async (req, res) => {
-    await pool.query('DELETE FROM muted_users WHERE user_id = ? AND muted_user_id = ?', [req.session.userId, req.params.id]);
+// PUT /api/users/password
+router.put('/password', isAuthenticated, async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const [[user]] = await pool.query('SELECT password FROM users WHERE id = ?', [req.session.userId]);
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+        return res.status(401).json({ message: 'Incorrect old password.' });
+    }
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedNewPassword, req.session.userId]);
     res.sendStatus(200);
 });
 

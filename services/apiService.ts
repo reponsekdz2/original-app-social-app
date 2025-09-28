@@ -1,192 +1,183 @@
-// services/apiService.ts
+// A central place for all API calls
 
-import type {
-  User,
-  Post,
-  Story,
-  Reel,
-  Conversation,
-  Message,
-  Notification,
-  AdminStats,
-  AnalyticsData,
-  TrendingTopic,
-  SponsoredContent,
-  FeedActivity,
-  AuthCarouselImage,
-  SupportTicket,
-  Report,
-  Announcement,
-  AccountStatusInfo,
-  LiveStream,
-  StoryItem,
-  Comment,
-  Call,
-} from '../types.ts';
+const API_BASE_URL = '/api'; // Using a relative URL for proxying
 
-const API_BASE_URL = '/api';
-
-async function fetchWrapper<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const defaultHeaders: HeadersInit = {};
-  if (!(options.body instanceof FormData)) {
-    defaultHeaders['Content-Type'] = 'application/json';
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-  }
-
-  if (response.status === 204 || response.headers.get('content-length') === '0') {
-    return null as T;
-  }
-
-  return response.json();
-}
-
-// Auth
-export const login = (username: string, password: string): Promise<{ user: User }> => fetchWrapper('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
-export const register = (
-    username: string, 
-    email: string, 
-    password: string,
-    name: string,
-    phone: string,
-    dob: string,
-    gender: string,
-    country: string,
-    avatarUrl: string
-): Promise<{ user: User }> => fetchWrapper('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password, name, phone, dob, gender, country, avatar_url: avatarUrl }) });
-export const logout = (): Promise<void> => fetchWrapper('/auth/logout', { method: 'POST' });
-export const getSession = (): Promise<{ user: User }> => fetchWrapper('/auth/session');
-export const changePassword = (oldPassword: string, newPassword: string): Promise<void> => fetchWrapper('/auth/change-password', { method: 'POST', body: JSON.stringify({ oldPassword, newPassword }) });
-
-// Search
-export const search = (query: string): Promise<{users: User[], posts: Post[]}> => fetchWrapper(`/search?q=${encodeURIComponent(query)}`);
-
-// Posts
-export const getPosts = (): Promise<Post[]> => fetchWrapper('/posts');
-export const createPost = (formData: FormData): Promise<Post> => fetchWrapper('/posts', { method: 'POST', body: formData });
-export const togglePostLike = (postId: string): Promise<{ likes: number }> => fetchWrapper(`/posts/${postId}/like`, { method: 'POST' });
-export const togglePostSave = (postId: string): Promise<{ isSaved: boolean }> => fetchWrapper(`/posts/${postId}/save`, { method: 'POST' });
-export const addPostComment = (postId: string, text: string): Promise<Comment> => fetchWrapper(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
-export const getPostById = (postId: string): Promise<Post> => fetchWrapper(`/posts/${postId}`);
-export const editPost = (postId: string, caption: string, location: string): Promise<Post> => fetchWrapper(`/posts/${postId}`, { method: 'PUT', body: JSON.stringify({ caption, location }) });
-export const deletePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}`, { method: 'DELETE' });
-export const archivePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}/archive`, { method: 'POST' });
-export const unarchivePost = (postId: string): Promise<void> => fetchWrapper(`/posts/${postId}/unarchive`, { method: 'POST' });
-export const sendTip = (postId: string, amount: number): Promise<void> => fetchWrapper(`/posts/${postId}/tip`, { method: 'POST', body: JSON.stringify({ amount }) });
-export const voteOnPoll = (pollId: string, optionId: number): Promise<void> => fetchWrapper(`/posts/poll/${pollId}/vote`, { method: 'POST', body: JSON.stringify({ optionId }) });
-export const toggleCommentLike = (commentId: string): Promise<void> => fetchWrapper(`/comments/${commentId}/like`, { method: 'POST' });
+// Helper function for API requests
+const request = async (endpoint: string, options: RequestInit = {}) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+        ...options,
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API error: ${response.status}`);
+    }
+    if (response.status === 204 || response.headers.get('Content-Length') === '0') {
+      return null;
+    }
+    return response.json();
+};
 
 
-// Reels
-export const getReels = (): Promise<Reel[]> => fetchWrapper('/reels');
-export const createReel = (formData: FormData): Promise<Reel> => fetchWrapper('/reels', { method: 'POST', body: formData });
-export const toggleReelLike = (reelId: string): Promise<{ likes: number }> => fetchWrapper(`/reels/${reelId}/like`, { method: 'POST' });
-export const addReelComment = (reelId: string, text: string): Promise<Comment> => fetchWrapper(`/reels/${reelId}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+// --- Auth ---
+export const register = (username: string, email: string, password: string, name: string, phone: string, dob: string, gender: string, country: string, avatarUrl: string) => {
+    return request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ username, email, password, name, phone, dob, gender, country, avatar_url: avatarUrl }),
+    });
+};
+
+export const login = (username: string, password: string) => {
+    return request('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+    });
+};
+
+export const logout = () => {
+    return request('/auth/logout', { method: 'POST' });
+};
+
+export const checkSession = () => {
+    return request('/auth/session');
+};
 
 
-// Stories
-export const getStories = (): Promise<Story[]> => fetchWrapper('/stories');
-export const createStory = (formData: FormData): Promise<{ message: string }> => fetchWrapper('/stories', { method: 'POST', body: formData });
-export const getUserArchivedStories = (): Promise<StoryItem[]> => fetchWrapper('/users/me/stories/archived');
-export const createHighlight = (title: string, storyIds: string[]): Promise<void> => fetchWrapper('/users/me/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
+// --- Users ---
+export const getUserProfile = (username: string) => request(`/users/profile/${username}`);
+export const getSuggestedUsers = () => request('/users/suggested');
+export const getAllUsers = () => request('/users/all');
+export const followUser = (userId: string) => request(`/users/${userId}/follow`, { method: 'POST' });
+export const unfollowUser = (userId: string) => request(`/users/${userId}/unfollow`, { method: 'POST' });
+export const updateUserProfile = (data: any) => request('/users/profile', { method: 'PUT', body: JSON.stringify(data) });
 
-// Users
-export const getAllUsers = (): Promise<User[]> => fetchWrapper('/users');
-export const getUserProfile = (username: string): Promise<User> => fetchWrapper(`/users/${username}`);
-export const followUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/follow`, { method: 'POST' });
-export const unfollowUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/unfollow`, { method: 'POST' });
-export const updateProfile = (data: { name: string; bio: string; website: string; gender: string }): Promise<User> => fetchWrapper('/users/me', { method: 'PUT', body: JSON.stringify(data) });
-export const getBlockedUsers = (): Promise<User[]> => fetchWrapper('/users/me/blocked');
-export const blockUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/block`, { method: 'POST' });
-export const unblockUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/unblock`, { method: 'POST' });
-export const muteUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/mute`, { method: 'POST' });
-export const unmuteUser = (userId: string): Promise<void> => fetchWrapper(`/users/${userId}/unmute`, { method: 'POST' });
-export const getSuggestedUsers = (): Promise<User[]> => fetchWrapper('/users/suggestions');
+// --- Posts ---
+export const getFeedPosts = (page = 1) => request(`/posts/feed?page=${page}`);
+export const createPost = (formData: FormData) => fetch(`${API_BASE_URL}/posts`, { method: 'POST', body: formData }).then(res => res.json());
+export const likePost = (postId: string) => request(`/posts/${postId}/like`, { method: 'POST' });
+export const savePost = (postId: string) => request(`/posts/${postId}/save`, { method: 'POST' });
+export const getSavedPosts = () => request('/posts/saved');
+export const getArchivedPosts = () => request('/posts/archived');
+export const archivePost = (postId: string) => request(`/posts/${postId}/archive`, { method: 'POST' });
+export const unarchivePost = (postId: string) => request(`/posts/${postId}/unarchive`, { method: 'POST' });
+export const deletePost = (postId: string) => request(`/posts/${postId}`, { method: 'DELETE' });
+export const createComment = (postId: string, text: string) => request('/posts/comment', { method: 'POST', body: JSON.stringify({ postId, text }) });
 
-// Messages
-export const getConversations = (): Promise<Conversation[]> => fetchWrapper('/messages/conversations');
-export const sendMessage = (content: string | File, type: Message['type'], conversationId?: string, recipientId?: string, sharedContentId?: string, sharedContentType?: 'post' | 'reel', replyToMessageId?: string): Promise<Message> => {
+// FIX: Add missing likeComment function
+export const likeComment = (commentId: string) => {
+    return request(`/comments/${commentId}/like`, { method: 'POST' });
+};
+
+// FIX: Add missing voteOnPoll function
+export const voteOnPoll = (pollId: string, optionId: number) => request(`/posts/poll/vote`, { method: 'POST', body: JSON.stringify({ pollId, optionId }) });
+
+// --- Reels ---
+export const getReels = (page = 1) => request(`/reels?page=${page}`);
+export const createReel = (formData: FormData) => fetch(`${API_BASE_URL}/reels`, { method: 'POST', body: formData }).then(res => res.json());
+export const likeReel = (reelId: string) => request(`/reels/${reelId}/like`, { method: 'POST' });
+
+// --- Stories ---
+export const getStories = () => request('/stories');
+export const createStory = (formData: FormData) => fetch(`${API_BASE_URL}/stories`, { method: 'POST', body: formData }).then(res => res.json());
+export const getArchivedStories = () => request('/users/stories/archived');
+export const createHighlight = (title: string, storyIds: string[]) => request('/users/highlights', { method: 'POST', body: JSON.stringify({ title, storyIds }) });
+
+// --- Messaging ---
+export const getConversations = () => request('/messages/conversations');
+export const sendMessage = (content: string | File, type: string, conversationId?: string, recipientId?: string, contentId?: string, contentType?: string, replyToMessageId?: string) => {
+    if (typeof content === 'string') {
+        return request('/messages', { method: 'POST', body: JSON.stringify({ content, type, conversationId, recipientId, contentId, contentType, replyToMessageId }) });
+    }
     const formData = new FormData();
+    formData.append('attachment', content);
     formData.append('type', type);
     if (conversationId) formData.append('conversationId', conversationId);
     if (recipientId) formData.append('recipientId', recipientId);
-    if (sharedContentId) formData.append('sharedContentId', sharedContentId);
-    if (sharedContentType) formData.append('sharedContentType', sharedContentType);
     if (replyToMessageId) formData.append('replyToMessageId', replyToMessageId);
-
-    if (typeof content === 'string') {
-        formData.append('content', content);
-    } else {
-        formData.append('media', content);
-    }
-
-    return fetchWrapper('/messages', { method: 'POST', body: formData });
+    return fetch(`${API_BASE_URL}/messages`, { method: 'POST', body: formData }).then(res => res.json());
 };
-export const createGroupChat = (name: string, userIds: string[]): Promise<Conversation> => fetchWrapper('/messages/conversations/group', { method: 'POST', body: JSON.stringify({ name, userIds }) });
-export const addMessageReaction = (messageId: string, emoji: string): Promise<void> => fetchWrapper(`/messages/${messageId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) });
-export const updateConversationSettings = (conversationId: string, settings: Partial<Conversation['settings']>): Promise<void> => fetchWrapper(`/messages/conversations/${conversationId}/settings`, { method: 'PUT', body: JSON.stringify(settings) });
+export const reactToMessage = (messageId: string, emoji: string) => request(`/messages/${messageId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) });
+export const createGroupChat = (name: string, userIds: string[]) => request('/messages/group', { method: 'POST', body: JSON.stringify({ name, userIds }) });
 
-// Calls
-export const getCallHistory = (): Promise<Call[]> => fetchWrapper('/calls/history');
-export const logCall = (receiverId: string, type: 'video' | 'audio', status: 'completed' | 'missed' | 'declined', duration: number): Promise<void> => fetchWrapper('/calls/log', { method: 'POST', body: JSON.stringify({ receiverId, type, status, duration }) });
+// --- Search & Misc ---
+export const search = (query: string) => request(`/search?q=${query}`);
+export const getFeedActivity = () => request('/misc/activity');
+export const getSponsoredContent = () => request('/misc/sponsored');
+export const getCarouselImages = () => request('/misc/carousel');
+export const getStickers = () => request('/misc/stickers');
+// FIX: Add missing getActiveAnnouncement function
+export const getActiveAnnouncement = () => request('/misc/announcements/active');
+
+// --- Settings & Privacy ---
+export const changePassword = (oldPassword: string, newPassword: string) => request('/users/password', { method: 'PUT', body: JSON.stringify({ oldPassword, newPassword }) });
+export const getBlockedUsers = () => request('/users/blocked');
+export const getLoginActivity = () => request('/users/activity');
+export const getAccountStatus = () => request('/misc/account-status');
+export const updateUserRelationship = (targetUserId: string, action: 'block' | 'unblock' | 'mute' | 'unmute') => request('/users/relationship', { method: 'POST', body: JSON.stringify({ targetUserId, action }) });
+
+// --- Help & Support ---
+export const getSupportTickets = () => request('/support/tickets');
+export const createSupportTicket = (subject: string, description: string) => request('/support/tickets', { method: 'POST', body: JSON.stringify({ subject, description }) });
+
+// --- Notifications ---
+export const getNotifications = () => request('/notifications');
+export const markNotificationsAsRead = () => request('/notifications/read', { method: 'POST' });
+
+// --- Admin Panel ---
+export const getAdminStats = () => request('/admin/stats');
+export const getAdminAllUsers = () => request('/admin/users');
+export const warnUser = (userId: string, reason: string) => request(`/admin/users/${userId}/warn`, { method: 'POST', body: JSON.stringify({ reason }) });
+export const deleteUser = (userId: string) => request(`/admin/users/${userId}`, { method: 'DELETE' });
+export const getAdminAllPosts = () => request('/admin/posts');
+export const adminDeletePost = (postId: string) => request(`/admin/posts/${postId}`, { method: 'DELETE' });
+export const getAdminAllReels = () => request('/admin/reels');
+export const adminDeleteReel = (reelId: string) => request(`/admin/reels/${reelId}`, { method: 'DELETE' });
+export const getAdminAllReports = () => request('/admin/reports');
+export const updateReportStatus = (reportId: number, status: string) => request(`/admin/reports/${reportId}`, { method: 'PUT', body: JSON.stringify({ status }) });
+export const getAdminAllTickets = () => request('/admin/support/tickets');
+export const getTicketReplies = (ticketId: number) => request(`/admin/support/tickets/${ticketId}/replies`);
+export const replyToTicket = (ticketId: number, message: string) => request(`/admin/support/tickets/${ticketId}/reply`, { method: 'POST', body: JSON.stringify({ message }) });
+export const getAdminAllSponsoredContent = () => request('/admin/sponsored');
+export const addSponsoredContent = (data: any) => request('/admin/sponsored', { method: 'POST', body: JSON.stringify(data) });
+export const deleteSponsoredContent = (id: number) => request(`/admin/sponsored/${id}`, { method: 'DELETE' });
+export const getAdminTrendingTopics = () => request('/admin/trending');
+export const addTrendingTopic = (topic: string) => request('/admin/trending', { method: 'POST', body: JSON.stringify({ topic }) });
+export const deleteTrendingTopic = (id: number) => request(`/admin/trending/${id}`, { method: 'DELETE' });
+export const adminUploadCarouselImage = (formData: FormData) => fetch(`${API_BASE_URL}/admin/carousel`, { method: 'POST', body: formData }).then(res => res.json());
+export const adminDeleteCarouselImage = (id: number) => request(`/admin/carousel/${id}`, { method: 'DELETE' });
+export const getAdminAnnouncements = () => request('/admin/announcements');
+export const addAnnouncement = (data: any) => request('/admin/announcements', { method: 'POST', body: JSON.stringify(data) });
+export const updateAnnouncement = (id: number, data: any) => request(`/admin/announcements/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteAnnouncement = (id: number) => request(`/admin/announcements/${id}`, { method: 'DELETE' });
+export const getAppSettings = () => request('/admin/settings');
+export const updateAppSettings = (settings: any) => request('/admin/settings', { method: 'PUT', body: JSON.stringify(settings) });
+// FIX: Add missing admin analytics functions (mocked)
+export const getAdminUserGrowthData = async () => {
+    // Mock data
+    return Promise.resolve({
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        values: [120, 150, 180, 220, 250, 300]
+    });
+};
+export const getAdminContentTrendsData = async () => {
+    // Mock data
+    return Promise.resolve({
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        postValues: [500, 550, 600, 620, 680, 750],
+        reelValues: [200, 250, 350, 400, 500, 600]
+    });
+};
 
 
-// Notifications
-export const getNotifications = (): Promise<Notification[]> => fetchWrapper('/notifications');
+// --- Live Streams & Calls ---
+export const getLiveStreams = () => request('/livestreams');
+export const startLiveStream = (title: string) => request('/livestreams', { method: 'POST', body: JSON.stringify({ title }) });
+export const endLiveStream = (id: string) => request(`/livestreams/${id}/end`, { method: 'PUT' });
+export const logCall = (data: any) => request('/calls/log', { method: 'POST', body: JSON.stringify(data) });
+export const getCallHistory = () => request('/calls/history');
 
-// Misc
-export const getSponsoredContent = (): Promise<SponsoredContent[]> => fetchWrapper('/misc/sponsored');
-export const getTrendingTopics = (): Promise<TrendingTopic[]> => fetchWrapper('/misc/trending');
-export const getFeedActivity = (): Promise<FeedActivity[]> => fetchWrapper('/misc/feed-activity');
-export const getStickers = (): Promise<string[]> => fetchWrapper('/misc/stickers');
-export const getCarouselImages = (): Promise<AuthCarouselImage[]> => fetchWrapper('/misc/carousel');
-export const getActiveAnnouncement = (): Promise<Announcement | null> => fetchWrapper('/misc/announcements/active');
-export const getAccountStatus = (): Promise<AccountStatusInfo> => fetchWrapper('/misc/account-status');
-export const getLiveStreams = (): Promise<LiveStream[]> => fetchWrapper('/livestreams');
-export const startLiveStream = (title: string): Promise<LiveStream> => fetchWrapper('/livestreams', { method: 'POST', body: JSON.stringify({ title }) });
-export const endLiveStream = (streamId: string): Promise<void> => fetchWrapper(`/livestreams/${streamId}/end`, { method: 'POST' });
-export const submitReport = (content: Post | User, reason: string, details: string): Promise<void> => fetchWrapper('/reports', { method: 'POST', body: JSON.stringify({ content, reason, details }) });
-
-
-// Admin
-export const getAdminStats = (): Promise<AdminStats> => fetchWrapper('/admin/stats');
-export const getAdminUserGrowthData = (): Promise<AnalyticsData> => fetchWrapper('/admin/analytics/user-growth');
-export const getAdminContentTrendsData = (): Promise<any> => fetchWrapper('/admin/analytics/content-trends');
-export const getAdminUsers = (searchTerm: string): Promise<User[]> => fetchWrapper(`/admin/users?search=${searchTerm}`);
-export const updateAdminUser = (userId: string, updates: any): Promise<void> => fetchWrapper(`/admin/users/${userId}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteAdminUser = (userId: string): Promise<void> => fetchWrapper(`/admin/users/${userId}`, { method: 'DELETE' });
-export const issueUserWarning = (userId: string, reason: string): Promise<void> => fetchWrapper(`/admin/users/${userId}/warn`, { method: 'POST', body: JSON.stringify({ reason }) });
-export const getAdminContent = (type: 'posts' | 'reels'): Promise<any[]> => fetchWrapper(`/admin/content?type=${type}`);
-export const deleteAdminContent = (type: 'post' | 'reel', id: string): Promise<void> => fetchWrapper(`/admin/content/${type}/${id}`, { method: 'DELETE' });
-export const getAdminReports = (): Promise<Report[]> => fetchWrapper('/admin/reports');
-export const updateAdminReportStatus = (reportId: number, status: Report['status']): Promise<void> => fetchWrapper(`/admin/reports/${reportId}`, { method: 'PUT', body: JSON.stringify({ status }) });
-export const getAdminSupportTickets = (): Promise<SupportTicket[]> => fetchWrapper('/admin/support');
-export const getAdminSupportTicketDetails = (ticketId: number): Promise<SupportTicket> => fetchWrapper(`/admin/support/${ticketId}`);
-export const replyToSupportTicket = (ticketId: number, message: string): Promise<void> => fetchWrapper(`/admin/support/${ticketId}/reply`, { method: 'POST', body: JSON.stringify({ message }) });
-export const getAdminSponsoredContent = (): Promise<SponsoredContent[]> => fetchWrapper('/admin/sponsored');
-export const createAdminSponsoredContent = (ad: Omit<SponsoredContent, 'id'>): Promise<void> => fetchWrapper('/admin/sponsored', { method: 'POST', body: JSON.stringify(ad) });
-export const updateAdminSponsoredContent = (id: number, ad: Partial<SponsoredContent>): Promise<void> => fetchWrapper(`/admin/sponsored/${id}`, { method: 'PUT', body: JSON.stringify(ad) });
-export const deleteAdminSponsoredContent = (id: number): Promise<void> => fetchWrapper(`/admin/sponsored/${id}`, { method: 'DELETE' });
-export const getAdminTrendingTopics = (): Promise<TrendingTopic[]> => fetchWrapper('/admin/trending');
-export const createAdminTrendingTopic = (topic: string, post_count: number): Promise<void> => fetchWrapper('/admin/trending', { method: 'POST', body: JSON.stringify({ topic, post_count }) });
-export const deleteAdminTrendingTopic = (id: number): Promise<void> => fetchWrapper(`/admin/trending/${id}`, { method: 'DELETE' });
-export const adminGetCarouselImages = (): Promise<AuthCarouselImage[]> => fetchWrapper('/admin/carousel');
-export const adminAddCarouselImage = (formData: FormData): Promise<void> => fetchWrapper('/admin/carousel', { method: 'POST', body: formData });
-export const adminDeleteCarouselImage = (id: number): Promise<void> => fetchWrapper(`/admin/carousel/${id}`, { method: 'DELETE' });
-export const getAnnouncements = (): Promise<Announcement[]> => fetchWrapper('/admin/announcements');
-export const createAnnouncement = (announcement: Omit<Announcement, 'id'>): Promise<void> => fetchWrapper('/admin/announcements', { method: 'POST', body: JSON.stringify(announcement) });
-export const updateAnnouncement = (id: number, announcement: Partial<Announcement>): Promise<void> => fetchWrapper(`/admin/announcements/${id}`, { method: 'PUT', body: JSON.stringify(announcement) });
-export const deleteAnnouncement = (id: number): Promise<void> => fetchWrapper(`/admin/announcements/${id}`, { method: 'DELETE' });
-export const getAppSettings = (): Promise<Record<string, any>> => fetchWrapper('/admin/settings');
-export const updateAppSettings = (settings: Record<string, any>): Promise<void> => fetchWrapper('/admin/settings', { method: 'POST', body: JSON.stringify(settings) });
+// --- Tags ---
+export const getPostsByTag = (tag: string) => request(`/tags/${tag}`);

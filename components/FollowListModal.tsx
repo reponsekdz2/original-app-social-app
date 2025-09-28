@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 // Fix: Add .ts extension to types import
 import type { User } from '../types.ts';

@@ -11,7 +11,6 @@ CREATE TABLE `users` (
   `bio` TEXT,
   `website` VARCHAR(255) DEFAULT NULL,
   `gender` ENUM('Male','Female','Other','Prefer not to say') DEFAULT 'Prefer not to say',
-  `country` VARCHAR(100) DEFAULT NULL,
   `is_verified` TINYINT(1) NOT NULL DEFAULT 0,
   `is_premium` TINYINT(1) NOT NULL DEFAULT 0,
   `is_private` TINYINT(1) NOT NULL DEFAULT 0,
@@ -21,6 +20,7 @@ CREATE TABLE `users` (
   `wallet_balance` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
   `last_login` TIMESTAMP NULL DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `country` VARCHAR(100) DEFAULT NULL,
   INDEX `idx_username` (`username`),
   INDEX `idx_email` (`email`)
 );
@@ -49,7 +49,7 @@ CREATE TABLE `posts` (
 
 -- Polls for Posts
 CREATE TABLE `polls` (
-  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `post_id` VARCHAR(36) NOT NULL,
   `question` VARCHAR(255) NOT NULL,
   FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
@@ -57,14 +57,14 @@ CREATE TABLE `polls` (
 
 CREATE TABLE `poll_options` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `poll_id` VARCHAR(36) NOT NULL,
+  `poll_id` INT NOT NULL,
   `text` VARCHAR(100) NOT NULL,
   FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE `poll_votes` (
   `user_id` VARCHAR(36) NOT NULL,
-  `poll_id` VARCHAR(36) NOT NULL,
+  `poll_id` INT NOT NULL,
   `option_id` INT NOT NULL,
   PRIMARY KEY (`user_id`, `poll_id`),
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
@@ -105,12 +105,10 @@ CREATE TABLE `comments` (
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
--- Comment Likes Table
 CREATE TABLE `comment_likes` (
   `comment_id` VARCHAR(36) NOT NULL,
   `user_id` VARCHAR(36) NOT NULL,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`comment_id`,`user_id`),
+  PRIMARY KEY (`comment_id`, `user_id`),
   FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
@@ -164,24 +162,23 @@ CREATE TABLE `story_items` (
   FOREIGN KEY (`story_id`) REFERENCES `stories` (`id`) ON DELETE CASCADE
 );
 
--- Story Highlights
+-- Story Highlights (Container)
 CREATE TABLE `story_highlights` (
-  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` VARCHAR(36) NOT NULL,
   `title` VARCHAR(100) NOT NULL,
   `cover_image_url` VARCHAR(255) NOT NULL,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
+-- Items within a highlight
 CREATE TABLE `story_highlight_items` (
-  `highlight_id` VARCHAR(36) NOT NULL,
+  `highlight_id` INT NOT NULL,
   `story_item_id` VARCHAR(36) NOT NULL,
   PRIMARY KEY (`highlight_id`, `story_item_id`),
   FOREIGN KEY (`highlight_id`) REFERENCES `story_highlights` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`story_item_id`) REFERENCES `story_items` (`id`) ON DELETE CASCADE
 );
-
 
 -- Messaging Conversations
 CREATE TABLE `conversations` (
@@ -216,17 +213,14 @@ CREATE TABLE `messages` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`reply_to_message_id`) REFERENCES `messages`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`reply_to_message_id`) REFERENCES `messages` (`id`) ON DELETE SET NULL
 );
 
--- Message Reactions Table
 CREATE TABLE `message_reactions` (
-  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `message_id` VARCHAR(36) NOT NULL,
   `user_id` VARCHAR(36) NOT NULL,
   `emoji` VARCHAR(10) NOT NULL,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY `unique_reaction` (`message_id`, `user_id`),
+  PRIMARY KEY (`message_id`, `user_id`),
   FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
@@ -246,26 +240,12 @@ CREATE TABLE `notifications` (
 
 -- Live Streams Table
 CREATE TABLE `livestreams` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `user_id` VARCHAR(36) NOT NULL,
   `title` VARCHAR(255) DEFAULT NULL,
   `status` ENUM('live','ended') NOT NULL DEFAULT 'live',
   `started_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-);
-
--- Call History Table
-CREATE TABLE `call_history` (
-  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
-  `caller_id` VARCHAR(36) NOT NULL,
-  `receiver_id` VARCHAR(36) NOT NULL,
-  `type` ENUM('audio', 'video') NOT NULL,
-  `status` ENUM('completed', 'missed', 'declined') NOT NULL,
-  `started_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `ended_at` TIMESTAMP NULL DEFAULT NULL,
-  `duration_seconds` INT DEFAULT 0,
-  FOREIGN KEY (`caller_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
 -- Transactions Table
@@ -307,6 +287,17 @@ CREATE TABLE `support_tickets` (
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
+CREATE TABLE `support_ticket_replies` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `ticket_id` INT NOT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  `is_admin_reply` TINYINT(1) NOT NULL DEFAULT 0,
+  `message` TEXT NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`ticket_id`) REFERENCES `support_tickets` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
 -- For Login Carousel
 CREATE TABLE `auth_carousel_images` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -321,20 +312,81 @@ CREATE TABLE `sessions` (
   `data` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin
 );
 
--- Blocked Users
 CREATE TABLE `blocked_users` (
-  `user_id` VARCHAR(36) NOT NULL,
-  `blocked_user_id` VARCHAR(36) NOT NULL,
-  PRIMARY KEY (`user_id`, `blocked_user_id`),
-  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`blocked_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  `blocker_id` VARCHAR(36) NOT NULL,
+  `blocked_id` VARCHAR(36) NOT NULL,
+  PRIMARY KEY (`blocker_id`, `blocked_id`),
+  FOREIGN KEY (`blocker_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`blocked_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
--- Muted Users
 CREATE TABLE `muted_users` (
+  `muter_id` VARCHAR(36) NOT NULL,
+  `muted_id` VARCHAR(36) NOT NULL,
+  PRIMARY KEY (`muter_id`, `muted_id`),
+  FOREIGN KEY (`muter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`muted_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `login_activity` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` VARCHAR(36) NOT NULL,
-  `muted_user_id` VARCHAR(36) NOT NULL,
-  PRIMARY KEY (`user_id`, `muted_user_id`),
+  `ip_address` VARCHAR(45) NOT NULL,
+  `user_agent` VARCHAR(255) NOT NULL,
+  `login_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `user_warnings` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `user_id` VARCHAR(36) NOT NULL,
+  `reason` TEXT NOT NULL,
+  `issued_by_admin_id` VARCHAR(36) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`muted_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  FOREIGN KEY (`issued_by_admin_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `call_history` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `caller_id` VARCHAR(36) NOT NULL,
+  `receiver_id` VARCHAR(36) NOT NULL,
+  `type` ENUM('audio','video') NOT NULL,
+  `status` ENUM('completed','missed','declined') NOT NULL,
+  `started_at` TIMESTAMP NOT NULL,
+  `ended_at` TIMESTAMP NOT NULL,
+  `duration_seconds` INT NOT NULL,
+  FOREIGN KEY (`caller_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `announcements` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `title` VARCHAR(255) NOT NULL,
+    `content` TEXT NOT NULL,
+    `type` ENUM('info', 'warning', 'success') NOT NULL DEFAULT 'info',
+    `is_active` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `expires_at` TIMESTAMP NULL DEFAULT NULL
+);
+
+CREATE TABLE `app_settings` (
+    `setting_key` VARCHAR(50) NOT NULL PRIMARY KEY,
+    `setting_value` VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE `sponsored_content` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `company` VARCHAR(100) NOT NULL,
+    `logo_url` VARCHAR(255) NOT NULL,
+    `media_url` VARCHAR(255) NOT NULL,
+    `tagline` VARCHAR(255) NOT NULL,
+    `call_to_action` VARCHAR(50) NOT NULL,
+    `link` VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE `trending_topics` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `topic` VARCHAR(100) NOT NULL UNIQUE,
+    `post_count` INT NOT NULL DEFAULT 0
 );

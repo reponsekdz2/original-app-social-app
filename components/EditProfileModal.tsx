@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -6,14 +7,14 @@ import Icon from './Icon.tsx';
 interface EditProfileModalProps {
   user: User;
   onClose: () => void;
-  onSave: (data: { name: string; bio: string; website: string; gender: string }) => void;
+  onSave: (data: { name: string; bio: string; website: string; gender: User['gender'] }) => void;
 }
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSave }) => {
   const [name, setName] = useState(user.name);
   const [bio, setBio] = useState(user.bio || '');
   const [website, setWebsite] = useState(user.website || '');
-  const [gender, setGender] = useState(user.gender || 'Prefer not to say');
+  const [gender, setGender] = useState<User['gender']>(user.gender || 'Prefer not to say');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -61,7 +62,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Gender</label>
-                {/* Fix: Cast selected value to the correct type for the state setter */}
+                {/* FIX: Cast selected value to the correct type for the state setter */}
                 <select value={gender} onChange={e => setGender(e.target.value as User['gender'])} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2">
                     <option>Prefer not to say</option>
                     <option>Male</option>

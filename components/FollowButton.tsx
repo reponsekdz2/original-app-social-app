@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import type { User } from '../types.ts';
+import UnfollowModal from './UnfollowModal.tsx';
 
 interface FollowButtonProps {
   user: User;
@@ -11,36 +11,63 @@ interface FollowButtonProps {
 }
 
 const FollowButton: React.FC<FollowButtonProps> = ({ user, currentUser, onFollow, onUnfollow, className = '' }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  // FIX: Added optional chaining to prevent crash if currentUser.following is undefined.
-  const isFollowing = currentUser.following?.some(u => u.id === user.id) || false;
-  const baseClasses = 'text-center font-semibold text-sm py-1.5 px-4 rounded-md transition-all duration-200 transform hover:scale-105';
-  const widthClass = className.includes('w-') ? '' : 'w-24';
+  const [isFollowing, setIsFollowing] = useState(currentUser.following?.some(u => u.id === user.id) || false);
+  const [showUnfollowModal, setShowUnfollowModal] = useState(false);
 
-  if (isFollowing) {
-    return (
-      <button 
-        onClick={() => onUnfollow(user)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`${baseClasses} ${widthClass} ${className} ${
-          isHovered 
-            ? 'bg-red-500/20 text-red-500 border border-red-500/50' 
-            : 'bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700'
-        }`}
-      >
-        {isHovered ? 'Unfollow' : 'Following'}
-      </button>
-    );
+  const handleFollow = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Optimistic update
+    setIsFollowing(true);
+    onFollow(user);
+  };
+
+  const handleUnfollow = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (user.isPrivate) {
+        setShowUnfollowModal(true);
+    } else {
+        // Optimistic update
+        setIsFollowing(false);
+        onUnfollow(user);
+    }
+  };
+
+  const confirmUnfollow = () => {
+    // Optimistic update
+    setIsFollowing(false);
+    onUnfollow(user);
+    setShowUnfollowModal(false);
+  }
+
+  if (user.id === currentUser.id) {
+    return null;
   }
 
   return (
-    <button 
-      onClick={() => onFollow(user)}
-      className={`${baseClasses} ${widthClass} ${className} bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white`}
-    >
-      Follow
-    </button>
+    <>
+      {isFollowing ? (
+        <button
+          onClick={handleUnfollow}
+          className={`text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-white py-1 px-4 rounded-md ${className}`}
+        >
+          Following
+        </button>
+      ) : (
+        <button
+          onClick={handleFollow}
+          className={`text-sm font-semibold bg-red-600 hover:bg-red-700 text-white py-1 px-4 rounded-md ${className}`}
+        >
+          Follow
+        </button>
+      )}
+      {showUnfollowModal && (
+          <UnfollowModal 
+            user={user} 
+            onCancel={() => setShowUnfollowModal(false)}
+            onConfirm={confirmUnfollow}
+          />
+      )}
+    </>
   );
 };
 

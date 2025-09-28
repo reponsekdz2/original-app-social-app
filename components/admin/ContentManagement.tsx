@@ -1,70 +1,69 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as api from '../../services/apiService.ts';
-import Icon from '../Icon.tsx';
+import type { Post, Reel } from '../../types.ts';
 
 const ContentManagement: React.FC = () => {
     const [contentType, setContentType] = useState<'posts' | 'reels'>('posts');
-    const [content, setContent] = useState<({ id: string, username: string, caption: string, media_url: string })[]>([]);
+    const [content, setContent] = useState<(Post | Reel)[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchContent = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await api.getAdminContent(contentType);
-            setContent(data);
-        } catch (error) {
-            console.error(`Failed to fetch ${contentType}:`, error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [contentType]);
-
     useEffect(() => {
+        const fetchContent = async () => {
+            setIsLoading(true);
+            try {
+                const data = contentType === 'posts'
+                    ? await api.getAdminAllPosts()
+                    : await api.getAdminAllReels();
+                setContent(data);
+            } catch (error) {
+                console.error(`Failed to fetch ${contentType}`, error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
         fetchContent();
-    }, [fetchContent]);
-
-    const handleDelete = async (item: { id: string, username: string }) => {
-        const type = contentType === 'reels' ? 'reel' : 'post';
-        if (!window.confirm(`Are you sure you want to delete this ${type} by ${item.username}?`)) return;
-        try {
-            await api.deleteAdminContent(type, item.id);
-            fetchContent(); // Refresh
-        } catch (error) {
-            console.error(`Failed to delete ${type}:`, error);
+    }, [contentType]);
+    
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Are you sure you want to delete this content?")) {
+            contentType === 'posts' ? await api.adminDeletePost(id) : await api.adminDeleteReel(id);
+            setContent(prev => prev.filter(c => c.id !== id));
         }
     };
 
     return (
-        <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-lg">Content Moderation</h3>
-                <div>
-                    <button onClick={() => setContentType('posts')} className={`px-3 py-1 text-sm rounded-l-md ${contentType === 'posts' ? 'bg-red-600' : 'bg-gray-700'}`}>Posts</button>
-                    <button onClick={() => setContentType('reels')} className={`px-3 py-1 text-sm rounded-r-md ${contentType === 'reels' ? 'bg-red-600' : 'bg-gray-700'}`}>Reels</button>
-                </div>
+        <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Content Management</h2>
+            <div className="flex gap-2 border-b border-gray-700">
+                <button onClick={() => setContentType('posts')} className={`py-2 px-4 ${contentType === 'posts' ? 'border-b-2 border-red-500 font-semibold' : 'text-gray-400'}`}>Posts</button>
+                <button onClick={() => setContentType('reels')} className={`py-2 px-4 ${contentType === 'reels' ? 'border-b-2 border-red-500 font-semibold' : 'text-gray-400'}`}>Reels</button>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-                {content.map(item => (
-                    <div key={item.id} className="relative aspect-square group bg-black">
-                         {contentType === 'posts' && item.media_url && item.media_url.endsWith('.mp4') ? (
-                            <video src={item.media_url} className="w-full h-full object-cover rounded" />
-                         ) : contentType === 'posts' ? (
-                            <img src={item.media_url} alt="Post" className="w-full h-full object-cover rounded" />
-                         ) : (
-                            <video src={item.media_url} className="w-full h-full object-cover rounded" />
-                         )}
-                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 text-white text-xs">
-                            <p>by <span className="font-bold">{item.username}</span></p>
-                             <button onClick={() => handleDelete(item)} className="self-end p-2 bg-red-600/80 rounded-full">
-                                <Icon className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></Icon>
-                            </button>
-                         </div>
-                    </div>
-                ))}
+            <div className="overflow-x-auto">
+                <table className="min-w-full bg-gray-800 rounded-lg">
+                    <thead className="bg-gray-900">
+                        <tr>
+                            <th className="p-3 text-left text-sm font-semibold">Content ID</th>
+                            <th className="p-3 text-left text-sm font-semibold">Author</th>
+                            <th className="p-3 text-left text-sm font-semibold">Caption</th>
+                            <th className="p-3 text-left text-sm font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                     <tbody className="divide-y divide-gray-700">
+                        {isLoading ? (
+                            <tr><td colSpan={4} className="p-4 text-center">Loading content...</td></tr>
+                        ) : content.map(item => (
+                            <tr key={item.id}>
+                                <td className="p-3 text-xs font-mono">{item.id}</td>
+                                <td className="p-3">{(item as any).username || item.user.username}</td>
+                                <td className="p-3 max-w-xs truncate">{item.caption}</td>
+                                <td className="p-3">
+                                    <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-400 text-sm">Delete</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
-            {isLoading && <div className="flex items-center justify-center p-8"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>}
-            {!isLoading && content.length === 0 && <p className="text-center py-4">No {contentType} found.</p>}
         </div>
     );
 };

@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { Post, User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -59,7 +60,7 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
             <button 
               key={index} 
               onClick={() => { if(option && option.action) option.action(); onClose(); }} 
-              className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 transition-colors ${option ? option.className || '' : ''}`}
+              className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 last:border-b-0 transition-colors ${option ? option.className || '' : ''}`}
             >
               {option ? option.label : ''}
             </button>

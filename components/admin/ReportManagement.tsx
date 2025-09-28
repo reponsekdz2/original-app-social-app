@@ -5,82 +5,68 @@ import type { Report } from '../../types.ts';
 const ReportManagement: React.FC = () => {
     const [reports, setReports] = useState<Report[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    const fetchReports = async () => {
-        setIsLoading(true);
-        try {
-            const data = await api.getAdminReports();
-            setReports(data);
-        } catch (error) {
-            console.error("Failed to fetch reports:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [filter, setFilter] = useState<'pending' | 'resolved' | 'dismissed'>('pending');
 
     useEffect(() => {
+        const fetchReports = async () => {
+            setIsLoading(true);
+            try {
+                const data = await api.getAdminAllReports();
+                setReports(data);
+            } catch (error) {
+                console.error("Failed to fetch reports", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
         fetchReports();
     }, []);
 
-    const handleUpdateStatus = async (reportId: number, status: Report['status']) => {
-        try {
-            await api.updateAdminReportStatus(reportId, status);
-            fetchReports();
-        } catch (error) {
-            console.error("Failed to update report status:", error);
-        }
+    const handleUpdateStatus = async (reportId: number, status: 'resolved' | 'dismissed') => {
+        await api.updateReportStatus(reportId, status);
+        setReports(prev => prev.map(r => r.id === reportId ? { ...r, status } : r));
     };
     
-    const getStatusColor = (status: Report['status']) => ({
-        pending: 'bg-yellow-500/20 text-yellow-300',
-        resolved: 'bg-green-500/20 text-green-300',
-        dismissed: 'bg-gray-500/20 text-gray-400'
-    }[status]);
+    const filteredReports = reports.filter(r => r.status === filter);
 
     return (
-        <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
-            <h3 className="font-bold mb-4 text-lg">Report Management</h3>
+        <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Report Management</h2>
+             <div className="flex gap-2 border-b border-gray-700">
+                <button onClick={() => setFilter('pending')} className={`py-2 px-4 ${filter === 'pending' ? 'border-b-2 border-red-500 font-semibold' : 'text-gray-400'}`}>Pending</button>
+                <button onClick={() => setFilter('resolved')} className={`py-2 px-4 ${filter === 'resolved' ? 'border-b-2 border-green-500 font-semibold' : 'text-gray-400'}`}>Resolved</button>
+                <button onClick={() => setFilter('dismissed')} className={`py-2 px-4 ${filter === 'dismissed' ? 'border-b-2 border-gray-500 font-semibold' : 'text-gray-400'}`}>Dismissed</button>
+            </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                     <thead className="text-xs text-gray-400 uppercase bg-gray-700/50">
+                 <table className="min-w-full bg-gray-800 rounded-lg">
+                    <thead className="bg-gray-900">
                         <tr>
-                            <th className="px-4 py-3">Reported Entity</th>
-                            <th className="px-4 py-3">Reporter</th>
-                            <th className="px-4 py-3">Reason</th>
-                            <th className="px-4 py-3">Date</th>
-                            <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3 text-right">Actions</th>
+                            <th className="p-3 text-left text-sm font-semibold">Reporter ID</th>
+                            <th className="p-3 text-left text-sm font-semibold">Reported Entity</th>
+                            <th className="p-3 text-left text-sm font-semibold">Reason</th>
+                            <th className="p-3 text-left text-sm font-semibold">Actions</th>
                         </tr>
                     </thead>
-                     <tbody>
-                        {reports.map(report => (
-                            <tr key={report.id} className="border-b border-gray-700 hover:bg-gray-700/30">
-                                <td className="px-4 py-3 font-medium">
-                                    <p>{(report as any).reported_username || (report as any).reported_post_caption || report.reported_entity_id}</p>
-                                    <p className="text-xs text-gray-400 uppercase">{report.entity_type}</p>
-                                </td>
-                                <td className="px-4 py-3">{(report as any).reporter_username}</td>
-                                <td className="px-4 py-3">{report.reason}</td>
-                                <td className="px-4 py-3">{new Date(report.created_at).toLocaleDateString()}</td>
-                                <td className="px-4 py-3">
-                                    <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded ${getStatusColor(report.status)}`}>
-                                        {report.status}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-right space-x-1">
-                                    {report.status === 'pending' && (
+                    <tbody className="divide-y divide-gray-700">
+                        {isLoading ? (
+                            <tr><td colSpan={4} className="p-4 text-center">Loading reports...</td></tr>
+                        ) : filteredReports.map(report => (
+                            <tr key={report.id}>
+                                <td className="p-3 text-xs">{report.reporter_id}</td>
+                                <td className="p-3 text-xs">{report.entity_type}: {report.reported_entity_id}</td>
+                                <td className="p-3">{report.reason}</td>
+                                <td className="p-3 space-x-2">
+                                    {filter === 'pending' && (
                                         <>
-                                            <button onClick={() => handleUpdateStatus(report.id, 'resolved')} className="px-2 py-1 text-xs bg-green-500/20 text-green-300 rounded">Resolve</button>
-                                            <button onClick={() => handleUpdateStatus(report.id, 'dismissed')} className="px-2 py-1 text-xs bg-gray-500/20 text-gray-300 rounded">Dismiss</button>
+                                            <button onClick={() => handleUpdateStatus(report.id, 'resolved')} className="text-green-400 hover:underline text-sm">Resolve</button>
+                                            <button onClick={() => handleUpdateStatus(report.id, 'dismissed')} className="text-gray-400 hover:underline text-sm">Dismiss</button>
                                         </>
                                     )}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
-                </table>
-                 {isLoading && <div className="flex items-center justify-center p-8"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>}
-                 {!isLoading && reports.length === 0 && <p className="text-center py-4">No reports found.</p>}
+                 </table>
             </div>
         </div>
     );

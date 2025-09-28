@@ -3,114 +3,104 @@ import * as api from '../../services/apiService.ts';
 import type { SupportTicket, AdminReply } from '../../types.ts';
 import Icon from '../Icon.tsx';
 
-interface TicketDetailsModalProps {
-    ticket: SupportTicket;
-    onClose: () => void;
-    onReply: (ticketId: number, message: string) => Promise<void>;
-}
+const TicketDetailModal: React.FC<{ ticket: SupportTicket, onClose: () => void, onReply: (ticketId: number, message: string) => Promise<void> }> = ({ ticket, onClose, onReply }) => {
+    const [replies, setReplies] = useState<AdminReply[]>([]);
+    const [newReply, setNewReply] = useState('');
 
-const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({ ticket, onClose, onReply }) => {
-    const [reply, setReply] = useState('');
-    const [isReplying, setIsReplying] = useState(false);
+    useEffect(() => {
+        const fetchReplies = async () => {
+            const data = await api.getTicketReplies(ticket.id);
+            setReplies(data);
+        };
+        fetchReplies();
+    }, [ticket.id]);
 
     const handleReply = async () => {
-        if (!reply.trim() || isReplying) return;
-        setIsReplying(true);
-        await onReply(ticket.id, reply);
-        setIsReplying(false);
-        setReply('');
+        if (!newReply.trim()) return;
+        await onReply(ticket.id, newReply);
+        // Optimistically add reply to UI
+        setReplies(prev => [...prev, { id: Date.now(), ticket_id: ticket.id, admin_user_id: 'current_admin', message: newReply, created_at: new Date().toISOString() }]);
+        setNewReply('');
     };
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div 
-                className="bg-gray-800 w-full max-w-2xl rounded-lg h-[80vh] flex flex-col border border-gray-700"
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="p-3 border-b border-gray-700 text-center relative">
-                    <h2 className="text-lg font-semibold">Ticket Details</h2>
-                    <button className="absolute top-2 right-3" onClick={onClose}><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
+            <div className="bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <h3 className="p-4 font-bold border-b border-gray-700">Ticket #{ticket.id} - {ticket.subject}</h3>
+                <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                     <p className="bg-gray-900 p-3 rounded-lg"><span className="font-bold">{ticket.user_username}:</span> {ticket.description}</p>
+                     {replies.map(reply => (
+                         <p key={reply.id} className="bg-red-500/10 p-3 rounded-lg"><span className="font-bold">Admin:</span> {reply.message}</p>
+                     ))}
                 </div>
-                <div className="p-4">
-                    <h3 className="font-bold">{ticket.subject}</h3>
-                    <p className="text-sm text-gray-400">From: {ticket.user_username} | Status: {ticket.status}</p>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/20">
-                    <div className="p-3 bg-gray-700/50 rounded-lg">
-                        <p className="font-semibold text-sm">{ticket.user_username} said:</p>
-                        <p className="text-sm mt-1 whitespace-pre-line">{ticket.description}</p>
-                    </div>
-                     {ticket.replies.map(r => (
-                        <div key={r.id} className="p-3 bg-red-500/10 rounded-lg text-right">
-                            <p className="font-semibold text-sm">You replied:</p>
-                            <p className="text-sm mt-1 whitespace-pre-line">{r.message}</p>
-                        </div>
-                    ))}
-                </div>
-                <div className="p-4 border-t border-gray-700">
-                    <textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Write your reply..." rows={3} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-sm resize-none"></textarea>
-                    <button onClick={handleReply} disabled={isReplying || !reply.trim()} className="w-full bg-red-600 text-white font-semibold py-2 rounded-md mt-2 disabled:bg-gray-600">
-                        {isReplying ? 'Sending...' : 'Send Reply'}
-                    </button>
+                <div className="p-4 border-t border-gray-700 flex gap-2">
+                    <input value={newReply} onChange={e => setNewReply(e.target.value)} placeholder="Write a reply..." className="w-full bg-gray-700 p-2 rounded-md" />
+                    <button onClick={handleReply} className="bg-red-600 px-4 rounded-md font-semibold">Send</button>
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
+
 
 const SupportTicketManagement: React.FC = () => {
     const [tickets, setTickets] = useState<SupportTicket[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
 
-    const fetchTickets = async () => {
-        setIsLoading(true);
-        try {
-            const data = await api.getAdminSupportTickets();
-            setTickets(data);
-        } catch (error) {
-            console.error("Failed to fetch support tickets:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
+     useEffect(() => {
+        const fetchTickets = async () => {
+            setIsLoading(true);
+            try {
+                const data = await api.getAdminAllTickets();
+                setTickets(data);
+            } catch (error) {
+                console.error("Failed to fetch tickets", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
         fetchTickets();
     }, []);
-
-    const handleViewTicket = async (ticket: SupportTicket) => {
-        const fullTicket = await api.getAdminSupportTicketDetails(ticket.id);
-        setSelectedTicket(fullTicket);
-    };
-
+    
     const handleReply = async (ticketId: number, message: string) => {
-        await api.replyToSupportTicket(ticketId, message);
-        await fetchTickets(); // Refresh all tickets
-        const updatedTicket = await api.getAdminSupportTicketDetails(ticketId); // Get fresh data for modal
-        setSelectedTicket(updatedTicket);
+        await api.replyToTicket(ticketId, message);
+        // Optionally refetch tickets or update state
     };
+
 
     return (
-        <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
-            <h3 className="font-bold mb-4 text-lg">Support Inbox</h3>
-            <div className="space-y-3">
-                {tickets.map(ticket => (
-                    <div key={ticket.id} onClick={() => handleViewTicket(ticket)} className="p-3 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700">
-                        <div className="flex justify-between items-start">
-                             <div>
-                                <p className="font-semibold">{ticket.subject}</p>
-                                <p className="text-xs text-gray-400">From: {ticket.user_username}</p>
-                            </div>
-                            <span className="text-xs font-bold">{ticket.status}</span>
-                        </div>
-                    </div>
-                ))}
+        <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Support Tickets</h2>
+            <div className="overflow-x-auto">
+                <table className="min-w-full bg-gray-800 rounded-lg">
+                    <thead className="bg-gray-900">
+                        <tr>
+                            <th className="p-3 text-left text-sm font-semibold">Ticket ID</th>
+                            <th className="p-3 text-left text-sm font-semibold">User</th>
+                            <th className="p-3 text-left text-sm font-semibold">Subject</th>
+                            <th className="p-3 text-left text-sm font-semibold">Status</th>
+                            <th className="p-3 text-left text-sm font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                         {isLoading ? (
+                            <tr><td colSpan={5} className="p-4 text-center">Loading tickets...</td></tr>
+                        ) : tickets.map(ticket => (
+                            <tr key={ticket.id}>
+                                <td className="p-3">#{ticket.id}</td>
+                                <td className="p-3">{ticket.user_username}</td>
+                                <td className="p-3">{ticket.subject}</td>
+                                <td className="p-3">{ticket.status}</td>
+                                <td className="p-3">
+                                    <button onClick={() => setSelectedTicket(ticket)} className="text-blue-400 hover:underline text-sm">View</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
-            {isLoading && <div className="flex items-center justify-center p-8"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>}
-            {!isLoading && tickets.length === 0 && <p className="text-center py-4">No support tickets found.</p>}
-            
-            {selectedTicket && <TicketDetailsModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} onReply={handleReply}/>}
+            {selectedTicket && <TicketDetailModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} onReply={handleReply} />}
         </div>
     );
 };

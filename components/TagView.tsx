@@ -1,23 +1,44 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Post } from '../types.ts';
+import * as api from '../services/apiService.ts';
 import PostGrid from './PostGrid.tsx';
 
 interface TagViewProps {
-  tagName: string;
-  posts: Post[];
+  tag: string;
   onViewPost: (post: Post) => void;
-  onBack: () => void;
 }
 
-const TagView: React.FC<TagViewProps> = ({ tagName, posts, onViewPost, onBack }) => {
+const TagView: React.FC<TagViewProps> = ({ tag, onViewPost }) => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      if (!tag) return;
+      setIsLoading(true);
+      try {
+        const taggedPosts = await api.getPostsByTag(tag);
+        setPosts(taggedPosts);
+      } catch (error) {
+        console.error(`Failed to fetch posts for tag #${tag}`, error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPosts();
+  }, [tag]);
+
   return (
     <div className="p-4">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold">#{tagName}</h1>
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold">#{tag}</h1>
         <p className="text-gray-400">{posts.length.toLocaleString()} posts</p>
-      </header>
-      <PostGrid posts={posts} onViewPost={onViewPost} />
+      </div>
+      {isLoading ? (
+        <p>Loading posts...</p>
+      ) : (
+        <PostGrid posts={posts} onViewPost={onViewPost} />
+      )}
     </div>
   );
 };

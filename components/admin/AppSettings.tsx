@@ -3,64 +3,54 @@ import * as api from '../../services/apiService.ts';
 import ToggleSwitch from '../ToggleSwitch.tsx';
 
 const AppSettings: React.FC = () => {
-    const [settings, setSettings] = useState<Record<string, any>>({});
+    const [settings, setSettings] = useState({
+        maintenance_mode: false,
+        new_registrations_enabled: true,
+    });
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-
-    const fetchSettings = async () => {
-        setIsLoading(true);
-        const data = await api.getAppSettings();
-        setSettings(data);
-        setIsLoading(false);
-    };
 
     useEffect(() => {
+        const fetchSettings = async () => {
+            setIsLoading(true);
+            try {
+                const data = await api.getAppSettings();
+                setSettings(prev => ({ ...prev, ...data }));
+            } catch (error) {
+                console.error("Failed to fetch settings", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
         fetchSettings();
     }, []);
 
-    const handleToggleChange = (key: string, value: boolean) => {
-        setSettings(prev => ({ ...prev, [key]: value ? 'true' : 'false' }));
+    const handleSettingChange = async (key: keyof typeof settings, value: boolean) => {
+        const newSettings = { ...settings, [key]: value };
+        setSettings(newSettings);
+        await api.updateAppSettings(newSettings);
     };
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        await api.updateAppSettings(settings);
-        setIsSaving(false);
-        // Maybe show a success toast
-    };
-
-    const settingDefinitions = [
-        { key: 'maintenance_mode', label: 'Maintenance Mode', description: 'Temporarily disable access to the app for non-admin users.', type: 'toggle' },
-        { key: 'disable_new_registrations', label: 'Disable New Registrations', description: 'Prevent new users from signing up.', type: 'toggle' },
-        { key: 'reels_enabled', label: 'Enable Reels', description: 'Enable or disable the Reels feature globally.', type: 'toggle' },
-    ];
-    
-    if (isLoading) return <p>Loading settings...</p>;
 
     return (
-        <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
-            <h3 className="font-bold text-lg mb-4">Application Settings</h3>
-            <div className="space-y-4">
-                {settingDefinitions.map(def => (
-                    <div key={def.key} className="flex justify-between items-center p-3 bg-gray-700/50 rounded-lg">
+        <div className="space-y-4 max-w-2xl">
+            <h2 className="text-2xl font-bold">Application Settings</h2>
+            {isLoading ? <p>Loading settings...</p> : (
+                <div className="bg-gray-800 rounded-lg p-6 space-y-4 divide-y divide-gray-700">
+                    <div className="flex justify-between items-center pt-4 first:pt-0">
                         <div>
-                            <p className="font-semibold">{def.label}</p>
-                            <p className="text-xs text-gray-400">{def.description}</p>
+                            <p className="font-semibold">Maintenance Mode</p>
+                            <p className="text-sm text-gray-400">Puts the site in a read-only mode for all non-admin users.</p>
                         </div>
-                        {def.type === 'toggle' && (
-                            <ToggleSwitch
-                                enabled={settings[def.key] === 'true'}
-                                setEnabled={(val) => handleToggleChange(def.key, val)}
-                            />
-                        )}
+                        <ToggleSwitch enabled={settings.maintenance_mode} setEnabled={(val) => handleSettingChange('maintenance_mode', val)} />
                     </div>
-                ))}
-            </div>
-             <div className="mt-6 text-right">
-                <button onClick={handleSave} disabled={isSaving} className="px-6 py-2 text-sm bg-red-600 rounded-md disabled:bg-gray-600">
-                    {isSaving ? 'Saving...' : 'Save Settings'}
-                </button>
-            </div>
+                     <div className="flex justify-between items-center pt-4 first:pt-0">
+                        <div>
+                            <p className="font-semibold">Enable New Registrations</p>
+                            <p className="text-sm text-gray-400">Allows new users to sign up for an account.</p>
+                        </div>
+                        <ToggleSwitch enabled={settings.new_registrations_enabled} setEnabled={(val) => handleSettingChange('new_registrations_enabled', val)} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

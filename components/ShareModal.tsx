@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 // Fix: Add .ts extension to types import
 import type { Post, Reel, User, Conversation } from '../types.ts';
@@ -44,7 +45,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ content, currentUser, conversat
     setSentTo(prev => [...prev, user.id]);
 
     try {
-        // Fix: Corrected arguments for sendMessage API call
+        // FIX: Corrected arguments for sendMessage API call
         await api.sendMessage(`Shared a ${contentType}`, messageType, undefined, user.id, contentId, contentType);
         onShareSuccess(user);
     } catch (error) {
