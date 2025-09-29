@@ -69,13 +69,17 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
   const loadMorePosts = useCallback(async () => {
     setIsLoading(true);
     try {
-        // FIX: The api.getFeedPosts function requires a page number to fetch paginated results.
         const newPosts = await api.getFeedPosts(page);
-        setPosts(prev => [...prev, ...newPosts]);
-        setHasMore(newPosts.length > 0);
-        setPage(prev => prev + 1);
+        // FIX: Handle cases where the API might return null or an empty array to prevent errors and unnecessary fetches.
+        if (newPosts && newPosts.length > 0) {
+            setPosts(prev => [...prev, ...newPosts]);
+            setPage(prev => prev + 1);
+        } else {
+            setHasMore(false);
+        }
     } catch (error) {
         console.error("Failed to load more posts", error);
+        setHasMore(false);
     } finally {
         setIsLoading(false);
     }

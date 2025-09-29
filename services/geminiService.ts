@@ -1,4 +1,4 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse } from "@google/ai";
 
 // FIX: Initialize Gemini AI client according to guidelines.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -17,7 +17,7 @@ export async function generatePostCaption(imageDescription: string): Promise<str
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
-    // FIX: Use .text property to extract the response text. The .text property provides a clean string without needing to call .trim().
+    // FIX: Use .text property to extract the response text.
     return response.text;
   } catch (error) {
     console.error("Error generating content with Gemini:", error);

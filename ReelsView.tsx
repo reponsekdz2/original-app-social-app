@@ -20,12 +20,17 @@ const ReelsView: React.FC<ReelsViewProps> = ({ initialReels, currentUser, onLike
   const loadMoreReels = useCallback(async () => {
     setIsLoading(true);
     try {
+      // FIX: Handle cases where the API might return null or an empty array to prevent errors and unnecessary fetches.
       const newReels = await api.getReels(page);
-      setReels(prev => [...prev, ...newReels]);
-      setHasMore(newReels.length > 0);
-      setPage(prev => prev + 1);
+      if (newReels && newReels.length > 0) {
+        setReels(prev => [...prev, ...newReels]);
+        setPage(prev => prev + 1);
+      } else {
+        setHasMore(false);
+      }
     } catch (error) {
       console.error("Failed to load more reels", error);
+      setHasMore(false);
     } finally {
       setIsLoading(false);
     }
@@ -45,7 +50,8 @@ const ReelsView: React.FC<ReelsViewProps> = ({ initialReels, currentUser, onLike
   useEffect(() => {
       setReels(initialReels);
       setPage(2);
-      setHasMore(true);
+      // FIX: Correctly set hasMore based on initial data to avoid unnecessary fetches.
+      setHasMore(initialReels.length > 0);
   }, [initialReels]);
 
   return (

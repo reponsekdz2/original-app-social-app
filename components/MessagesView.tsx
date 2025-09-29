@@ -35,7 +35,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations,
     if (existingConvo) {
       handleSelectConvo(existingConvo);
     } else {
-      // Create a new temporary conversation
+      // Create a new temporary conversation that will be solidified on the first message
       const tempConvo: Conversation = {
         id: `temp_${user.id}`,
         name: user.name,

@@ -147,7 +147,7 @@ router.post('/highlights', isAuthenticated, async (req, res) => {
             [req.session.userId, title, coverStory.media_url]
         );
         const highlightId = result.insertId;
-        const highlightItems = storyIds.map(storyId => [highlightId, storyId]);
+        const highlightItems = storyIds.map((storyId: string) => [highlightId, storyId]);
         await connection.query('INSERT INTO story_highlight_items (highlight_id, story_item_id) VALUES ?', [highlightItems]);
         await connection.commit();
         res.sendStatus(201);

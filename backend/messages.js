@@ -82,7 +82,7 @@ export default (upload) => {
                 }
             }
             
-            if (!finalConversationId || finalConversationId.startsWith('temp_')) {
+            if (!finalConversationId || finalConversationId.toString().startsWith('temp_')) {
                  throw new Error("Conversation ID is missing or temporary");
             }
 
@@ -166,7 +166,7 @@ export default (upload) => {
                 await pool.query('UPDATE conversations SET group_name = ? WHERE id = ?', [name, conversationId]);
             }
             if (addUserIds && addUserIds.length > 0) {
-                const participantsData = addUserIds.map(userId => [conversationId, userId]);
+                const participantsData = addUserIds.map((userId: string) => [conversationId, userId]);
                 await pool.query('INSERT INTO conversation_participants (conversation_id, user_id) VALUES ?', [participantsData]);
             }
             res.sendStatus(200);
