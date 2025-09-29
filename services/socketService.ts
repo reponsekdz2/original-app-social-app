@@ -1,4 +1,5 @@
-import { io, Socket } from 'socket.io-client';
+import { io } from 'https://cdn.socket.io/4.7.5/socket.io.esm.min.js';
+import type { Socket } from 'socket.io-client';
 
 type EventHandler = (payload: any) => void;
 

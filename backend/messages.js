@@ -4,6 +4,39 @@ import { isAuthenticated } from './middleware/authMiddleware.js';
 
 const router = Router();
 
+const getSharedContentDetails = async (type, id) => {
+    let contentQuery, mediaQuery;
+    switch (type) {
+        case 'post':
+            contentQuery = 'SELECT p.id, u.username, u.avatar_url FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = ?';
+            mediaQuery = 'SELECT media_url FROM post_media WHERE post_id = ? ORDER BY sort_order LIMIT 1';
+            break;
+        case 'reel':
+            contentQuery = 'SELECT r.id, u.username, u.avatar_url FROM reels r JOIN users u ON r.user_id = u.id WHERE r.id = ?';
+            mediaQuery = 'SELECT video_url as media_url FROM reels WHERE id = ?';
+            break;
+        case 'story':
+            contentQuery = 'SELECT si.id, u.username, u.avatar_url FROM story_items si JOIN stories s ON si.story_id = s.id JOIN users u ON s.user_id = u.id WHERE si.id = ?';
+            mediaQuery = 'SELECT media_url FROM story_items WHERE id = ?';
+            break;
+        default:
+            return null;
+    }
+
+    const [[contentDetails]] = await pool.query(contentQuery, [id]);
+    const [[mediaDetails]] = await pool.query(mediaQuery, [id]);
+
+    if (contentDetails && mediaDetails) {
+        return {
+            username: contentDetails.username,
+            avatar_url: contentDetails.avatar_url,
+            media_url: mediaDetails.media_url,
+        };
+    }
+    return null;
+};
+
+
 export default (upload) => {
     // GET /api/messages/conversations
     router.get('/conversations', isAuthenticated, async (req, res) => {
@@ -36,6 +69,10 @@ export default (upload) => {
                  for(const message of messages) {
                     const [reactions] = await pool.query('SELECT mr.emoji, u.id as user_id, u.username FROM message_reactions mr JOIN users u ON mr.user_id = u.id WHERE mr.message_id = ?', [message.id]);
                     message.reactions = reactions.map(r => ({ emoji: r.emoji, user: {id: r.user_id, username: r.username}}));
+                    
+                    if (message.shared_content_id && message.shared_content_type) {
+                        message.sharedContent = await getSharedContentDetails(message.shared_content_type, message.shared_content_id);
+                    }
                  }
                 convo.messages = messages.reverse();
             }
@@ -109,6 +146,10 @@ export default (upload) => {
             
             const [[newMessage]] = await pool.query('SELECT m.*, u.id as sender_id, u.username, u.avatar_url FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?', [result.insertId]);
             newMessage.sender = { id: newMessage.sender_id, username: newMessage.username, avatar_url: newMessage.avatar_url };
+            
+            if (newMessage.shared_content_id && newMessage.shared_content_type) {
+                newMessage.sharedContent = await getSharedContentDetails(newMessage.shared_content_type, newMessage.shared_content_id);
+            }
 
 
             const [participants] = await pool.query('SELECT user_id FROM conversation_participants WHERE conversation_id = ?', [finalConversationId]);

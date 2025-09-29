@@ -1,4 +1,5 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/ai";
+// Corrected import path for Google GenAI SDK.
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
 // FIX: Initialize Gemini AI client according to guidelines.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

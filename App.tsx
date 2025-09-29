@@ -264,13 +264,40 @@ const App: React.FC = () => {
     };
     
     const handleFollowUser = (userId: string) => {
-        api.followUser(userId);
-        setCurrentUser(prev => prev ? {...prev, following_count: (prev.following_count || 0) + 1} : null);
+        const userToFollow = allUsers.find(u => u.id === userId);
+        if (!userToFollow || !currentUser) return;
+
+        const originalUser = { ...currentUser };
+        // Optimistic Update
+        const optimisticUser = {
+            ...currentUser,
+            following_count: (currentUser.following_count || 0) + 1,
+            following: [...(currentUser.following || []), userToFollow]
+        };
+        setCurrentUser(optimisticUser);
+
+        api.followUser(userId).catch(() => {
+            showToast('Failed to follow user.', 'error');
+            setCurrentUser(originalUser); // Revert on failure
+        });
     };
-    
+
     const handleUnfollowUser = (userId: string) => {
-        api.unfollowUser(userId);
-        setCurrentUser(prev => prev ? {...prev, following_count: (prev.following_count || 0) - 1} : null);
+        if (!currentUser) return;
+
+        const originalUser = { ...currentUser };
+        // Optimistic Update
+        const optimisticUser = {
+            ...currentUser,
+            following_count: (currentUser.following_count || 0) - 1,
+            following: (currentUser.following || []).filter(u => u.id !== userId)
+        };
+        setCurrentUser(optimisticUser);
+
+        api.unfollowUser(userId).catch(() => {
+            showToast('Failed to unfollow user.', 'error');
+            setCurrentUser(originalUser); // Revert on failure
+        });
     };
 
     // --- Content Creation Handlers ---
@@ -280,6 +307,7 @@ const App: React.FC = () => {
             setFeedPosts(prev => [newPost, ...prev]);
             handleCloseModal();
             showToast('Post created!', 'success');
+            setCurrentView('home');
         } catch (e) { showToast('Failed to create post.', 'error'); }
     };
     const handleCreateReel = async (formData: FormData) => {
@@ -299,6 +327,16 @@ const App: React.FC = () => {
             handleCloseModal();
             showToast('Story shared!', 'success');
         } catch (e) { showToast('Failed to share story.', 'error'); }
+    };
+
+    const handleReplyToStory = async (story: Story, storyItem: StoryItem, text: string) => {
+        try {
+            await api.sendMessage(text, 'share_post', undefined, story.user.id, storyItem.id, 'story');
+            showToast('Reply sent!', 'success');
+        } catch (error) {
+            showToast('Failed to send reply.', 'error');
+            console.error(error);
+        }
     };
     
     // --- Call Handlers ---
@@ -345,29 +383,23 @@ const App: React.FC = () => {
         if (!activeModal || !currentUser) return null;
         switch (activeModal.type) {
             case 'post': return <PostModal post={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onLike={handleLikeUnlikePost} onSave={handleSavePost} onComment={api.createComment} onShare={p => handleOpenModal('share', p)} onOptions={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} />;
-            case 'story': return <StoryViewer stories={activeModal.data.stories} initialStoryIndex={activeModal.data.initialIndex} onClose={handleCloseModal} onNextUser={() => {}} onPrevUser={() => {}} />;
+            case 'story': return <StoryViewer stories={activeModal.data.stories} initialStoryIndex={activeModal.data.initialIndex} onClose={handleCloseModal} onNextUser={() => {}} onPrevUser={() => {}} onReply={handleReplyToStory} />;
             case 'createChoice': return <CreateChoiceModal onClose={handleCloseModal} onChoice={(type) => { handleCloseModal(); if(type === 'live') { handleOpenModal('goLive'); } else { handleOpenModal(`create${type.charAt(0).toUpperCase() + type.slice(1)}` as any); } }} />;
             case 'createPost': return <CreatePostModal onClose={handleCloseModal} onCreatePost={handleCreatePost} allUsers={allUsers} currentUser={currentUser} />;
             case 'createReel': return <CreateReelModal onClose={handleCloseModal} onCreateReel={handleCreateReel} />;
             case 'createStory': return <CreateStoryModal onClose={handleCloseModal} onCreateStory={handleCreateStory} />;
             case 'createHighlight': return <CreateHighlightModal userStories={archivedStories} onClose={handleCloseModal} onCreate={async (title, ids) => { await api.createHighlight(title, ids); handleCloseModal(); showToast('Highlight created!', 'success'); }} />;
             case 'share': return <ShareModal content={activeModal.data} currentUser={currentUser} conversations={conversations} onClose={handleCloseModal} onShareSuccess={() => showToast('Shared successfully', 'success')} />;
-            // FIX: The onFollow and onUnfollow handlers were incorrectly trying to access .id on a string argument. Changed to pass the handler functions directly.
             case 'postOptions': return <PostWithOptionsModal post={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onUnfollow={handleUnfollowUser} onFollow={handleFollowUser} onEdit={(p) => handleOpenModal('editPost', p)} onDelete={async (p) => { await api.deletePost(p.id); setFeedPosts(prev => prev.filter(post => post.id !== p.id)); handleCloseModal(); showToast('Post deleted', 'info'); }} onArchive={() => {}} onReport={c => handleOpenModal('report', c)} onShare={p => handleOpenModal('share', p)} onCopyLink={() => {}} onViewProfile={u => handleNavigate('profile', u)} onGoToPost={p => { handleCloseModal(); handleOpenModal('post', p); }} />;
             case 'editPost': return <EditPostModal post={activeModal.data} onClose={handleCloseModal} onSave={() => {}} />;
-            // FIX: Pass function reference directly, as the handler now expects a userId.
             case 'followers': return <FollowListModal title="Followers" users={activeModal.data.followers || []} currentUser={currentUser} onClose={handleCloseModal} onViewProfile={u => handleNavigate('profile', u)} onFollow={handleFollowUser} onUnfollow={handleUnfollowUser} />;
-            // FIX: Pass function reference directly, as the handler now expects a userId.
             case 'following': return <FollowListModal title="Following" users={activeModal.data.following || []} currentUser={currentUser} onClose={handleCloseModal} onViewProfile={u => handleNavigate('profile', u)} onFollow={handleFollowUser} onUnfollow={handleUnfollowUser} />;
-            // FIX: Pass function reference directly, as the handler now expects a userId.
             case 'viewLikes': return <ViewLikesModal users={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onViewProfile={u => handleNavigate('profile', u)} onFollow={handleFollowUser} onUnfollow={handleUnfollowUser} />;
             case 'editProfile': return <EditProfileModal user={activeModal.data} onClose={handleCloseModal} onSave={async (data) => { await api.updateUserProfile(data); const user = await api.checkSession(); setCurrentUser(user.user); handleCloseModal(); showToast("Profile updated!", "success"); }} />;
             case 'accountSwitcher': return <AccountSwitcherModal accounts={allUsers} currentUser={currentUser} onClose={handleCloseModal} onSwitchAccount={() => {}} onAddAccount={() => {}} />;
-            // FIX: Pass function reference directly, as the handler now expects a userId.
             case 'notifications': return <NotificationsPanel notifications={notifications} onClose={handleCloseModal} currentUser={currentUser} onFollow={handleFollowUser} onUnfollow={handleUnfollowUser} />;
             case 'search': return <SearchView onClose={handleCloseModal} onViewProfile={u => handleNavigate('profile', u)} onViewPost={p => handleOpenModal('post', p)} />;
             case 'report': return <ReportModal content={activeModal.data} onClose={handleCloseModal} onSubmitReport={async (reason, details) => { await api.submitReport(activeModal.data, reason, details); showToast('Report submitted', 'success'); }} />;
-            // FIX: Pass function reference directly, as the handler now expects a userId.
             case 'welcomeOnboarding': return <WelcomeOnboardingModal currentUser={currentUser} suggestedUsers={activeModal.data} onClose={handleCloseModal} onFollow={handleFollowUser} onUnfollow={handleUnfollowUser} />;
             case 'newSupportRequest': return <NewSupportRequestModal onClose={handleCloseModal} onSubmit={(ticket) => showToast('Support ticket submitted!', 'success')} />;
             case 'goLive': return <GoLiveModal onClose={handleCloseModal} onStartStream={async (title) => { const stream = await api.startLiveStream(title); handleCloseModal(); handleOpenModal('liveStream', stream); }} />;
@@ -399,7 +431,6 @@ const App: React.FC = () => {
                              {renderView()}
                            </div>
                            <div className="flex-1 hidden lg:block">
-                             {/* FIX: Pass function reference directly, as the handler now expects a userId. */}
                              <Sidebar currentUser={currentUser} onViewProfile={(u) => handleNavigate('profile', u)} onFollow={handleFollowUser} onUnfollow={handleUnfollowUser} onSwitchAccount={() => handleOpenModal('accountSwitcher')}/>
                            </div>
                         </main>
