@@ -33,6 +33,10 @@ export default (upload) => {
                     ORDER BY m.created_at DESC 
                     LIMIT 30
                 `, [convo.id]);
+                 for(const message of messages) {
+                    const [reactions] = await pool.query('SELECT mr.emoji, u.id as user_id, u.username FROM message_reactions mr JOIN users u ON mr.user_id = u.id WHERE mr.message_id = ?', [message.id]);
+                    message.reactions = reactions.map(r => ({ emoji: r.emoji, user: {id: r.user_id, username: r.username}}));
+                 }
                 convo.messages = messages.reverse();
             }
 
@@ -61,10 +65,12 @@ export default (upload) => {
             if (!conversationId && recipientId) {
                 // Check if a conversation between these two users already exists
                 const [existingConvo] = await connection.query(`
-                    SELECT conversation_id FROM conversation_participants cp
-                    WHERE cp.is_group = 0 AND cp.user_id IN (?, ?)
+                    SELECT cp.conversation_id 
+                    FROM conversation_participants cp
+                    JOIN conversations c ON c.id = cp.conversation_id
+                    WHERE c.is_group = 0 
                     GROUP BY cp.conversation_id
-                    HAVING COUNT(DISTINCT cp.user_id) = 2
+                    HAVING SUM(IF(cp.user_id IN (?, ?), 1, 0)) = 2
                 `, [senderId, recipientId]);
 
                 if (existingConvo.length > 0) {
@@ -76,23 +82,22 @@ export default (upload) => {
                 }
             }
             
-            if (!finalConversationId) {
-                throw new Error("Conversation ID is missing");
+            if (!finalConversationId || finalConversationId.startsWith('temp_')) {
+                 throw new Error("Conversation ID is missing or temporary");
             }
 
             let messageContent = content;
             let fileAttachment = null;
             if (file) {
                 const filePath = `/uploads/attachments/${file.filename}`;
-                if(type === 'image') {
+                if(type === 'image' || type === 'sticker' || type === 'voicenote') {
                     messageContent = filePath;
-                } else {
-                     fileAttachment = JSON.stringify({
-                        fileName: file.originalname,
-                        fileSize: file.size,
-                        fileUrl: filePath,
-                    });
                 }
+                fileAttachment = JSON.stringify({
+                    fileName: file.originalname,
+                    fileSize: file.size,
+                    fileUrl: filePath,
+                });
             }
 
             const [result] = await connection.query(
@@ -102,10 +107,10 @@ export default (upload) => {
 
             await connection.commit();
             
-            // Fetch the full message object to send back and emit
-            const [[newMessage]] = await pool.query('SELECT m.*, u.username as senderUsername FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?', [result.insertId]);
+            const [[newMessage]] = await pool.query('SELECT m.*, u.id as sender_id, u.username, u.avatar_url FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?', [result.insertId]);
+            newMessage.sender = { id: newMessage.sender_id, username: newMessage.username, avatar_url: newMessage.avatar_url };
 
-            // Emit to all participants in the conversation
+
             const [participants] = await pool.query('SELECT user_id FROM conversation_participants WHERE conversation_id = ?', [finalConversationId]);
             participants.forEach(p => {
                 io.to(p.user_id).emit('receive_message', newMessage);
@@ -141,7 +146,6 @@ export default (upload) => {
             await connection.query('INSERT INTO conversation_participants (conversation_id, user_id) VALUES ?', [participantsData]);
 
             await connection.commit();
-            // Fetch the full conversation to return
             const newConvo = { id: conversationId, name, participants: allParticipantIds, isGroup: true, messages: [] };
             res.status(201).json(newConvo);
         } catch (error) {
@@ -170,6 +174,22 @@ export default (upload) => {
             res.status(500).json({ message: 'Failed to update group' });
         }
     });
+    
+    // POST /api/messages/:id/react
+    router.post('/:id/react', isAuthenticated, async (req, res) => {
+        const { id: messageId } = req.params;
+        const { emoji } = req.body;
+        const userId = req.session.userId;
+
+        try {
+            // Upsert reaction
+            await pool.query('INSERT INTO message_reactions (message_id, user_id, emoji) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE emoji = ?', [messageId, userId, emoji, emoji]);
+            res.sendStatus(200);
+        } catch(e) {
+            res.status(500).json({ message: 'Failed to react to message' });
+        }
+    });
+
 
     return router;
 };

@@ -1,8 +1,3 @@
-
-
-
-
-
 import React from 'react';
 import type { Notification, User } from '../types.ts';
 
@@ -13,7 +8,6 @@ interface ActivityViewProps {
 const ActivityView: React.FC<ActivityViewProps> = ({ activities }) => {
   const renderActivityText = (activity: Notification) => {
     switch (activity.type) {
-      // FIX: Differentiate between post and reel likes/comments
       case 'like_post':
       case 'like_reel':
         return <>liked your {activity.type === 'like_reel' ? 'reel' : 'post'}.</>;
@@ -34,7 +28,6 @@ const ActivityView: React.FC<ActivityViewProps> = ({ activities }) => {
       <h1 className="text-2xl font-bold mb-4">Activity</h1>
       <div className="space-y-2">
         {activities.map(activity => (
-          // FIX: Use activity.actor instead of activity.user and avatar_url
           <div key={activity.id} className="flex items-center gap-3 p-2 hover:bg-gray-900 rounded-lg">
             <img src={activity.actor.avatar_url} alt={activity.actor.username} className="w-11 h-11 rounded-full object-cover" />
             <p className="text-sm flex-1">

@@ -17,8 +17,8 @@ export async function generatePostCaption(imageDescription: string): Promise<str
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
-    // FIX: Use .text property to extract the response text.
-    return response.text.trim();
+    // FIX: Use .text property to extract the response text. The .text property provides a clean string without needing to call .trim().
+    return response.text;
   } catch (error) {
     console.error("Error generating content with Gemini:", error);
     // Provide a fallback or re-throw the error for the caller to handle.

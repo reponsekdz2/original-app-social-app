@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -62,7 +60,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onSa
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Gender</label>
-                {/* FIX: Cast selected value to the correct type for the state setter */}
                 <select value={gender} onChange={e => setGender(e.target.value as User['gender'])} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2">
                     <option>Prefer not to say</option>
                     <option>Male</option>

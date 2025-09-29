@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import type { Post, User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -8,8 +6,8 @@ interface PostWithOptionsModalProps {
   post: Post;
   currentUser: User;
   onClose: () => void;
-  onUnfollow: (user: User) => void;
-  onFollow: (user: User) => void;
+  onUnfollow: (userId: string) => void;
+  onFollow: (userId: string) => void;
   onEdit: (post: Post) => void;
   onDelete: (post: Post) => void;
   onArchive: (post: Post) => void;
@@ -25,14 +23,13 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
   const { post, currentUser, onClose, onUnfollow, onFollow, onEdit, onDelete, onArchive, onUnarchive, onReport, onShare, onCopyLink, onViewProfile, onGoToPost } = props;
 
   const isCurrentUserPost = post.user.id === currentUser.id;
-  // FIX: Added optional chaining to prevent crash if currentUser.following is undefined.
   const isFollowing = currentUser.following?.some(u => u.id === post.user.id) || false;
 
   const options = [
     // --- Destructive/Moderation Actions ---
     !isCurrentUserPost && { label: 'Report', action: () => onReport(post), className: 'text-red-500 font-bold' },
     isCurrentUserPost && { label: 'Delete', action: () => onDelete(post), className: 'text-red-500 font-bold' },
-    !isCurrentUserPost && isFollowing && { label: 'Unfollow', action: () => onUnfollow(post.user), className: 'text-red-500 font-bold' },
+    !isCurrentUserPost && isFollowing && { label: 'Unfollow', action: () => onUnfollow(post.user.id), className: 'text-red-500 font-bold' },
 
     // --- User-Specific Actions ---
     isCurrentUserPost && { label: 'Edit', action: () => onEdit(post) },
@@ -40,7 +37,7 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
         ? { label: 'Unarchive', action: () => onUnarchive && onUnarchive(post) }
         : { label: 'Archive', action: () => onArchive(post) }
     ),
-    !isCurrentUserPost && !isFollowing && { label: 'Follow', action: () => onFollow(post.user), className: 'font-bold' },
+    !isCurrentUserPost && !isFollowing && { label: 'Follow', action: () => onFollow(post.user.id), className: 'font-bold' },
 
     // --- General Actions ---
     { label: 'Go to post', action: () => onGoToPost(post) },

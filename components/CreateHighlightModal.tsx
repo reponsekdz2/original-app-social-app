@@ -1,8 +1,3 @@
-
-
-
-
-
 import React, { useState } from 'react';
 import type { StoryItem } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -66,7 +61,6 @@ const CreateHighlightModal: React.FC<CreateHighlightModalProps> = ({ userStories
                         const isSelected = selectedStoryIds.includes(story.id);
                         return (
                             <div key={story.id} className="relative aspect-[9/16] cursor-pointer" onClick={() => handleToggleStory(story.id)}>
-                                {/* FIX: Use story.media_url instead of story.media */}
                                 {story.mediaType === 'image' ? (
                                     <img src={story.media_url} alt="story item" className="w-full h-full object-cover rounded-md" />
                                 ) : (

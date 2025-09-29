@@ -180,7 +180,6 @@ export interface AuthCarouselImage {
     image_url: string;
 }
 
-// FIX: Export the ToastMessage type
 export interface ToastMessage {
   id: number;
   message: string;

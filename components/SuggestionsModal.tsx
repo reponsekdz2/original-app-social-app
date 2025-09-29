@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import type { User } from '../types.ts';
 import Icon from './Icon.tsx';
@@ -11,9 +9,7 @@ interface SuggestionsModalProps {
   currentUser: User;
   onClose: () => void;
   onViewProfile: (user: User) => void;
-  // FIX: Changed prop type to accept userId string for consistency with FollowButton.
   onFollow: (userId: string) => void;
-  // FIX: Changed prop type to accept userId string for consistency with FollowButton.
   onUnfollow: (userId: string) => void;
 }
 
@@ -34,7 +30,6 @@ const SuggestionsModal: React.FC<SuggestionsModalProps> = ({ users, currentUser,
           {users.map(user => (
             <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-700">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => onViewProfile(user)}>
-                {/* FIX: Changed user.avatar to user.avatar_url */}
                 <img src={user.avatar_url} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
                 <div>
                   <p className="font-semibold text-sm flex items-center">{user.username} {user.isVerified && <VerifiedBadge className="w-3 h-3 ml-1" />}</p>

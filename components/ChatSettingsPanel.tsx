@@ -29,7 +29,6 @@ const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = (props) => {
   };
 
   const handleAddMembers = (userIds: string[]) => {
-      // FIX: Correctly map the `userIds` variable to the `addUserIds` property.
       onUpdateSettings(conversation.id, { addUserIds: userIds });
       setIsAddingMembers(false);
   };

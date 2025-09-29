@@ -79,7 +79,7 @@ router.get('/suggested', isAuthenticated, async (req, res) => {
 
 // GET /api/users/all
 router.get('/all', isAuthenticated, async (req, res) => {
-    const [users] = await pool.query('SELECT id, username, name, avatar_url FROM users');
+    const [users] = await pool.query('SELECT id, username, name, avatar_url, is_verified FROM users');
     res.json(users);
 });
 

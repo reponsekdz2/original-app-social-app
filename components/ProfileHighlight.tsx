@@ -1,6 +1,4 @@
-
 import React from 'react';
-// Fix: Add .ts extension to types import to resolve module error.
 import type { StoryHighlight } from '../types.ts';
 
 interface ProfileHighlightProps {
