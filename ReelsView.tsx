@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { Reel as ReelType, User } from './types.ts';
 import * as api from './services/apiService.ts';
@@ -22,7 +23,6 @@ const ReelsView: React.FC<ReelsViewProps> = ({ initialReels, currentUser, onLike
     try {
       // FIX: Pass the current page number to the API call to fetch the next set of reels for pagination.
       const newReels = await api.getReels(page);
-      // FIX: Handle cases where the API might return null or an empty array to prevent errors and unnecessary fetches.
       if (newReels && newReels.length > 0) {
         setReels(prev => [...prev, ...newReels]);
         setPage(prev => prev + 1);

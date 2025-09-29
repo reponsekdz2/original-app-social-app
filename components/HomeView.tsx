@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { Story, Post, User } from '../types.ts';
 import * as api from '../services/apiService.ts';
@@ -69,8 +70,8 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
   const loadMorePosts = useCallback(async () => {
     setIsLoading(true);
     try {
+        // FIX: Pass page number to fetch next set of posts.
         const newPosts = await api.getFeedPosts(page);
-        // FIX: Handle cases where the API might return null or an empty array to prevent errors and unnecessary fetches.
         if (newPosts && newPosts.length > 0) {
             setPosts(prev => [...prev, ...newPosts]);
             setPage(prev => prev + 1);

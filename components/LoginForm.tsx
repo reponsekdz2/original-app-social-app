@@ -43,23 +43,23 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
     }
   };
   
-    const SocialButton: React.FC<{ provider: 'Google' | 'Apple' }> = ({ provider }) => (
-        <button type="button" className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-md font-semibold text-sm border border-gray-700 hover:bg-gray-800 transition-colors`}>
+    const SocialButton: React.FC<{ provider: 'Google' | 'Apple', className?: string }> = ({ provider, className }) => (
+        <button type="button" className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-md font-semibold text-sm border border-gray-700 hover:bg-gray-800 transition-colors ${className}`}>
            {provider}
         </button>
     );
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-4xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400">InstaFire</h2>
-      <p className="text-center text-gray-400 mb-6 text-sm">Sign in to see photos and videos from your friends.</p>
+      <h2 className="text-4xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400 animate-slide-fade-in">InstaFire</h2>
+      <p className="text-center text-gray-400 mb-6 text-sm animate-slide-fade-in" style={{ animationDelay: '100ms' }}>Sign in to see photos and videos from your friends.</p>
       
-      <div className="flex gap-4 mb-4">
-        <SocialButton provider="Google" />
-        <SocialButton provider="Apple" />
+      <div className="flex gap-4 mb-4 animate-slide-fade-in" style={{ animationDelay: '200ms' }}>
+        <SocialButton provider="Google" className="social-btn-google" />
+        <SocialButton provider="Apple" className="social-btn-apple" />
       </div>
 
-      <div className="flex items-center my-2">
+      <div className="flex items-center my-2 animate-slide-fade-in" style={{ animationDelay: '300ms' }}>
         <div className="flex-grow border-t border-gray-700"></div>
         <span className="flex-shrink mx-4 text-gray-500 text-xs">OR</span>
         <div className="flex-grow border-t border-gray-700"></div>
@@ -68,7 +68,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <p className="text-red-500 text-sm bg-red-500/10 p-2 rounded-md text-center">{error}</p>}
         
-        <div className="relative">
+        <div className="relative animate-slide-fade-in" style={{ animationDelay: '400ms' }}>
             <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                 <Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></Icon>
             </span>
@@ -82,7 +82,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
             />
         </div>
 
-        <div className="relative">
+        <div className="relative animate-slide-fade-in" style={{ animationDelay: '500ms' }}>
             <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                 <Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></Icon>
             </span>
@@ -104,7 +104,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
             </button>
         </div>
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between animate-slide-fade-in" style={{ animationDelay: '600ms' }}>
             <label className="flex items-center text-xs text-gray-400">
                 <input type="checkbox" className="w-4 h-4 mr-2 bg-gray-700 border-gray-600 rounded" />
                 Remember Me
@@ -116,7 +116,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
 
         <button
           type="submit"
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-700 flex items-center justify-center transition-colors"
+          className="w-full btn-gradient text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-700 flex items-center justify-center transition-colors animate-slide-fade-in"
+          style={{ animationDelay: '700ms' }}
           disabled={isLoading}
         >
           {isLoading ? (

@@ -1,4 +1,3 @@
---- START OF FILE backend/livestreams.js ---
 import { Router } from 'express';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
@@ -68,4 +67,3 @@ router.put('/:id/end', isAuthenticated, async (req, res) => {
 });
 
 export default router;
---- END OF FILE backend/livestreams.js ---

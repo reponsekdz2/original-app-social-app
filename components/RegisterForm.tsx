@@ -145,7 +145,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
         
         <div className="flex-grow">
             {step === 1 && (
-                <div className="space-y-3 animate-slide-fade-in">
+                <div key="step1" className="space-y-3 animate-slide-fade-in">
                     <h3 className="font-semibold text-center text-lg mt-2">Create your account</h3>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3"><Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243c0 .384.128.753.36 1.06l.995 1.493a.75.75 0 01-.26 1.06l-1.636 1.09a.75.75 0 00-.26 1.06l.995 1.493c.232.348.359.726.359 1.112v.243m-13.5-9.75h9" /></Icon></span>
@@ -159,7 +159,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             )}
 
             {step === 2 && (
-                <div className="space-y-3 animate-slide-fade-in">
+                <div key="step2" className="space-y-3 animate-slide-fade-in">
                     <h3 className="font-semibold text-center text-lg mt-2">Profile & Security</h3>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3"><Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm-2.25-6h3.75a.75.75 0 01.75.75v3.75a.75.75 0 01-.75.75h-3.75a.75.75 0 01-.75-.75v-3.75a.75.75 0 01.75-.75z" /></Icon></span>
@@ -184,7 +184,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             )}
             
             {step === 3 && (
-                <div className="space-y-3 animate-slide-fade-in">
+                <div key="step3" className="space-y-3 animate-slide-fade-in">
                     <h3 className="font-semibold text-center text-lg mt-2">Final Details</h3>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3"><Icon className="w-5 h-5 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 6.75z" /></Icon></span>
@@ -218,11 +218,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
                 </button>
              )}
             {step < 3 ? (
-                <button type="button" onClick={handleNext} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md">
+                <button type="button" onClick={handleNext} className="w-full btn-gradient text-white font-semibold py-2.5 px-4 rounded-md">
                     Next
                 </button>
             ) : (
-                <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-700 flex items-center justify-center" disabled={isLoading}>
+                <button type="submit" className="w-full btn-gradient text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-700 flex items-center justify-center" disabled={isLoading}>
                     {isLoading ? 'Signing up...' : 'Sign Up'}
                 </button>
             )}

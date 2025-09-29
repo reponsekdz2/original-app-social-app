@@ -44,7 +44,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
         <div className="aurora aurora-3"></div>
       </div>
 
-      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center justify-center w-full">
+      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center justify-center w-full animate-slide-fade-in">
         
         {/* Carousel (Left) - Visible on large screens */}
         <div className="hidden lg:flex justify-center">

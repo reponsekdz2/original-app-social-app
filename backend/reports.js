@@ -1,4 +1,3 @@
---- START OF FILE backend/reports.js ---
 import { Router } from 'express';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
@@ -27,4 +26,3 @@ router.post('/', isAuthenticated, async (req, res) => {
 });
 
 export default router;
---- END OF FILE backend/reports.js ---

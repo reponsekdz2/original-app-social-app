@@ -1,4 +1,3 @@
---- START OF FILE backend/admin.js ---
 import { Router } from 'express';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
@@ -215,4 +214,3 @@ export default (upload) => {
 
     return router;
 };
---- END OF FILE backend/admin.js ---

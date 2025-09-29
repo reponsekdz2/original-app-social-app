@@ -1,4 +1,4 @@
---- START OF FILE backend/schema.txt ---
+-- Users Table: Core of the application
 CREATE TABLE `users` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `username` VARCHAR(50) NOT NULL UNIQUE,
@@ -207,7 +207,7 @@ CREATE TABLE `messages` (
   `content` TEXT,
   `message_type` ENUM('text','image','sticker','voicenote','share_post','share_reel', 'file') NOT NULL DEFAULT 'text',
   `shared_content_id` VARCHAR(36) DEFAULT NULL,
-  `shared_content_type` ENUM('post', 'reel') DEFAULT NULL,
+  `shared_content_type` ENUM('post', 'reel', 'story') DEFAULT NULL,
   `reply_to_message_id` VARCHAR(36) DEFAULT NULL,
   `file_attachment` JSON DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -390,4 +390,3 @@ CREATE TABLE `trending_topics` (
     `topic` VARCHAR(100) NOT NULL UNIQUE,
     `post_count` INT NOT NULL DEFAULT 0
 );
---- END OF FILE backend/schema.txt ---

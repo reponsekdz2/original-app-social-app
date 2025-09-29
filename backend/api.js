@@ -1,4 +1,3 @@
---- START OF FILE backend/api.js ---
 import { Router } from 'express';
 import authRouter from './auth.js';
 import usersRouter from './users.js';
@@ -38,4 +37,3 @@ export default (upload) => {
 
     return router;
 };
---- END OF FILE backend/api.js ---

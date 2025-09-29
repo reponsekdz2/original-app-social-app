@@ -13,10 +13,12 @@ interface ProfileViewProps {
   isCurrentUser: boolean;
   currentUser: User;
   onNavigate: (view: 'settings' | 'archive' | 'messages' | 'createHighlight', user?: User) => void;
-  onShowFollowers: (users: User[]) => void;
-  onShowFollowing: (users: User[]) => void;
+  onShowFollowers: (user: User) => void;
+  onShowFollowing: (user: User) => void;
   onViewPost: (post: Post) => void;
   onViewReel: (reel: Reel) => void;
+  onFollow: (userId: string) => void;
+  onUnfollow: (userId: string) => void;
 }
 
 const ProfileGridSkeleton: React.FC = () => (
@@ -28,7 +30,7 @@ const ProfileGridSkeleton: React.FC = () => (
 );
 
 const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { user: initialUser, isCurrentUser, currentUser, onNavigate, onShowFollowers, onShowFollowing, onViewPost, onViewReel } = props;
+    const { user: initialUser, isCurrentUser, currentUser, onNavigate, onShowFollowers, onShowFollowing, onViewPost, onViewReel, onFollow, onUnfollow } = props;
     
     const [user, setUser] = useState<User | null>(initialUser);
     const [isLoading, setIsLoading] = useState(true);
@@ -92,12 +94,10 @@ const ProfileView: React.FC<ProfileViewProps> = (props) => {
         currentUser={currentUser}
         onEditProfile={() => onNavigate('settings')}
         onViewArchive={() => onNavigate('archive')}
-        // FIX: Pass function reference directly, as the handler now expects a userId.
-        onFollow={api.followUser}
-        // FIX: Pass function reference directly, as the handler now expects a userId.
-        onUnfollow={api.unfollowUser}
-        onShowFollowers={() => onShowFollowers(user.followers || [])}
-        onShowFollowing={() => onShowFollowing(user.following || [])}
+        onFollow={onFollow}
+        onUnfollow={onUnfollow}
+        onShowFollowers={() => onShowFollowers(user)}
+        onShowFollowing={() => onShowFollowing(user)}
         onMessage={(userToMessage) => onNavigate('messages', userToMessage)}
       />
       <ProfileHighlights 
