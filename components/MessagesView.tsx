@@ -38,6 +38,7 @@ const MessagesView: React.FC<MessagesViewProps> = ({ currentUser, conversations,
       // Create a new temporary conversation
       const tempConvo: Conversation = {
         id: `temp_${user.id}`,
+        name: user.name,
         participants: [currentUser, user],
         messages: [],
         isGroup: false,

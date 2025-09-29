@@ -92,8 +92,10 @@ const ProfileView: React.FC<ProfileViewProps> = (props) => {
         currentUser={currentUser}
         onEditProfile={() => onNavigate('settings')}
         onViewArchive={() => onNavigate('archive')}
-        onFollow={() => api.followUser(user.id)}
-        onUnfollow={() => api.unfollowUser(user.id)}
+        // FIX: Pass function reference directly, as the handler now expects a userId.
+        onFollow={api.followUser}
+        // FIX: Pass function reference directly, as the handler now expects a userId.
+        onUnfollow={api.unfollowUser}
         onShowFollowers={() => onShowFollowers(user.followers || [])}
         onShowFollowing={() => onShowFollowing(user.following || [])}
         onMessage={(userToMessage) => onNavigate('messages', userToMessage)}

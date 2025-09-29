@@ -1,4 +1,3 @@
---- START OF FILE backend/users.js ---
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import pool from './db.js';
@@ -10,25 +9,60 @@ const saltRounds = 10;
 // GET /api/users/profile/:username
 router.get('/profile/:username', isAuthenticated, async (req, res) => {
     const { username } = req.params;
+    const currentUserId = req.session.userId;
     try {
         const [[user]] = await pool.query('SELECT id, username, name, avatar_url, bio, website, is_verified, is_private FROM users WHERE username = ?', [username]);
         if (!user) return res.status(404).json({ message: 'User not found' });
         
-        // Fetch counts
+        const [[{ isFollowing }]] = await pool.query('SELECT COUNT(*) > 0 as isFollowing FROM followers WHERE follower_id = ? AND following_id = ?', [currentUserId, user.id]);
+
         const [[[counts]]] = await pool.query(`
             SELECT
                 (SELECT COUNT(*) FROM posts WHERE user_id = ? AND is_archived = 0) as post_count,
                 (SELECT COUNT(*) FROM followers WHERE following_id = ?) as follower_count,
                 (SELECT COUNT(*) FROM followers WHERE follower_id = ?) as following_count
         `, [user.id, user.id, user.id]);
-
-        // Fetch posts, reels, highlights etc.
-        const [posts] = await pool.query('SELECT p.*, (SELECT media_url FROM post_media WHERE post_id = p.id LIMIT 1) as media_url FROM posts p WHERE user_id = ? AND is_archived = 0 ORDER BY created_at DESC', [user.id]);
-        user.posts = posts;
-        // ... fetch other details as needed
         
+        user.isFollowing = !!isFollowing;
+
+        // Only return full data if profile is not private or if the current user is following them or it's their own profile
+        const canViewFullProfile = !user.is_private || user.isFollowing || user.id === currentUserId;
+
+        if (canViewFullProfile) {
+            const [posts] = await pool.query(`
+                SELECT p.*, 
+                       (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes,
+                       (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count
+                FROM posts p WHERE user_id = ? AND is_archived = 0 ORDER BY created_at DESC
+            `, [user.id]);
+
+            for(const post of posts) {
+                const [media] = await pool.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [post.id]);
+                post.media = media;
+                post.comments = []; // simplified for grid view
+            }
+            
+            const [reels] = await pool.query(`
+                SELECT r.*,
+                       (SELECT COUNT(*) FROM reel_likes WHERE reel_id = r.id) as likes,
+                       (SELECT COUNT(*) FROM comments WHERE reel_id = r.id) as comments_count
+                FROM reels r WHERE user_id = ? ORDER BY created_at DESC
+            `, [user.id]);
+
+            const [highlights] = await pool.query('SELECT id, title, cover_image_url as cover FROM story_highlights WHERE user_id = ?', [user.id]);
+            const [followers] = await pool.query('SELECT u.id, u.username, u.name, u.avatar_url, u.is_verified FROM users u JOIN followers f ON u.id = f.follower_id WHERE f.following_id = ?', [user.id]);
+            const [following] = await pool.query('SELECT u.id, u.username, u.name, u.avatar_url, u.is_verified FROM users u JOIN followers f ON u.id = f.following_id WHERE f.follower_id = ?', [user.id]);
+
+            user.posts = posts;
+            user.reels = reels;
+            user.highlights = highlights;
+            user.followers = followers;
+            user.following = following;
+        }
+
         res.json({ ...user, ...counts });
     } catch (error) {
+        console.error("Error fetching profile:", error);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
@@ -55,7 +89,7 @@ router.post('/:id/follow', isAuthenticated, async (req, res) => {
     const { id: followingId } = req.params;
     const followerId = req.session.userId;
     try {
-        await pool.query('INSERT INTO followers (follower_id, following_id) VALUES (?, ?)', [followerId, followingId]);
+        await pool.query('INSERT IGNORE INTO followers (follower_id, following_id) VALUES (?, ?)', [followerId, followingId]);
         // Create notification
         await pool.query('INSERT INTO notifications (user_id, actor_id, type) VALUES (?, ?, "follow")', [followingId, followerId]);
         res.sendStatus(200);
@@ -70,6 +104,7 @@ router.post('/:id/unfollow', isAuthenticated, async (req, res) => {
     const followerId = req.session.userId;
     try {
         await pool.query('DELETE FROM followers WHERE follower_id = ? AND following_id = ?', [followerId, followingId]);
+        await pool.query('DELETE FROM notifications WHERE user_id = ? AND actor_id = ? AND type = "follow"', [followingId, followerId]);
         res.sendStatus(200);
     } catch (error) {
         res.status(500).json({ message: 'Could not unfollow user' });
@@ -175,4 +210,3 @@ router.put('/password', isAuthenticated, async (req, res) => {
 });
 
 export default router;
---- END OF FILE backend/users.js ---

@@ -11,8 +11,10 @@ interface SuggestionsModalProps {
   currentUser: User;
   onClose: () => void;
   onViewProfile: (user: User) => void;
-  onFollow: (user: User) => void;
-  onUnfollow: (user: User) => void;
+  // FIX: Changed prop type to accept userId string for consistency with FollowButton.
+  onFollow: (userId: string) => void;
+  // FIX: Changed prop type to accept userId string for consistency with FollowButton.
+  onUnfollow: (userId: string) => void;
 }
 
 const SuggestionsModal: React.FC<SuggestionsModalProps> = ({ users, currentUser, onClose, onViewProfile, onFollow, onUnfollow }) => {

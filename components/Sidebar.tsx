@@ -9,8 +9,10 @@ import SponsoredPost from './SponsoredPost.tsx';
 interface SidebarProps {
   currentUser: User;
   onViewProfile: (user: User) => void;
-  onFollow: (user: User) => void;
-  onUnfollow: (user: User) => void;
+  // FIX: Changed prop type to accept userId string for consistency with FollowButton.
+  onFollow: (userId: string) => void;
+  // FIX: Changed prop type to accept userId string for consistency with FollowButton.
+  onUnfollow: (userId: string) => void;
   onSwitchAccount: () => void;
 }
 

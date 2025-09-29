@@ -21,6 +21,7 @@ const ReelsView: React.FC<ReelsViewProps> = ({ initialReels, currentUser, onLike
   const loadMoreReels = useCallback(async () => {
     setIsLoading(true);
     try {
+      // FIX: Pass the 'page' argument to the api.getReels function.
       const newReels = await api.getReels(page);
       setReels(prev => [...prev, ...newReels]);
       setHasMore(newReels.length > 0);
@@ -41,13 +42,12 @@ const ReelsView: React.FC<ReelsViewProps> = ({ initialReels, currentUser, onLike
       }
     });
     if (node) observer.current.observe(node);
-    // FIX: Add loadMoreReels dependency to prevent stale closure.
   }, [isLoading, hasMore, loadMoreReels]);
 
   useEffect(() => {
       setReels(initialReels);
       setPage(2);
-      setHasMore(true);
+      setHasMore(initialReels.length > 0);
   }, [initialReels]);
 
   return (

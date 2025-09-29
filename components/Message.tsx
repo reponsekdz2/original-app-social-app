@@ -51,7 +51,6 @@ const Message: React.FC<MessageProps> = ({ message, currentUser, onReact, onRepl
         }
     };
     
-    // FIX: Explicitly type the accumulator in the reduce function to ensure `count` is inferred as a number.
     const reactionSummary = (message.reactions || []).reduce((acc: Record<string, number>, reaction: Reaction) => {
         acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
         return acc;

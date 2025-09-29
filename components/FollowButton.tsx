@@ -1,24 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User } from '../types.ts';
 import UnfollowModal from './UnfollowModal.tsx';
 
 interface FollowButtonProps {
   user: User;
   currentUser: User;
-  onFollow: (user: User) => void;
-  onUnfollow: (user: User) => void;
+  onFollow: (userId: string) => void;
+  onUnfollow: (userId: string) => void;
   className?: string;
 }
 
 const FollowButton: React.FC<FollowButtonProps> = ({ user, currentUser, onFollow, onUnfollow, className = '' }) => {
   const [isFollowing, setIsFollowing] = useState(currentUser.following?.some(u => u.id === user.id) || false);
   const [showUnfollowModal, setShowUnfollowModal] = useState(false);
+  
+  useEffect(() => {
+    // This allows the button to update if the currentUser prop changes (e.g., after a global state update)
+    setIsFollowing(currentUser.following?.some(u => u.id === user.id) || false);
+  }, [currentUser.following, user.id]);
 
   const handleFollow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Optimistic update
     setIsFollowing(true);
-    onFollow(user);
+    onFollow(user.id);
   };
 
   const handleUnfollow = (e: React.MouseEvent) => {
@@ -26,16 +30,14 @@ const FollowButton: React.FC<FollowButtonProps> = ({ user, currentUser, onFollow
     if (user.isPrivate) {
         setShowUnfollowModal(true);
     } else {
-        // Optimistic update
         setIsFollowing(false);
-        onUnfollow(user);
+        onUnfollow(user.id);
     }
   };
 
   const confirmUnfollow = () => {
-    // Optimistic update
     setIsFollowing(false);
-    onUnfollow(user);
+    onUnfollow(user.id);
     setShowUnfollowModal(false);
   }
 

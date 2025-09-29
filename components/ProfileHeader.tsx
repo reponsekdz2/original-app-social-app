@@ -12,8 +12,10 @@ interface ProfileHeaderProps {
   currentUser: User;
   onEditProfile: () => void;
   onViewArchive: () => void;
-  onFollow: (user: User) => void;
-  onUnfollow: (user: User) => void;
+  // FIX: Changed prop type to accept userId string for consistency with FollowButton.
+  onFollow: (userId: string) => void;
+  // FIX: Changed prop type to accept userId string for consistency with FollowButton.
+  onUnfollow: (userId: string) => void;
   onShowFollowers: (users: User[]) => void;
   onShowFollowing: (users: User[]) => void;
   onMessage: (user: User) => void;

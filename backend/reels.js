@@ -20,10 +20,10 @@ export default (upload) => {
             
             for (const reel of reels) {
                  const [likes] = await pool.query('SELECT user_id FROM reel_likes WHERE reel_id = ?', [reel.id]);
-                 const [comments] = await pool.query('SELECT id FROM comments WHERE reel_id = ?', [reel.id]);
+                 const [comments] = await pool.query('SELECT c.*, u.username, u.avatar_url FROM comments c JOIN users u on c.user_id = u.id WHERE reel_id = ?', [reel.id]);
                  reel.likes = likes.length;
                  reel.likedBy = likes.map(l => ({ id: l.user_id }));
-                 reel.comments = comments; // Just need the count for the main view
+                 reel.comments = comments.map(c => ({...c, user: { id: c.user_id, username: c.username, avatar_url: c.avatar_url } }));
                  reel.user = { id: reel.user_id, username: reel.username, avatar_url: reel.avatar_url };
             }
             res.json(reels);
@@ -73,6 +73,28 @@ export default (upload) => {
         }
     });
     
+    router.post('/:id/like', isAuthenticated, async (req, res) => {
+        const { id: reelId } = req.params;
+        const userId = req.session.userId;
+        const io = req.app.get('io');
+        
+        try {
+            const [[existingLike]] = await pool.query('SELECT * FROM reel_likes WHERE reel_id = ? AND user_id = ?', [reelId, userId]);
+
+            if (existingLike) {
+                await pool.query('DELETE FROM reel_likes WHERE reel_id = ? AND user_id = ?', [reelId, userId]);
+            } else {
+                await pool.query('INSERT INTO reel_likes (reel_id, user_id) VALUES (?, ?)', [reelId, userId]);
+            }
+            
+            const [[{likes}]] = await pool.query('SELECT COUNT(*) as likes FROM reel_likes WHERE reel_id = ?', [reelId]);
+            io.emit('reel_like_update', { reelId, likes });
+            res.sendStatus(200);
+        } catch (error) {
+            res.status(500).json({ message: 'Error liking reel' });
+        }
+    });
+
     router.post('/:id/comment', isAuthenticated, async (req, res) => {
         const { id: reelId } = req.params;
         const { text } = req.body;
@@ -83,7 +105,8 @@ export default (upload) => {
                 'INSERT INTO comments (reel_id, user_id, text) VALUES (?, ?, ?)',
                 [reelId, userId, text]
             );
-            const [[newComment]] = await pool.query('SELECT * FROM comments WHERE id = ?', [result.insertId]);
+            const [[newComment]] = await pool.query('SELECT c.*, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id = ?', [result.insertId]);
+            newComment.user = { id: newComment.user_id, username: newComment.username, avatar_url: newComment.avatar_url };
             res.status(201).json(newComment);
         } catch (error) {
             console.error("Error commenting on reel:", error);

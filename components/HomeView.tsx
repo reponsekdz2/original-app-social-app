@@ -69,6 +69,7 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
   const loadMorePosts = useCallback(async () => {
     setIsLoading(true);
     try {
+        // FIX: Pass the 'page' argument to the api.getFeedPosts function.
         const newPosts = await api.getFeedPosts(page);
         setPosts(prev => [...prev, ...newPosts]);
         setHasMore(newPosts.length > 0);
@@ -89,13 +90,12 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
         }
     });
     if (node) observer.current.observe(node);
-    // FIX: Add `loadMorePosts` to dependency array to prevent stale closure.
   }, [isLoading, hasMore, loadMorePosts]);
   
   useEffect(() => {
       setPosts(initialPosts); // Reset posts when initialPosts change
       setPage(2);
-      setHasMore(true);
+      setHasMore(initialPosts.length > 0);
   }, [initialPosts]);
 
   return (
@@ -128,7 +128,7 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
           </div>
         ))}
         {isLoading && Array.from({ length: 2 }).map((_, i) => <PostSkeleton key={`skeleton-${i}`} />)}
-        {!hasMore && <p className="text-center text-gray-500 py-8">You've reached the end!</p>}
+        {!hasMore && posts.length > 0 && <p className="text-center text-gray-500 py-8">You've reached the end!</p>}
       </div>
     </div>
   );
