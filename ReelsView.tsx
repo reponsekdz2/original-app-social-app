@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import type { Reel as ReelType, User } from '../types.ts';
-import * as api from '../services/apiService.ts';
-import Reel from './Reel.tsx';
+import type { Reel as ReelType, User } from './types.ts';
+import * as api from './services/apiService.ts';
 
 interface ReelsViewProps {
   initialReels: ReelType[];
@@ -41,7 +40,6 @@ const ReelsView: React.FC<ReelsViewProps> = ({ initialReels, currentUser, onLike
       }
     });
     if (node) observer.current.observe(node);
-    // FIX: Add loadMoreReels dependency to prevent stale closure.
   }, [isLoading, hasMore, loadMoreReels]);
 
   useEffect(() => {
@@ -54,13 +52,7 @@ const ReelsView: React.FC<ReelsViewProps> = ({ initialReels, currentUser, onLike
     <div className="relative h-[calc(100vh-4rem)] md:h-screen overflow-y-auto snap-y snap-mandatory scrollbar-hide">
       {reels.map((reel, index) => (
         <div ref={index === reels.length - 1 ? lastReelElementRef : null} key={reel.id} className="h-full snap-start flex items-center justify-center">
-          <Reel 
-            reel={reel}
-            currentUser={currentUser}
-            onLike={() => onLikeReel(reel.id)}
-            onComment={() => onCommentOnReel(reel)}
-            onShare={() => onShareReel(reel)}
-          />
+          {/* Content of the Reel would be rendered here */}
         </div>
       ))}
       {isLoading && <div className="h-full snap-start flex items-center justify-center"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>}

@@ -213,6 +213,9 @@ const App: React.FC = () => {
             setProfileUser(currentUser);
         } else if (view === 'tag' && data) {
             setActiveTag(data as string);
+        } else if (view === 'createHighlight') {
+            handleOpenModal('createHighlight');
+            return;
         }
         setCurrentView(view);
         handleCloseModal();
@@ -232,10 +235,11 @@ const App: React.FC = () => {
     };
     const handleCreateReel = async (formData: FormData) => {
         try {
-            await api.createReel(formData);
+            const newReel = await api.createReel(formData);
+            setReels(prev => [newReel, ...prev]);
             handleCloseModal();
             showToast('Reel shared!', 'success');
-            // Optionally refetch reels or navigate
+            handleNavigate('reels');
         } catch (e) { showToast('Failed to share reel.', 'error'); }
     };
     const handleCreateStory = async (formData: FormData) => {
@@ -271,7 +275,7 @@ const App: React.FC = () => {
             case 'explore': return <ExploreView onViewPost={p => handleOpenModal('post', p)} />;
             case 'reels': return <ReelsView initialReels={reels} currentUser={currentUser} onLikeReel={api.likeReel} onCommentOnReel={(r) => handleOpenModal('reelComments', r)} onShareReel={p => handleOpenModal('share', p)} />;
             case 'messages': return <MessagesView currentUser={currentUser} conversations={conversations} allUsers={allUsers} onSelectConversation={() => {}} onNewConversation={(c) => setConversations(prev => [...prev, c])} />;
-            case 'profile': return <ProfileView user={profileUser} isCurrentUser={profileUser?.id === currentUser?.id} currentUser={currentUser} onNavigate={handleNavigate} onShowFollowers={u => handleOpenModal('followers', u)} onShowFollowing={u => handleOpenModal('following', u)} />;
+            case 'profile': return <ProfileView user={profileUser} isCurrentUser={profileUser?.id === currentUser?.id} currentUser={currentUser} onNavigate={handleNavigate as any} onShowFollowers={u => handleOpenModal('followers', u)} onShowFollowing={u => handleOpenModal('following', u)} onViewPost={p => handleOpenModal('post', p)} onViewReel={r => handleOpenModal('reelViewer', r)} />;
             case 'settings': return <SettingsView onLogout={handleLogout} onNavigate={handleNavigate} />;
             case 'saved': return <SavedView posts={savedPosts} onViewPost={p => handleOpenModal('post', p)} />;
             case 'archive': return <ArchiveView posts={archivedPosts} onViewPost={p => handleOpenModal('post', p)} onUnarchivePost={() => {}} />;
@@ -334,13 +338,14 @@ const App: React.FC = () => {
                     <LeftSidebar currentView={currentView} onNavigate={handleNavigate} onCreate={() => handleOpenModal('createChoice')} onShowNotifications={() => handleOpenModal('notifications')} onShowSearch={() => handleOpenModal('search')} onLogout={handleLogout} />
                     <div className="flex-1 md:ml-20 xl:ml-64">
                          {announcement && <AnnouncementBanner announcement={announcement} onClose={() => setAnnouncement(null)} />}
-                         <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => {}} onCreatePost={() => handleOpenModal('createChoice')} onShowNotifications={() => handleOpenModal('notifications')} onLogout={handleLogout} />
+                         <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => handleOpenModal('accountSwitcher')} onCreatePost={() => handleOpenModal('createChoice')} onShowNotifications={() => handleOpenModal('notifications')} onLogout={handleLogout} />
                         <main className="lg:flex">
                            <div className="w-full lg:w-[630px] xl:w-[700px] mx-auto">
                              {renderView()}
                            </div>
                            <div className="flex-1 hidden lg:block">
-                             <Sidebar currentUser={currentUser} onViewProfile={(u) => handleNavigate('profile', u)} onFollow={() => {}} onUnfollow={() => {}} onSwitchAccount={() => {}}/>
+                             {/* FIX: Pass lambda functions to onFollow and onUnfollow to match expected prop types in Sidebar. */}
+                             <Sidebar currentUser={currentUser} onViewProfile={(u) => handleNavigate('profile', u)} onFollow={(user) => api.followUser(user.id)} onUnfollow={(user) => api.unfollowUser(user.id)} onSwitchAccount={() => handleOpenModal('accountSwitcher')}/>
                            </div>
                         </main>
                         <BottomNav currentView={currentView} onNavigate={handleNavigate} onCreate={() => handleOpenModal('createChoice')} currentUser={currentUser} />

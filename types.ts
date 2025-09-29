@@ -1,4 +1,4 @@
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'activity' | 'premium' | 'admin' | 'changePassword' | 'blockedUsers' | 'loginActivity' | 'accountStatus' | 'help' | 'support_inbox' | 'faq' | 'privacy' | 'tag' | 'livestreams';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'activity' | 'premium' | 'admin' | 'changePassword' | 'blockedUsers' | 'loginActivity' | 'accountStatus' | 'help' | 'support_inbox' | 'faq' | 'privacy' | 'tag' | 'livestreams' | 'createHighlight';
 
 export interface User {
   id: string;

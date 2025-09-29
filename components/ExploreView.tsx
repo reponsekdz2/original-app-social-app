@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Post } from '../types.ts';
 import * as api from '../services/apiService.ts';

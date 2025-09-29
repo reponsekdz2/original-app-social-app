@@ -127,8 +127,23 @@ export default (upload) => {
 
             await connection.commit();
 
-            const [[newPost]] = await pool.query('SELECT * FROM posts WHERE id = ?', [postId]);
-            // You would normally fetch the full post object here to return
+            // Fetch the full post object to return it to the client for an optimistic update
+            const [[user]] = await connection.query('SELECT username, avatar_url, is_verified FROM users WHERE id = ?', [userId]);
+            const [media] = await connection.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [postId]);
+             const newPost = {
+                id: postId,
+                user: { id: userId, username: user.username, avatar_url: user.avatar_url, isVerified: user.is_verified },
+                media: media,
+                caption: caption,
+                location: location || null,
+                likes: 0,
+                likedBy: [],
+                comments: [],
+                isSaved: false,
+                timestamp: new Date().toISOString(),
+                poll: null, // Simplified for now
+            };
+
             res.status(201).json(newPost);
 
         } catch (error) {

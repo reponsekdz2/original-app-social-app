@@ -48,7 +48,24 @@ export default (upload) => {
                 'INSERT INTO reels (user_id, video_url, caption) VALUES (?, ?, ?)',
                 [userId, videoUrl, caption]
             );
-            const [[newReel]] = await pool.query('SELECT * FROM reels WHERE id = ?', [result.insertId]);
+            
+            const [[user]] = await pool.query('SELECT username, avatar_url FROM users WHERE id = ?', [userId]);
+            const newReel = {
+                id: result.insertId,
+                user_id: userId,
+                video_url: videoUrl,
+                caption,
+                created_at: new Date().toISOString(),
+                likes: 0,
+                likedBy: [],
+                comments: [],
+                shares: 0,
+                user: {
+                    id: userId,
+                    username: user.username,
+                    avatar_url: user.avatar_url
+                }
+            };
             res.status(201).json(newReel);
         } catch (error) {
             console.error("Error creating reel:", error);

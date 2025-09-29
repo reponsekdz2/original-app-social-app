@@ -89,6 +89,7 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
         }
     });
     if (node) observer.current.observe(node);
+    // FIX: Add `loadMorePosts` to dependency array to prevent stale closure.
   }, [isLoading, hasMore, loadMorePosts]);
   
   useEffect(() => {

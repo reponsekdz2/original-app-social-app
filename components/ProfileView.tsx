@@ -90,12 +90,12 @@ const ProfileView: React.FC<ProfileViewProps> = (props) => {
         user={user}
         isCurrentUser={isCurrentUser}
         currentUser={currentUser}
-        onEditProfile={() => {}}
+        onEditProfile={() => onNavigate('settings')}
         onViewArchive={() => onNavigate('archive')}
-        onFollow={() => {}}
-        onUnfollow={() => {}}
-        onShowFollowers={onShowFollowers}
-        onShowFollowing={onShowFollowing}
+        onFollow={() => api.followUser(user.id)}
+        onUnfollow={() => api.unfollowUser(user.id)}
+        onShowFollowers={() => onShowFollowers(user.followers || [])}
+        onShowFollowing={() => onShowFollowing(user.following || [])}
         onMessage={(userToMessage) => onNavigate('messages', userToMessage)}
       />
       <ProfileHighlights 
