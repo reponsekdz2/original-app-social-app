@@ -1,3 +1,4 @@
+--- START OF FILE backend/users.js ---
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import pool from './db.js';
@@ -174,3 +175,4 @@ router.put('/password', isAuthenticated, async (req, res) => {
 });
 
 export default router;
+--- END OF FILE backend/users.js ---

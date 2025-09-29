@@ -78,15 +78,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, currentUser, onBa
         setCallState({ user: otherUser, status: 'calling', type });
     };
 
-    if (!otherUser) return <div className="p-4">Could not load conversation.</div>;
+    if (!otherUser && !conversation.isGroup) return <div className="p-4">Could not load conversation.</div>;
+    const chatPartner = conversation.isGroup ? { username: conversation.name, avatar_url: '/uploads/group_avatar.png'} : otherUser;
+
 
     return (
         <div className="flex flex-col h-full bg-black">
             <header className="flex items-center gap-3 p-3 border-b border-gray-800">
                 <button onClick={onBack} className="md:hidden p-1"><Icon className="w-6 h-6"><path d="M15.75 19.5L8.25 12l7.5-7.5" /></Icon></button>
-                <img src={otherUser.avatar_url} alt={otherUser.username} className="w-10 h-10 rounded-full" />
+                <img src={chatPartner?.avatar_url} alt={chatPartner?.username} className="w-10 h-10 rounded-full" />
                 <div>
-                    <p className="font-semibold">{otherUser.username}</p>
+                    <p className="font-semibold">{chatPartner?.username}</p>
                     <p className="text-xs text-gray-400">Active now</p>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
@@ -99,14 +101,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, currentUser, onBa
                 {messages.map(msg => (
                     <Message key={msg.id} message={msg} currentUser={currentUser} onReact={handleReact} onReply={setReplyingTo}/>
                 ))}
-                {isTyping && <TypingIndicator user={otherUser} />}
+                {isTyping && otherUser && <TypingIndicator user={otherUser} />}
                 <div ref={messagesEndRef} />
             </div>
             <div className="p-2 border-t border-gray-800">
                 <MessageInput onSend={handleSendMessage} replyingTo={replyingTo} onCancelReply={() => setReplyingTo(null)} conversationId={conversation.id} otherUser={otherUser} />
             </div>
             {isSettingsOpen && <ChatSettingsPanel conversation={conversation} currentUser={currentUser} onClose={() => setSettingsOpen(false)} onUpdateUserRelationship={() => {}} onReport={() => {}} onViewProfile={() => {}} onUpdateSettings={() => {}} />}
-            {callState && <CallModal user={callState.user} status={callState.status} type={callState.type} onHangUp={() => { webRTCManager.hangUp(otherUser.id); setCallState(null); }} remoteStream={webRTCManager.remoteStream} />}
+            {callState && <CallModal user={callState.user} status={callState.status} type={callState.type} onHangUp={() => { if(otherUser) webRTCManager.hangUp(otherUser.id); setCallState(null); }} remoteStream={webRTCManager.remoteStream} />}
         </div>
     );
 };

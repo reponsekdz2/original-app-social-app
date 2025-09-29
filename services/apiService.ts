@@ -56,6 +56,7 @@ export const updateUserProfile = (data: any) => request('/users/profile', { meth
 
 // --- Posts ---
 export const getFeedPosts = (page = 1) => request(`/posts/feed?page=${page}`);
+export const getExplorePosts = () => request('/posts/explore');
 export const createPost = (formData: FormData) => fetch(`${API_BASE_URL}/posts`, { method: 'POST', body: formData }).then(res => res.json());
 export const likePost = (postId: string) => request(`/posts/${postId}/like`, { method: 'POST' });
 export const savePost = (postId: string) => request(`/posts/${postId}/save`, { method: 'POST' });
@@ -76,6 +77,8 @@ export const voteOnPoll = (pollId: string, optionId: number) => request(`/posts/
 export const getReels = (page = 1) => request(`/reels?page=${page}`);
 export const createReel = (formData: FormData) => fetch(`${API_BASE_URL}/reels`, { method: 'POST', body: formData }).then(res => res.json());
 export const likeReel = (reelId: string) => request(`/reels/${reelId}/like`, { method: 'POST' });
+export const commentOnReel = (reelId: string, text: string) => request(`/reels/${reelId}/comment`, { method: 'POST', body: JSON.stringify({ text }) });
+
 
 // --- Stories ---
 export const getStories = () => request('/stories');
@@ -99,6 +102,7 @@ export const sendMessage = (content: string | File, type: string, conversationId
 };
 export const reactToMessage = (messageId: string, emoji: string) => request(`/messages/${messageId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) });
 export const createGroupChat = (name: string, userIds: string[]) => request('/messages/group', { method: 'POST', body: JSON.stringify({ name, userIds }) });
+export const updateGroupChat = (conversationId: string, name?: string, addUserIds?: string[]) => request(`/messages/group/${conversationId}`, { method: 'PUT', body: JSON.stringify({ name, addUserIds }) });
 
 // --- Search & Misc ---
 export const search = (query: string) => request(`/search?q=${query}`);

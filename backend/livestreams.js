@@ -1,3 +1,4 @@
+--- START OF FILE backend/livestreams.js ---
 import { Router } from 'express';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
@@ -43,7 +44,8 @@ router.post('/', isAuthenticated, async (req, res) => {
             'INSERT INTO livestreams (user_id, title) VALUES (?, ?)',
             [userId, title]
         );
-        res.status(201).json({ message: 'Live stream started.', streamId: result.insertId });
+        const [[stream]] = await pool.query('SELECT * FROM livestreams WHERE id = ?', [result.insertId]);
+        res.status(201).json(stream);
     } catch (error) {
         console.error("Error starting live stream:", error);
         res.status(500).json({ message: "Failed to start live stream." });
@@ -66,3 +68,4 @@ router.put('/:id/end', isAuthenticated, async (req, res) => {
 });
 
 export default router;
+--- END OF FILE backend/livestreams.js ---

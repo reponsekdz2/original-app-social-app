@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import * as api from './services/apiService.ts';
 import { socketService } from './services/socketService.ts';
 import { webRTCManager } from './services/WebRTCManager.ts';
-import type { User, View, Post, Reel, Story, Conversation, Message, Notification, AuthCarouselImage, ToastMessage, Announcement } from './types.ts';
+import type { User, View, Post, Reel, Story, Conversation, Message, Notification, AuthCarouselImage, ToastMessage, Announcement, StoryItem } from './types.ts';
 
 // Import Views
 import AuthView from './components/AuthView.tsx';
@@ -52,12 +52,19 @@ import IncomingCallModal from './components/IncomingCallModal.tsx';
 import CallModal from './components/CallModal.tsx';
 import CreateChoiceModal from './components/CreateChoiceModal.tsx';
 import Sidebar from './components/Sidebar.tsx';
+import ReelViewerModal from './components/ReelViewerModal.tsx';
+import ReelCommentsModal from './components/ReelCommentsModal.tsx';
+import CreateHighlightModal from './components/CreateHighlightModal.tsx';
+import EditPostModal from './components/EditPostModal.tsx';
+
 
 type ModalState = 
     | { type: 'post', data: Post }
+    | { type: 'editPost', data: Post }
     | { type: 'createPost' }
     | { type: 'createReel' }
     | { type: 'createStory' }
+    | { type: 'createHighlight' }
     | { type: 'createChoice' }
     | { type: 'story', data: { stories: Story[], initialIndex: number } }
     | { type: 'share', data: Post | Reel }
@@ -75,7 +82,9 @@ type ModalState =
     | { type: 'goLive' }
     | { type: 'liveStream', data: any }
     | { type: 'incomingCall', data: { caller: User, offer: any, type: 'video' | 'audio' } }
-    | { type: 'call', data: { user: User, status: 'calling' | 'connected', type: 'video' | 'audio' } };
+    | { type: 'call', data: { user: User, status: 'calling' | 'connected', type: 'video' | 'audio' } }
+    | { type: 'reelViewer', data: Reel }
+    | { type: 'reelComments', data: Reel };
 
 
 const App: React.FC = () => {
@@ -94,9 +103,11 @@ const App: React.FC = () => {
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [savedPosts, setSavedPosts] = useState<Post[]>([]);
     const [archivedPosts, setArchivedPosts] = useState<Post[]>([]);
+    const [archivedStories, setArchivedStories] = useState<StoryItem[]>([]);
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
     const [announcement, setAnnouncement] = useState<Announcement | null>(null);
     const [activeTag, setActiveTag] = useState<string | null>(null);
+    const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
 
     const showToast = (message: string, type: ToastMessage['type']) => {
         setToasts(prev => [...prev, { id: Date.now(), message, type }]);
@@ -104,14 +115,17 @@ const App: React.FC = () => {
     
     const fetchData = useCallback(async () => {
         try {
-            const [storiesData, postsData, reelsData, convosData, usersData, notificationsData, announcementData] = await Promise.all([
+            const [storiesData, postsData, reelsData, convosData, usersData, notificationsData, announcementData, savedData, archivedData, archivedStoriesData] = await Promise.all([
                 api.getStories(),
                 api.getFeedPosts(),
                 api.getReels(),
                 api.getConversations(),
                 api.getAllUsers(),
                 api.getNotifications(),
-                api.getActiveAnnouncement()
+                api.getActiveAnnouncement(),
+                api.getSavedPosts(),
+                api.getArchivedPosts(),
+                api.getArchivedStories(),
             ]);
             setStories(storiesData);
             setFeedPosts(postsData);
@@ -120,6 +134,9 @@ const App: React.FC = () => {
             setAllUsers(usersData);
             setNotifications(notificationsData);
             setAnnouncement(announcementData);
+            setSavedPosts(savedData);
+            setArchivedPosts(archivedData);
+            setArchivedStories(archivedStoriesData);
         } catch (error) {
             console.error("Failed to fetch initial data", error);
             showToast('Failed to load data from server.', 'error');
@@ -146,28 +163,29 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (currentUser && socketService.socket) {
-            socketService.emit('user_connect', { userId: currentUser.id });
-            socketService.on('new_notification', (notif: Notification) => {
-                setNotifications(prev => [notif, ...prev]);
-                showToast(`New notification from ${notif.actor.username}`, 'info');
-            });
-            socketService.on('receive_message', (message: Message) => {
-                showToast(`New message from ${message.sender?.username}`, 'info');
-                // Update conversation list logic here
-            });
+            webRTCManager.onRemoteStream = (stream) => setRemoteStream(stream);
+            webRTCManager.onCallEnded = () => {
+                if(activeModal?.type === 'call' || activeModal?.type === 'incomingCall') {
+                    handleCloseModal();
+                }
+                webRTCManager.stopStream();
+                setRemoteStream(null);
+            };
+
             socketService.on('incoming-call', ({ from, offer, type }) => {
                 const caller = allUsers.find(u => u.id === from);
-                if(caller) {
+                if(caller && activeModal?.type !== 'call') { // Don't show if already in a call
                     setActiveModal({ type: 'incomingCall', data: { caller, offer, type } });
                 }
             });
+            
+            return () => {
+                webRTCManager.onRemoteStream = null;
+                webRTCManager.onCallEnded = null;
+                socketService.off('incoming-call');
+            }
         }
-        return () => {
-            socketService.off('new_notification');
-            socketService.off('receive_message');
-            socketService.off('incoming-call');
-        };
-    }, [currentUser, allUsers]);
+    }, [currentUser, allUsers, activeModal]);
 
     const handleLoginSuccess = async (data: { user: User, isNewUser?: boolean }) => {
         setCurrentUser(data.user);
@@ -197,18 +215,61 @@ const App: React.FC = () => {
             setActiveTag(data as string);
         }
         setCurrentView(view);
-        setActiveModal(null);
+        handleCloseModal();
     };
 
     const handleOpenModal = (type: ModalState['type'], data?: any) => setActiveModal({ type, data } as ModalState);
     const handleCloseModal = () => setActiveModal(null);
 
+    // --- Content Creation Handlers ---
+    const handleCreatePost = async (formData: FormData) => {
+        try {
+            const newPost = await api.createPost(formData);
+            setFeedPosts(prev => [newPost, ...prev]);
+            handleCloseModal();
+            showToast('Post created!', 'success');
+        } catch (e) { showToast('Failed to create post.', 'error'); }
+    };
+    const handleCreateReel = async (formData: FormData) => {
+        try {
+            await api.createReel(formData);
+            handleCloseModal();
+            showToast('Reel shared!', 'success');
+            // Optionally refetch reels or navigate
+        } catch (e) { showToast('Failed to share reel.', 'error'); }
+    };
+    const handleCreateStory = async (formData: FormData) => {
+        try {
+            await api.createStory(formData);
+            const newStories = await api.getStories();
+            setStories(newStories);
+            handleCloseModal();
+            showToast('Story shared!', 'success');
+        } catch (e) { showToast('Failed to share story.', 'error'); }
+    };
+    
+    // --- Call Handlers ---
+    const handleAcceptCall = () => {
+        if(activeModal?.type === 'incomingCall') {
+            const { caller, offer, type } = activeModal.data;
+            webRTCManager.answerCall(offer, caller.id, type==='video');
+            setActiveModal({ type: 'call', data: { user: caller, status: 'connected', type } });
+        }
+    };
+
+    const handleDeclineCall = () => {
+        if(activeModal?.type === 'incomingCall') {
+            webRTCManager.rejectCall(activeModal.data.caller.id);
+            handleCloseModal();
+        }
+    };
+
     const renderView = () => {
         if (!currentUser) return null;
         switch (currentView) {
-            case 'home': return <HomeView stories={stories} posts={feedPosts} currentUser={currentUser} onViewStory={(s, i) => handleOpenModal('story', { stories: s, initialIndex: i })} onViewPost={p => handleOpenModal('post', p)} onLikePost={api.likePost} onUnlikePost={api.likePost} onSavePost={api.savePost} onCommentOnPost={p => handleOpenModal('post', p)} onSharePost={p => handleOpenModal('share', p)} onOptionsForPost={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} onVote={api.voteOnPoll} onViewTag={(tag) => handleNavigate('tag', tag)} />;
-            case 'explore': return <ExploreView posts={[]} onViewPost={p => handleOpenModal('post', p)} />;
-            case 'reels': return <ReelsView reels={reels} currentUser={currentUser} onLikeReel={api.likeReel} onCommentOnReel={() => {}} onShareReel={p => handleOpenModal('share', p)} />;
+            case 'home': return <HomeView stories={stories} initialPosts={feedPosts} currentUser={currentUser} onViewStory={(s, i) => handleOpenModal('story', { stories: s, initialIndex: i })} onViewPost={p => handleOpenModal('post', p)} onLikePost={api.likePost} onUnlikePost={api.likePost} onSavePost={api.savePost} onCommentOnPost={p => handleOpenModal('post', p)} onSharePost={p => handleOpenModal('share', p)} onOptionsForPost={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} onVote={api.voteOnPoll} onViewTag={(tag) => handleNavigate('tag', tag)} />;
+            case 'explore': return <ExploreView onViewPost={p => handleOpenModal('post', p)} />;
+            case 'reels': return <ReelsView initialReels={reels} currentUser={currentUser} onLikeReel={api.likeReel} onCommentOnReel={(r) => handleOpenModal('reelComments', r)} onShareReel={p => handleOpenModal('share', p)} />;
             case 'messages': return <MessagesView currentUser={currentUser} conversations={conversations} allUsers={allUsers} onSelectConversation={() => {}} onNewConversation={(c) => setConversations(prev => [...prev, c])} />;
             case 'profile': return <ProfileView user={profileUser} isCurrentUser={profileUser?.id === currentUser?.id} currentUser={currentUser} onNavigate={handleNavigate} onShowFollowers={u => handleOpenModal('followers', u)} onShowFollowing={u => handleOpenModal('following', u)} />;
             case 'settings': return <SettingsView onLogout={handleLogout} onNavigate={handleNavigate} />;
@@ -223,35 +284,39 @@ const App: React.FC = () => {
             case 'support_inbox': return <SupportInboxView onBack={() => setCurrentView('help')} onNewRequest={() => handleOpenModal('newSupportRequest')} />;
             case 'tag': return <TagView tag={activeTag!} onViewPost={p => handleOpenModal('post', p)} />;
             case 'livestreams': return <LiveStreamsView onViewStream={(s) => handleOpenModal('liveStream', s)} />;
-            default: return <HomeView stories={stories} posts={feedPosts} currentUser={currentUser} onViewStory={(s, i) => handleOpenModal('story', { stories: s, initialIndex: i })} onViewPost={p => handleOpenModal('post', p)} onLikePost={api.likePost} onUnlikePost={api.likePost} onSavePost={api.savePost} onCommentOnPost={p => handleOpenModal('post', p)} onSharePost={p => handleOpenModal('share', p)} onOptionsForPost={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} onVote={api.voteOnPoll} onViewTag={(tag) => handleNavigate('tag', tag)} />;
+            default: return <HomeView stories={stories} initialPosts={feedPosts} currentUser={currentUser} onViewStory={(s, i) => handleOpenModal('story', { stories: s, initialIndex: i })} onViewPost={p => handleOpenModal('post', p)} onLikePost={api.likePost} onUnlikePost={api.likePost} onSavePost={api.savePost} onCommentOnPost={p => handleOpenModal('post', p)} onSharePost={p => handleOpenModal('share', p)} onOptionsForPost={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} onVote={api.voteOnPoll} onViewTag={(tag) => handleNavigate('tag', tag)} />;
         }
     };
     
     const renderModal = () => {
         if (!activeModal || !currentUser) return null;
         switch (activeModal.type) {
-            case 'post': return <PostModal post={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onLike={api.likePost} onSave={api.savePost} onComment={() => {}} onShare={p => handleOpenModal('share', p)} onOptions={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} />;
+            case 'post': return <PostModal post={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onLike={api.likePost} onSave={api.savePost} onComment={api.createComment} onShare={p => handleOpenModal('share', p)} onOptions={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} />;
             case 'story': return <StoryViewer stories={activeModal.data.stories} initialStoryIndex={activeModal.data.initialIndex} onClose={handleCloseModal} onNextUser={() => {}} onPrevUser={() => {}} />;
             case 'createChoice': return <CreateChoiceModal onClose={handleCloseModal} onChoice={(type) => { handleCloseModal(); if(type === 'live') { handleOpenModal('goLive'); } else { handleOpenModal(`create${type.charAt(0).toUpperCase() + type.slice(1)}` as any); } }} />;
-            case 'createPost': return <CreatePostModal onClose={handleCloseModal} onCreatePost={() => {}} allUsers={allUsers} currentUser={currentUser} />;
-            case 'createReel': return <CreateReelModal onClose={handleCloseModal} onCreateReel={() => {}} />;
-            case 'createStory': return <CreateStoryModal onClose={handleCloseModal} onCreateStory={() => {}} />;
-            case 'share': return <ShareModal content={activeModal.data} currentUser={currentUser} conversations={conversations} onClose={handleCloseModal} onShareSuccess={() => {}} />;
-            case 'postOptions': return <PostWithOptionsModal post={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onUnfollow={() => {}} onFollow={() => {}} onEdit={() => {}} onDelete={() => {}} onArchive={() => {}} onReport={c => handleOpenModal('report', c)} onShare={p => handleOpenModal('share', p)} onCopyLink={() => {}} onViewProfile={u => handleNavigate('profile', u)} onGoToPost={p => { handleCloseModal(); handleOpenModal('post', p); }} />;
+            case 'createPost': return <CreatePostModal onClose={handleCloseModal} onCreatePost={handleCreatePost} allUsers={allUsers} currentUser={currentUser} />;
+            case 'createReel': return <CreateReelModal onClose={handleCloseModal} onCreateReel={handleCreateReel} />;
+            case 'createStory': return <CreateStoryModal onClose={handleCloseModal} onCreateStory={handleCreateStory} />;
+            case 'createHighlight': return <CreateHighlightModal userStories={archivedStories} onClose={handleCloseModal} onCreate={async (title, ids) => { await api.createHighlight(title, ids); handleCloseModal(); showToast('Highlight created!', 'success'); }} />;
+            case 'share': return <ShareModal content={activeModal.data} currentUser={currentUser} conversations={conversations} onClose={handleCloseModal} onShareSuccess={() => showToast('Shared successfully', 'success')} />;
+            case 'postOptions': return <PostWithOptionsModal post={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onUnfollow={() => {}} onFollow={() => {}} onEdit={(p) => handleOpenModal('editPost', p)} onDelete={async (p) => { await api.deletePost(p.id); setFeedPosts(prev => prev.filter(post => post.id !== p.id)); handleCloseModal(); showToast('Post deleted', 'info'); }} onArchive={() => {}} onReport={c => handleOpenModal('report', c)} onShare={p => handleOpenModal('share', p)} onCopyLink={() => {}} onViewProfile={u => handleNavigate('profile', u)} onGoToPost={p => { handleCloseModal(); handleOpenModal('post', p); }} />;
+            case 'editPost': return <EditPostModal post={activeModal.data} onClose={handleCloseModal} onSave={() => {}} />;
             case 'followers': return <FollowListModal title="Followers" users={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onViewProfile={u => handleNavigate('profile', u)} onFollow={() => {}} onUnfollow={() => {}} />;
             case 'following': return <FollowListModal title="Following" users={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onViewProfile={u => handleNavigate('profile', u)} onFollow={() => {}} onUnfollow={() => {}} />;
             case 'viewLikes': return <ViewLikesModal users={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onViewProfile={u => handleNavigate('profile', u)} onFollow={() => {}} onUnfollow={() => {}} />;
-            case 'editProfile': return <EditProfileModal user={activeModal.data} onClose={handleCloseModal} onSave={() => {}} />;
+            case 'editProfile': return <EditProfileModal user={activeModal.data} onClose={handleCloseModal} onSave={async (data) => { await api.updateUserProfile(data); const user = await api.checkSession(); setCurrentUser(user.user); handleCloseModal(); showToast("Profile updated!", "success"); }} />;
             case 'accountSwitcher': return <AccountSwitcherModal accounts={allUsers} currentUser={currentUser} onClose={handleCloseModal} onSwitchAccount={() => {}} onAddAccount={() => {}} />;
             case 'notifications': return <NotificationsPanel notifications={notifications} onClose={handleCloseModal} currentUser={currentUser} onFollow={() => {}} onUnfollow={() => {}} />;
             case 'search': return <SearchView onClose={handleCloseModal} onViewProfile={u => handleNavigate('profile', u)} onViewPost={p => handleOpenModal('post', p)} />;
-            case 'report': return <ReportModal content={activeModal.data} onClose={handleCloseModal} onSubmitReport={(reason, details) => api.submitReport(activeModal.data, reason, details)} />;
+            case 'report': return <ReportModal content={activeModal.data} onClose={handleCloseModal} onSubmitReport={async (reason, details) => { await api.submitReport(activeModal.data, reason, details); showToast('Report submitted', 'success'); }} />;
             case 'welcomeOnboarding': return <WelcomeOnboardingModal currentUser={currentUser} suggestedUsers={activeModal.data} onClose={handleCloseModal} onFollow={() => {}} onUnfollow={() => {}} />;
             case 'newSupportRequest': return <NewSupportRequestModal onClose={handleCloseModal} onSubmit={(ticket) => showToast('Support ticket submitted!', 'success')} />;
             case 'goLive': return <GoLiveModal onClose={handleCloseModal} onStartStream={async (title) => { const stream = await api.startLiveStream(title); handleCloseModal(); handleOpenModal('liveStream', stream); }} />;
             case 'liveStream': return <LiveStreamView stream={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} />;
-            case 'incomingCall': return <IncomingCallModal caller={activeModal.data.caller} onAccept={() => {}} onDecline={() => {}} />;
-            case 'call': return <CallModal user={activeModal.data.user} status={activeModal.data.status} type={activeModal.data.type} onHangUp={() => {}} remoteStream={null} />;
+            case 'incomingCall': return <IncomingCallModal caller={activeModal.data.caller} onAccept={handleAcceptCall} onDecline={handleDeclineCall} />;
+            case 'call': return <CallModal user={activeModal.data.user} status={activeModal.data.status} type={activeModal.data.type} onHangUp={() => { if(activeModal.data.user) webRTCManager.hangUp(activeModal.data.user.id); handleCloseModal(); }} remoteStream={remoteStream} />;
+            case 'reelViewer': return <ReelViewerModal reel={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onLikeReel={api.likeReel} onCommentOnReel={(r) => handleOpenModal('reelComments', r)} onShareReel={(r) => handleOpenModal('share', r)} />;
+            case 'reelComments': return <ReelCommentsModal reel={activeModal.data} currentUser={currentUser} onClose={handleCloseModal} onComment={api.commentOnReel} />;
             default: return null;
         }
     };

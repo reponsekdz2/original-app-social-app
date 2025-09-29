@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { Story, Post, User } from '../types.ts';
+import * as api from '../services/apiService.ts';
 import StoryBubble from './StoryBubble.tsx';
 import PostComponent from './Post.tsx';
 import Sidebar from './Sidebar.tsx';
 
 interface HomeViewProps {
   stories: Story[];
-  posts: Post[];
+  initialPosts: Post[];
   currentUser: User;
   onViewStory: (stories: Story[], initialIndex: number) => void;
   onViewPost: (post: Post) => void;
@@ -43,7 +44,7 @@ const PostSkeleton: React.FC = () => (
 const HomeView: React.FC<HomeViewProps> = (props) => {
   const {
     stories,
-    posts,
+    initialPosts,
     currentUser,
     onViewStory,
     onViewPost,
@@ -56,8 +57,45 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
     onViewProfile,
     onViewLikes,
     onVote,
-    onViewTag
+    onViewTag,
   } = props;
+  
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [page, setPage] = useState(2); // Start from page 2 since initial posts are page 1
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const observer = useRef<IntersectionObserver>();
+
+  const loadMorePosts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const newPosts = await api.getFeedPosts(page);
+        setPosts(prev => [...prev, ...newPosts]);
+        setHasMore(newPosts.length > 0);
+        setPage(prev => prev + 1);
+    } catch (error) {
+        console.error("Failed to load more posts", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, [page]);
+  
+  const lastPostElementRef = useCallback(node => {
+    if (isLoading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting && hasMore) {
+           loadMorePosts();
+        }
+    });
+    if (node) observer.current.observe(node);
+  }, [isLoading, hasMore, loadMorePosts]);
+  
+  useEffect(() => {
+      setPosts(initialPosts); // Reset posts when initialPosts change
+      setPage(2);
+      setHasMore(true);
+  }, [initialPosts]);
 
   return (
     <div className="pb-16 md:pb-0">
@@ -70,23 +108,26 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
 
       {/* Posts */}
       <div className="divide-y divide-gray-800">
-        {posts.length > 0 ? posts.map(post => (
-          <PostComponent
-            key={post.id}
-            post={post}
-            currentUser={currentUser}
-            onLike={onLikePost}
-            onUnlike={onUnlikePost}
-            onSave={onSavePost}
-            onComment={onCommentOnPost}
-            onShare={onSharePost}
-            onOptions={onOptionsForPost}
-            onViewProfile={onViewProfile}
-            onViewLikes={onViewLikes}
-            onVote={onVote}
-            onViewTag={onViewTag}
-          />
-        )) : Array.from({ length: 3 }).map((_, i) => <PostSkeleton key={i} />)}
+        {posts.map((post, index) => (
+          <div ref={index === posts.length - 1 ? lastPostElementRef : null} key={post.id}>
+             <PostComponent 
+                post={post} 
+                currentUser={currentUser} 
+                onLike={onLikePost}
+                onUnlike={onUnlikePost}
+                onSave={onSavePost}
+                onComment={onCommentOnPost}
+                onShare={onSharePost}
+                onOptions={onOptionsForPost}
+                onViewProfile={onViewProfile}
+                onViewLikes={onViewLikes}
+                onVote={onVote}
+                onViewTag={onViewTag}
+             />
+          </div>
+        ))}
+        {isLoading && Array.from({ length: 2 }).map((_, i) => <PostSkeleton key={`skeleton-${i}`} />)}
+        {!hasMore && <p className="text-center text-gray-500 py-8">You've reached the end!</p>}
       </div>
     </div>
   );

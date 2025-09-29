@@ -1,3 +1,4 @@
+--- START OF FILE backend/misc.js ---
 import { Router } from 'express';
 import pool from './db.js';
 import { isAuthenticated } from './middleware/authMiddleware.js';
@@ -47,3 +48,4 @@ router.get('/account-status', isAuthenticated, async (req, res) => {
 
 
 export default router;
+--- END OF FILE backend/misc.js ---

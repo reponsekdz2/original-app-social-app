@@ -58,6 +58,7 @@ export interface Post {
   isArchived?: boolean;
   timestamp: string;
   poll?: Poll;
+  tags?: string[];
 }
 
 export interface Reel {
@@ -70,6 +71,7 @@ export interface Reel {
   comments: Comment[];
   shares: number;
   timestamp: string;
+  tags?: string[];
 }
 
 export interface Comment {

@@ -12,9 +12,11 @@ interface ProfileViewProps {
   user: User | null;
   isCurrentUser: boolean;
   currentUser: User;
-  onNavigate: (view: 'settings' | 'archive' | 'messages', user?: User) => void;
+  onNavigate: (view: 'settings' | 'archive' | 'messages' | 'createHighlight', user?: User) => void;
   onShowFollowers: (users: User[]) => void;
   onShowFollowing: (users: User[]) => void;
+  onViewPost: (post: Post) => void;
+  onViewReel: (reel: Reel) => void;
 }
 
 const ProfileGridSkeleton: React.FC = () => (
@@ -26,7 +28,7 @@ const ProfileGridSkeleton: React.FC = () => (
 );
 
 const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { user: initialUser, isCurrentUser, currentUser, onNavigate, onShowFollowers, onShowFollowing } = props;
+    const { user: initialUser, isCurrentUser, currentUser, onNavigate, onShowFollowers, onShowFollowing, onViewPost, onViewReel } = props;
     
     const [user, setUser] = useState<User | null>(initialUser);
     const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +36,7 @@ const ProfileView: React.FC<ProfileViewProps> = (props) => {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!initialUser) return;
+            if (!initialUser?.username) return;
             setIsLoading(true);
             try {
                 const profileData = await api.getUserProfile(initialUser.username);
@@ -69,11 +71,11 @@ const ProfileView: React.FC<ProfileViewProps> = (props) => {
     switch (activeTab) {
       case 'posts':
         return user.posts && user.posts.length > 0
-          ? <PostGrid posts={user.posts} onViewPost={() => {}} />
+          ? <PostGrid posts={user.posts} onViewPost={onViewPost} />
           : <div className="text-center p-12 text-gray-400"><p>No posts yet.</p></div>;
       case 'reels':
         return user.reels && user.reels.length > 0
-          ? <ReelGrid reels={user.reels} onViewReel={() => {}} />
+          ? <ReelGrid reels={user.reels} onViewReel={onViewReel} />
           : <div className="text-center p-12 text-gray-400"><p>No reels yet.</p></div>;
       case 'tagged':
         return <div className="text-center p-12 text-gray-400"><p>No tagged posts yet.</p></div>;
@@ -99,7 +101,7 @@ const ProfileView: React.FC<ProfileViewProps> = (props) => {
       <ProfileHighlights 
         user={user}
         isCurrentUser={isCurrentUser}
-        onAddNew={() => {}}
+        onAddNew={() => onNavigate('createHighlight')}
       />
       <ProfileTabs activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="mt-1">
