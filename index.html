@@ -95,6 +95,18 @@
             background-size: 400% 400%;
             animation: gradient-pulse 5s ease infinite;
         }
+
+        /* Story green gradient pulse for close friends */
+        @keyframes green-gradient-pulse {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animate-green-gradient-pulse {
+            background: linear-gradient(-45deg, #23d5ab, #23a6d5, #5af7b2, #23d5ab);
+            background-size: 400% 400%;
+            animation: green-gradient-pulse 5s ease infinite;
+        }
         
         /* Advanced Auth Page Background */
         .auth-bg {
@@ -225,8 +237,12 @@
     "multer": "https://aistudiocdn.com/multer@^2.0.2",
     "mysql2/": "https://aistudiocdn.com/mysql2@^3.15.0/",
     "bcrypt": "https://aistudiocdn.com/bcrypt@^6.0.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
-    "fs/": "https://aistudiocdn.com/fs@^0.0.1-security/"
+    "fs/": "https://aistudiocdn.com/fs@^0.0.1-security/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
+    "vite": "https://aistudiocdn.com/vite@^7.1.7",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4",
+    "helmet": "https://aistudiocdn.com/helmet@^8.1.0",
+    "express-rate-limit": "https://aistudiocdn.com/express-rate-limit@^8.1.0"
   }
 }
 </script>

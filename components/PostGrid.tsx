@@ -20,6 +20,11 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, onViewPost }) => {
             ) : (
               <img src={firstMedia.url} alt="Post" className="w-full h-full object-cover" />
             )}
+             {post.is_pinned && (
+                <div className="absolute top-2 left-2 text-white z-10">
+                    <Icon className="w-5 h-5 drop-shadow-md" fill="currentColor"><path d="M10.496 2.992c.244-.523.82-.821 1.396-.821.576 0 1.152.298 1.396.821l.143.305c.162.345.515.57.908.57h.348c.966 0 1.62.983 1.259 1.83l-.12.28c-.218.51-.218 1.092 0 1.602l.12.28c.36.848-.293 1.83-1.259 1.83h-.348c-.393 0-.746.225-.908.57l-.143.305c-.244.523-.82.821-1.396.821-.576 0-1.152-.298-1.396-.821l-.143-.305c-.162-.345-.515-.57-.908-.57h-.348c-.966 0-1.62-.983-1.259-1.83l.12-.28c.218-.51.218-1.092 0-1.602l-.12-.28c-.36-.848.293-1.83 1.259-1.83h.348c.393 0 .746-.225.908.57l.143-.305z" /></Icon>
+                </div>
+              )}
              {post.media.length > 1 && (
                 <div className="absolute top-2 right-2 text-white z-10">
                     <Icon className="w-5 h-5 drop-shadow-md"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5-.124m7.5 10.375h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.521-.124H6.75c-.621 0-1.125.504-1.125 1.125V17.25m7.5-10.375h-7.5" /></Icon>

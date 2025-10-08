@@ -1,28 +1,26 @@
-// Corrected import path for Google GenAI SDK.
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
-// FIX: Initialize Gemini AI client according to guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// As per coding guidelines, API key is in environment variables.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 /**
- * Generates a creative caption for a post.
- * @param imageDescription A description of the image(s) in the post.
+ * Generates a post caption using the Gemini API based on a text description.
+ * @param imageDescription A description of the image/post content.
  * @returns A promise that resolves to a generated caption string.
  */
-export async function generatePostCaption(imageDescription: string): Promise<string> {
-  const prompt = `Write an engaging and creative Instagram caption for a post with the following description: "${imageDescription}". Keep it short and engaging. Include a few relevant hashtags.`;
-  
+export const generatePostCaption = async (imageDescription: string): Promise<string> => {
   try {
-    // FIX: Use the correct method to generate content.
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const prompt = `Write an engaging and creative Instagram caption for a photo described as: "${imageDescription}". Include a few relevant hashtags.`;
+    
+    const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
-    // FIX: Use .text property to extract the response text.
+    
+    // Per coding guidelines, access text directly.
     return response.text;
   } catch (error) {
-    console.error("Error generating content with Gemini:", error);
-    // Provide a fallback or re-throw the error for the caller to handle.
+    console.error("Error generating caption with Gemini:", error);
     throw new Error("Failed to generate caption.");
   }
-}
+};

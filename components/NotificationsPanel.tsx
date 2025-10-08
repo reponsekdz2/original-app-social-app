@@ -1,14 +1,14 @@
 import React from 'react';
-import type { Notification } from '../types.ts';
+import type { Notification, User } from '../types.ts';
 import Icon from './Icon.tsx';
 import FollowButton from './FollowButton.tsx';
 
 interface NotificationsPanelProps {
   notifications: Notification[];
   onClose: () => void;
-  currentUser: any;
-  onFollow: (user: any) => void;
-  onUnfollow: (user: any) => void;
+  currentUser: User;
+  onFollow: (userId: string) => void;
+  onUnfollow: (userId: string) => void;
 }
 
 const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose, currentUser, onFollow, onUnfollow }) => {

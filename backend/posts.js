@@ -16,16 +16,20 @@ export default (upload) => {
     router.get('/feed', isAuthenticated, async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const offset = (page - 1) * POSTS_PER_PAGE;
+        const userId = req.session.userId;
 
         try {
+            const followingQuery = `SELECT following_id FROM followers WHERE follower_id = ?`;
             const [posts] = await pool.query(`
                 SELECT p.*, u.username, u.avatar_url, u.is_verified
                 FROM posts p
                 JOIN users u ON p.user_id = u.id
-                WHERE p.user_id IN (SELECT following_id FROM followers WHERE follower_id = ?) OR p.user_id = ?
+                WHERE p.user_id IN (${followingQuery}) 
+                   OR p.user_id = ? 
+                   OR EXISTS (SELECT 1 FROM post_collaborators pc WHERE pc.post_id = p.id AND pc.user_id IN (${followingQuery}))
                 ORDER BY p.created_at DESC
                 LIMIT ? OFFSET ?
-            `, [req.session.userId, req.session.userId, POSTS_PER_PAGE, offset]);
+            `, [userId, userId, userId, POSTS_PER_PAGE, offset]);
             
             for (const post of posts) {
                 const [media] = await pool.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [post.id]);
@@ -33,6 +37,7 @@ export default (upload) => {
                 const [comments] = await pool.query('SELECT c.*, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? ORDER BY c.created_at ASC LIMIT 2', [post.id]);
                 const [[{ is_saved }]] = await pool.query('SELECT COUNT(*) > 0 as is_saved FROM post_saves WHERE post_id = ? AND user_id = ?', [post.id, req.session.userId]);
                 const [[poll]] = await pool.query('SELECT * FROM polls WHERE post_id = ?', [post.id]);
+                const [collaborators] = await pool.query('SELECT u.id, u.username, u.avatar_url FROM users u JOIN post_collaborators pc ON u.id = pc.user_id WHERE pc.post_id = ?', [post.id]);
                 
                 if (poll) {
                     const [options] = await pool.query('SELECT po.id, po.text, COUNT(pv.user_id) as votes FROM poll_options po LEFT JOIN poll_votes pv ON po.id = pv.option_id WHERE po.poll_id = ? GROUP BY po.id', [poll.id]);
@@ -48,6 +53,7 @@ export default (upload) => {
                 post.isSaved = !!is_saved;
                 post.poll = poll || null;
                 post.user = { id: post.user_id, username: post.username, avatar_url: post.avatar_url, isVerified: !!post.is_verified };
+                post.collaborators = collaborators;
             }
 
             res.json(posts);
@@ -88,7 +94,7 @@ export default (upload) => {
     });
 
     router.post('/', isAuthenticated, upload.array('media'), async (req, res) => {
-        const { caption, location, pollQuestion, pollOptions: pollOptionsJSON } = req.body;
+        const { caption, location, pollQuestion, pollOptions: pollOptionsJSON, collaborators: collaboratorsJSON } = req.body;
         const files = req.files;
         const userId = req.session.userId;
 
@@ -115,6 +121,14 @@ export default (upload) => {
             ]);
             await connection.query('INSERT INTO post_media (post_id, media_url, media_type, sort_order) VALUES ?', [mediaData]);
             
+            const collaborators = collaboratorsJSON ? JSON.parse(collaboratorsJSON) : [];
+            if (collaborators.length > 0) {
+                const collaboratorData = collaborators.map((cId: string) => [postId, cId]);
+                // Also add the author
+                collaboratorData.push([postId, userId]); 
+                await connection.query('INSERT INTO post_collaborators (post_id, user_id) VALUES ?', [collaboratorData]);
+            }
+
             if (pollQuestion && pollOptionsJSON) {
                 const pollOptions = JSON.parse(pollOptionsJSON);
                 if (pollOptions.length >= 2) {
@@ -127,9 +141,9 @@ export default (upload) => {
 
             await connection.commit();
 
-            // Fetch the full post object to return it to the client for an optimistic update
             const [[user]] = await connection.query('SELECT username, avatar_url, is_verified FROM users WHERE id = ?', [userId]);
             const [media] = await connection.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [postId]);
+            const [collaboratorUsers] = await connection.query('SELECT u.id, u.username, u.avatar_url FROM users u JOIN post_collaborators pc ON u.id = pc.user_id WHERE pc.post_id = ?', [postId]);
              const newPost = {
                 id: postId,
                 user: { id: userId, username: user.username, avatar_url: user.avatar_url, isVerified: user.is_verified },
@@ -140,8 +154,10 @@ export default (upload) => {
                 likedBy: [],
                 comments: [],
                 isSaved: false,
+                is_pinned: false,
                 timestamp: new Date().toISOString(),
                 poll: null, // Simplified for now
+                collaborators: collaboratorUsers,
             };
 
             res.status(201).json(newPost);
@@ -203,13 +219,75 @@ export default (upload) => {
         }
 
         try {
-            // Upsert logic: delete old vote if exists, then insert new one
             await pool.query('DELETE FROM poll_votes WHERE poll_id = ? AND user_id = ?', [pollId, userId]);
             await pool.query('INSERT INTO poll_votes (poll_id, user_id, option_id) VALUES (?, ?, ?)', [pollId, userId, optionId]);
             res.status(200).json({ message: 'Vote recorded successfully.' });
         } catch (error) {
             console.error('Error recording poll vote:', error);
             res.status(500).json({ message: 'Failed to record vote.' });
+        }
+    });
+
+    router.post('/:id/pin', isAuthenticated, async (req, res) => {
+        const { id: postId } = req.params;
+        const userId = req.session.userId;
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+            const [[post]] = await connection.query('SELECT user_id, is_pinned FROM posts WHERE id = ?', [postId]);
+            if (!post || post.user_id !== userId) {
+                return res.status(403).json({ message: 'You can only pin your own posts.' });
+            }
+
+            if (!post.is_pinned) {
+                const [[{ count }]] = await connection.query('SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND is_pinned = 1', [userId]);
+                if (count >= 3) {
+                    return res.status(400).json({ message: 'You can only pin up to 3 posts.' });
+                }
+            }
+
+            await connection.query('UPDATE posts SET is_pinned = ? WHERE id = ?', [!post.is_pinned, postId]);
+            await connection.commit();
+            res.status(200).json({ is_pinned: !post.is_pinned });
+        } catch (error) {
+            await connection.rollback();
+            res.status(500).json({ message: 'Failed to update pin status.' });
+        } finally {
+            connection.release();
+        }
+    });
+    
+    router.post('/:id/tip', isAuthenticated, async (req, res) => {
+        const { id: postId } = req.params;
+        const { amount } = req.body;
+        const senderId = req.session.userId;
+        
+        if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid tip amount' });
+
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            const [[sender]] = await connection.query('SELECT wallet_balance FROM users WHERE id = ? FOR UPDATE', [senderId]);
+            if (sender.wallet_balance < amount) {
+                return res.status(400).json({ message: 'Insufficient funds.' });
+            }
+
+            const [[post]] = await connection.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
+            const receiverId = post.user_id;
+
+            await connection.query('UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?', [amount, senderId]);
+            await connection.query('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?', [amount, receiverId]);
+            await connection.query('INSERT INTO transactions (sender_id, receiver_id, post_id, amount, type) VALUES (?, ?, ?, ?, "tip")', [senderId, receiverId, postId, amount]);
+
+            await connection.commit();
+            res.status(200).json({ message: 'Tip sent successfully!' });
+        } catch (error) {
+            await connection.rollback();
+            console.error("Tipping error:", error);
+            res.status(500).json({ message: 'Failed to send tip.' });
+        } finally {
+            connection.release();
         }
     });
 

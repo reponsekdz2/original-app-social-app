@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { Story, Post, User } from '../types.ts';
 import * as api from '../services/apiService.ts';
@@ -20,7 +19,7 @@ interface HomeViewProps {
   onOptionsForPost: (post: Post) => void;
   onViewProfile: (user: User) => void;
   onViewLikes: (users: User[]) => void;
-  onVote: (pollId: string, optionId: number) => void;
+  onVote: (pollId: string, optionId: string) => void;
   onViewTag: (tag: string) => void;
 }
 

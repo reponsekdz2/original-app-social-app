@@ -1,11 +1,6 @@
-
-
-
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
-// Fix: Add .ts extension to types import
 import type { User } from '../types.ts';
-// FIX: Add .ts extension for apiService import
 import * as api from '../services/apiService.ts';
 
 interface CreatePostModalProps {
@@ -22,16 +17,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
   const [location, setLocation] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [activeTool, setActiveTool] = useState<'caption' | 'poll' | 'collab'>('caption');
 
-  // Poll state
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
-
-  // Collab state
   const [collaborators, setCollaborators] = useState<User[]>([]);
   const [collabSearch, setCollabSearch] = useState('');
+
+  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
+  const [captionSuggestions, setCaptionSuggestions] = useState<string[]>([]);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -39,6 +34,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
       setMediaFiles(files);
       const newPreviews = files.map(file => URL.createObjectURL(file));
       setPreviews(newPreviews);
+      setCaptionSuggestions([]);
+      setGenerationError(null);
     }
   };
 
@@ -62,6 +59,24 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
 
     await onCreatePost(formData);
     setIsSubmitting(false);
+  };
+
+  const handleGenerateCaption = async () => {
+    if (mediaFiles.length === 0 || !mediaFiles[0].type.startsWith('image/')) return;
+    setIsGeneratingCaption(true);
+    setCaptionSuggestions([]);
+    setGenerationError(null);
+    try {
+      const formData = new FormData();
+      formData.append('image', mediaFiles[0]);
+      const response = await api.generateCaptionSuggestions(formData);
+      setCaptionSuggestions(response.suggestions);
+    } catch (error) {
+      console.error(error);
+      setGenerationError("Could not generate captions. Please try again.");
+    } finally {
+      setIsGeneratingCaption(false);
+    }
   };
 
   const handlePollOptionChange = (index: number, value: string) => {
@@ -111,13 +126,26 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onCreatePost
 
           <div className="w-full md:w-1/2 p-4 flex flex-col border-t md:border-t-0 md:border-l border-gray-700">
              {activeTool === 'caption' && (
-                <div className="relative flex-1">
+                <div className="flex-1 flex flex-col">
                     <textarea 
                         placeholder="Write a caption..." 
                         value={caption}
                         onChange={e => setCaption(e.target.value)}
-                        className="w-full h-full bg-transparent text-sm focus:outline-none resize-none"
+                        className="w-full flex-1 bg-transparent text-sm focus:outline-none resize-none"
                     />
+                     <div className="mt-2">
+                        <button onClick={handleGenerateCaption} disabled={isGeneratingCaption || mediaFiles.length === 0 || !mediaFiles[0].type.startsWith('image/')} className="text-sm flex items-center gap-1 font-semibold text-red-400 disabled:text-gray-500">
+                           ✨ {isGeneratingCaption ? 'Generating...' : 'Magic Compose'}
+                        </button>
+                        {generationError && <p className="text-xs text-red-400 mt-1">{generationError}</p>}
+                        <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                            {captionSuggestions.map((s, i) => (
+                                <button key={i} onClick={() => setCaption(s)} className="block w-full text-left p-2 bg-gray-800 hover:bg-gray-700 rounded-md text-xs">
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
              )}
              {activeTool === 'poll' && (

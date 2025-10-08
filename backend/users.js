@@ -18,14 +18,13 @@ router.get('/profile/:username', isAuthenticated, async (req, res) => {
 
         const [[[counts]]] = await pool.query(`
             SELECT
-                (SELECT COUNT(*) FROM posts WHERE user_id = ? AND is_archived = 0) as post_count,
+                (SELECT COUNT(*) FROM posts p WHERE p.user_id = ? AND p.is_archived = 0) as post_count,
                 (SELECT COUNT(*) FROM followers WHERE following_id = ?) as follower_count,
                 (SELECT COUNT(*) FROM followers WHERE follower_id = ?) as following_count
         `, [user.id, user.id, user.id]);
         
         user.isFollowing = !!isFollowing;
 
-        // Only return full data if profile is not private or if the current user is following them or it's their own profile
         const canViewFullProfile = !user.is_private || user.isFollowing || user.id === currentUserId;
 
         if (canViewFullProfile) {
@@ -33,8 +32,11 @@ router.get('/profile/:username', isAuthenticated, async (req, res) => {
                 SELECT p.*, 
                        (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes,
                        (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count
-                FROM posts p WHERE user_id = ? AND is_archived = 0 ORDER BY created_at DESC
-            `, [user.id]);
+                FROM posts p 
+                WHERE (p.user_id = ? OR EXISTS (SELECT 1 FROM post_collaborators pc WHERE pc.post_id = p.id AND pc.user_id = ?))
+                AND p.is_archived = 0 
+                ORDER BY p.is_pinned DESC, p.created_at DESC
+            `, [user.id, user.id]);
 
             for(const post of posts) {
                 const [media] = await pool.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [post.id]);
@@ -90,7 +92,6 @@ router.post('/:id/follow', isAuthenticated, async (req, res) => {
     const followerId = req.session.userId;
     try {
         await pool.query('INSERT IGNORE INTO followers (follower_id, following_id) VALUES (?, ?)', [followerId, followingId]);
-        // Create notification
         await pool.query('INSERT INTO notifications (user_id, actor_id, type) VALUES (?, ?, "follow")', [followingId, followerId]);
         res.sendStatus(200);
     } catch (error) {
@@ -123,6 +124,37 @@ router.put('/profile', isAuthenticated, async (req, res) => {
          res.status(500).json({ message: 'Could not update profile' });
     }
 });
+
+router.get('/close-friends', isAuthenticated, async (req, res) => {
+    const [friends] = await pool.query(`
+        SELECT u.id, u.username, u.name, u.avatar_url 
+        FROM users u JOIN close_friends cf ON u.id = cf.friend_id 
+        WHERE cf.user_id = ?`,
+    [req.session.userId]);
+    res.json(friends);
+});
+
+router.post('/close-friends', isAuthenticated, async (req, res) => {
+    const { friendIds } = req.body;
+    const userId = req.session.userId;
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        await connection.query('DELETE FROM close_friends WHERE user_id = ?', [userId]);
+        if (friendIds && friendIds.length > 0) {
+            const values = friendIds.map((friendId: string) => [userId, friendId]);
+            await connection.query('INSERT INTO close_friends (user_id, friend_id) VALUES ?', [values]);
+        }
+        await connection.commit();
+        res.sendStatus(200);
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ message: 'Could not update close friends list.' });
+    } finally {
+        connection.release();
+    }
+});
+
 
 // GET /api/users/stories/archived
 router.get('/stories/archived', isAuthenticated, async (req, res) => {

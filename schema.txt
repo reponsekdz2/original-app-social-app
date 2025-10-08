@@ -56,7 +56,7 @@ CREATE TABLE `polls` (
 );
 
 CREATE TABLE `poll_options` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `poll_id` VARCHAR(36) NOT NULL,
   `text` VARCHAR(100) NOT NULL,
   FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`) ON DELETE CASCADE
@@ -65,7 +65,7 @@ CREATE TABLE `poll_options` (
 CREATE TABLE `poll_votes` (
   `user_id` VARCHAR(36) NOT NULL,
   `poll_id` VARCHAR(36) NOT NULL,
-  `option_id` INT NOT NULL,
+  `option_id` VARCHAR(36) NOT NULL,
   PRIMARY KEY (`user_id`, `poll_id`),
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`) ON DELETE CASCADE,
@@ -145,7 +145,7 @@ CREATE TABLE `post_saves` (
 
 -- Stories Table (acts as a container for items)
 CREATE TABLE `stories` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `user_id` VARCHAR(36) NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -154,7 +154,7 @@ CREATE TABLE `stories` (
 -- Individual Story Items
 CREATE TABLE `story_items` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
-  `story_id` INT NOT NULL,
+  `story_id` VARCHAR(36) NOT NULL,
   `media_url` VARCHAR(255) NOT NULL,
   `media_type` ENUM('image','video') NOT NULL,
   `duration_ms` INT DEFAULT 7000,
@@ -164,7 +164,7 @@ CREATE TABLE `story_items` (
 
 -- Story Highlights (Container)
 CREATE TABLE `story_highlights` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `user_id` VARCHAR(36) NOT NULL,
   `title` VARCHAR(100) NOT NULL,
   `cover_image_url` VARCHAR(255) NOT NULL,
@@ -173,7 +173,7 @@ CREATE TABLE `story_highlights` (
 
 -- Items within a highlight
 CREATE TABLE `story_highlight_items` (
-  `highlight_id` INT NOT NULL,
+  `highlight_id` VARCHAR(36) NOT NULL,
   `story_item_id` VARCHAR(36) NOT NULL,
   PRIMARY KEY (`highlight_id`, `story_item_id`),
   FOREIGN KEY (`highlight_id`) REFERENCES `story_highlights` (`id`) ON DELETE CASCADE,
@@ -264,7 +264,7 @@ CREATE TABLE `transactions` (
 
 -- Reports Table
 CREATE TABLE `reports` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `reporter_id` VARCHAR(36) NOT NULL,
   `reported_entity_id` VARCHAR(36) NOT NULL,
   `entity_type` ENUM('user','post','comment','reel') NOT NULL,
@@ -277,7 +277,7 @@ CREATE TABLE `reports` (
 
 -- Support Tickets Table
 CREATE TABLE `support_tickets` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `user_id` VARCHAR(36) NOT NULL,
   `subject` VARCHAR(255) NOT NULL,
   `description` TEXT NOT NULL,
@@ -288,8 +288,8 @@ CREATE TABLE `support_tickets` (
 );
 
 CREATE TABLE `support_ticket_replies` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `ticket_id` INT NOT NULL,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  `ticket_id` VARCHAR(36) NOT NULL,
   `user_id` VARCHAR(36) NOT NULL,
   `is_admin_reply` TINYINT(1) NOT NULL DEFAULT 0,
   `message` TEXT NOT NULL,
@@ -300,7 +300,7 @@ CREATE TABLE `support_ticket_replies` (
 
 -- For Login Carousel
 CREATE TABLE `auth_carousel_images` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `image_url` VARCHAR(255) NOT NULL,
   `sort_order` INT DEFAULT 0
 );
@@ -329,7 +329,7 @@ CREATE TABLE `muted_users` (
 );
 
 CREATE TABLE `login_activity` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `user_id` VARCHAR(36) NOT NULL,
   `ip_address` VARCHAR(45) NOT NULL,
   `user_agent` VARCHAR(255) NOT NULL,
@@ -338,7 +338,7 @@ CREATE TABLE `login_activity` (
 );
 
 CREATE TABLE `user_warnings` (
-  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
   `user_id` VARCHAR(36) NOT NULL,
   `reason` TEXT NOT NULL,
   `issued_by_admin_id` VARCHAR(36) NOT NULL,
@@ -361,7 +361,7 @@ CREATE TABLE `call_history` (
 );
 
 CREATE TABLE `announcements` (
-    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     `title` VARCHAR(255) NOT NULL,
     `content` TEXT NOT NULL,
     `type` ENUM('info', 'warning', 'success') NOT NULL DEFAULT 'info',
@@ -376,7 +376,7 @@ CREATE TABLE `app_settings` (
 );
 
 CREATE TABLE `sponsored_content` (
-    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     `company` VARCHAR(100) NOT NULL,
     `logo_url` VARCHAR(255) NOT NULL,
     `media_url` VARCHAR(255) NOT NULL,
@@ -386,7 +386,7 @@ CREATE TABLE `sponsored_content` (
 );
 
 CREATE TABLE `trending_topics` (
-    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     `topic` VARCHAR(100) NOT NULL UNIQUE,
     `post_count` INT NOT NULL DEFAULT 0
 );

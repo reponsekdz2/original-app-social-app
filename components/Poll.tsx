@@ -1,4 +1,3 @@
-
 import React from 'react';
 // Fix: Add .ts extension to types import
 import type { Poll as PollType } from '../types.ts';
@@ -6,7 +5,7 @@ import Icon from './Icon.tsx';
 
 interface PollProps {
   poll: PollType;
-  onVote: (optionId: number) => void;
+  onVote: (optionId: string) => void;
 }
 
 const Poll: React.FC<PollProps> = ({ poll, onVote }) => {

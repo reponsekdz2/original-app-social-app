@@ -17,10 +17,12 @@ interface PostWithOptionsModalProps {
   onCopyLink: () => void;
   onViewProfile: (user: User) => void;
   onGoToPost: (post: Post) => void;
+  onPinPost: (postId: string) => void;
+  onTip: (post: Post) => void;
 }
 
 const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
-  const { post, currentUser, onClose, onUnfollow, onFollow, onEdit, onDelete, onArchive, onUnarchive, onReport, onShare, onCopyLink, onViewProfile, onGoToPost } = props;
+  const { post, currentUser, onClose, onUnfollow, onFollow, onEdit, onDelete, onArchive, onUnarchive, onReport, onShare, onCopyLink, onViewProfile, onGoToPost, onPinPost, onTip } = props;
 
   const isCurrentUserPost = post.user.id === currentUser.id;
   const isFollowing = currentUser.following?.some(u => u.id === post.user.id) || false;
@@ -32,6 +34,7 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
     !isCurrentUserPost && isFollowing && { label: 'Unfollow', action: () => onUnfollow(post.user.id), className: 'text-red-500 font-bold' },
 
     // --- User-Specific Actions ---
+    isCurrentUserPost && { label: post.is_pinned ? 'Unpin from profile' : 'Pin to profile', action: () => onPinPost(post.id) },
     isCurrentUserPost && { label: 'Edit', action: () => onEdit(post) },
     isCurrentUserPost && (post.isArchived 
         ? { label: 'Unarchive', action: () => onUnarchive && onUnarchive(post) }
@@ -40,6 +43,7 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
     !isCurrentUserPost && !isFollowing && { label: 'Follow', action: () => onFollow(post.user.id), className: 'font-bold' },
 
     // --- General Actions ---
+    !isCurrentUserPost && { label: 'Tip Author', action: () => onTip(post) },
     { label: 'Go to post', action: () => onGoToPost(post) },
     { label: 'Share to...', action: () => onShare(post) },
     { label: 'Copy link', action: onCopyLink },

@@ -16,7 +16,7 @@ interface PostProps {
   onOptions: (post: PostType) => void;
   onViewProfile: (user: User) => void;
   onViewLikes: (users: User[]) => void;
-  onVote: (pollId: string, optionId: number) => void;
+  onVote: (pollId: string, optionId: string) => void;
   onViewTag: (tag: string) => void;
 }
 

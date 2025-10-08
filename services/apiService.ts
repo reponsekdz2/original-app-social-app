@@ -53,6 +53,9 @@ export const getAllUsers = () => request('/users/all');
 export const followUser = (userId: string) => request(`/users/${userId}/follow`, { method: 'POST' });
 export const unfollowUser = (userId: string) => request(`/users/${userId}/unfollow`, { method: 'POST' });
 export const updateUserProfile = (data: any) => request('/users/profile', { method: 'PUT', body: JSON.stringify(data) });
+export const getCloseFriends = () => request('/users/close-friends');
+export const updateCloseFriends = (friendIds: string[]) => request('/users/close-friends', { method: 'POST', body: JSON.stringify({ friendIds }) });
+
 
 // --- Posts ---
 export const getFeedPosts = (page = 1) => request(`/posts/feed?page=${page}`);
@@ -66,12 +69,15 @@ export const archivePost = (postId: string) => request(`/posts/${postId}/archive
 export const unarchivePost = (postId: string) => request(`/posts/${postId}/unarchive`, { method: 'POST' });
 export const deletePost = (postId: string) => request(`/posts/${postId}`, { method: 'DELETE' });
 export const createComment = (postId: string, text: string) => request('/posts/comment', { method: 'POST', body: JSON.stringify({ postId, text }) });
+export const pinPost = (postId: string) => request(`/posts/${postId}/pin`, { method: 'POST' });
+export const sendTip = (postId: string, amount: number) => request(`/posts/${postId}/tip`, { method: 'POST', body: JSON.stringify({ amount }) });
+
 
 export const likeComment = (commentId: string) => {
     return request(`/comments/${commentId}/like`, { method: 'POST' });
 };
 
-export const voteOnPoll = (pollId: string, optionId: number) => request(`/posts/poll/vote`, { method: 'POST', body: JSON.stringify({ pollId, optionId }) });
+export const voteOnPoll = (pollId: string, optionId: string) => request(`/posts/poll/vote`, { method: 'POST', body: JSON.stringify({ pollId, optionId }) });
 
 // --- Reels ---
 export const getReels = (page = 1) => request(`/reels?page=${page}`);
@@ -103,6 +109,22 @@ export const sendMessage = (content: string | File, type: string, conversationId
 export const reactToMessage = (messageId: string, emoji: string) => request(`/messages/${messageId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) });
 export const createGroupChat = (name: string, userIds: string[]) => request('/messages/group', { method: 'POST', body: JSON.stringify({ name, userIds }) });
 export const updateGroupChat = (conversationId: string, name?: string, addUserIds?: string[]) => request(`/messages/group/${conversationId}`, { method: 'PUT', body: JSON.stringify({ name, addUserIds }) });
+
+// --- AI Services (Securely via Backend) ---
+export const generateCaptionSuggestions = async (formData: FormData) => {
+    // Note: We don't set Content-Type header when using FormData with fetch.
+    // The browser will set it automatically with the correct boundary.
+    const response = await fetch(`${API_BASE_URL}/ai/generate-caption-from-image`, {
+        method: 'POST',
+        body: formData,
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API error: ${response.status}`);
+    }
+    return response.json();
+};
+
 
 // --- Search & Misc ---
 export const search = (query: string) => request(`/search?q=${query}`);

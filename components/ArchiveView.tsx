@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 // Fix: Add .ts extension to types import to resolve module error.
 import type { Post } from '../types.ts';
@@ -38,7 +36,11 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ posts, onViewPost }) => {
           })}
         </div>
       ) : (
-        <p className="text-center text-gray-500 pt-16">You have no archived posts.</p>
+        <div className="text-center text-gray-500 pt-16">
+            <Icon className="w-16 h-16 mx-auto mb-4"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></Icon>
+            <h3 className="text-xl font-bold">No archived posts</h3>
+            <p>When you archive posts, they'll show up here.</p>
+        </div>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Icon from './Icon.tsx';
+import ToggleSwitch from './ToggleSwitch.tsx';
 
 interface CreateStoryModalProps {
   onClose: () => void;
@@ -10,6 +11,7 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forCloseFriendsOnly, setForCloseFriendsOnly] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,6 +27,7 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append('media', mediaFile);
+    formData.append('forCloseFriendsOnly', String(forCloseFriendsOnly));
     await onCreateStory(formData);
     setIsSubmitting(false);
   };
@@ -57,6 +60,13 @@ const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateSt
                         <img src={mediaPreview} alt="Preview" className="max-h-full max-w-full object-contain rounded-md" />
                     )
                 )}
+            </div>
+            <div className="mt-4 flex items-center justify-between p-2 bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-2">
+                    <Icon className="w-5 h-5 text-green-400"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.321h5.367a.563.563 0 01.321.988l-4.338 3.14a.563.563 0 00-.184.55l1.637 5.111a.563.563 0 01-.812.622l-4.338-3.14a.563.563 0 00-.576 0l-4.338 3.14a.563.563 0 01-.812-.622l1.637-5.111a.563.563 0 00-.184-.55l-4.338-3.14a.563.563 0 01.321-.988h5.367a.563.563 0 00.475-.321L11.48 3.5z" /></Icon>
+                    <p className="font-semibold text-sm">Close Friends Only</p>
+                </div>
+                <ToggleSwitch enabled={forCloseFriendsOnly} setEnabled={setForCloseFriendsOnly} />
             </div>
         </div>
       </div>

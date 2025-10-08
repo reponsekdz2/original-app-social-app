@@ -3,7 +3,7 @@ import Icon from './Icon.tsx';
 
 interface SettingsViewProps {
     onLogout: () => void;
-    onNavigate: (view: 'changePassword' | 'blockedUsers' | 'loginActivity' | 'accountStatus' | 'help' | 'privacy') => void;
+    onNavigate: (view: 'changePassword' | 'blockedUsers' | 'loginActivity' | 'accountStatus' | 'help' | 'privacy' | 'closeFriends') => void;
 }
 
 const SettingsLink: React.FC<{ label: string, description: string, onClick: () => void }> = ({ label, description, onClick }) => (
@@ -24,6 +24,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onNavigate }) => 
                     <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</h2>
                     <div className="bg-gray-800 rounded-lg">
                         <SettingsLink label="Change Password" description="Update your password for better security." onClick={() => onNavigate('changePassword')} />
+                        <SettingsLink label="Close Friends" description="Manage your list for private stories." onClick={() => onNavigate('closeFriends')} />
                         <SettingsLink label="Blocked Accounts" description="Manage the accounts you have blocked." onClick={() => onNavigate('blockedUsers')} />
                         <SettingsLink label="Login Activity" description="See where you're logged in." onClick={() => onNavigate('loginActivity')} />
                     </div>

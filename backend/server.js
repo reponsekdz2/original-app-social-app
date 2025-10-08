@@ -1,3 +1,4 @@
+// This file serves as the entry point and boots up the main server logic.
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -8,6 +9,8 @@ import cors from 'cors';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import pool from './db.js';
 import initializeSocket from './socket.js';
@@ -47,12 +50,23 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 
 // Middleware
+app.use(helmet());
 app.use(cors({
     origin: true, // Reflect request origin
     credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate Limiting
+const apiLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // Limit each IP to 100 requests per windowMs
+	standardHeaders: true,
+	legacyHeaders: false,
+});
+
+app.use('/api/', apiLimiter);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -74,7 +88,10 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, '_'));
     }
 });
-const upload = multer({ storage });
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB file size limit
+});
 
 // Make io available to routers
 app.set('io', io);

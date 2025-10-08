@@ -51,10 +51,11 @@ const Message: React.FC<MessageProps> = ({ message, currentUser, onReact, onRepl
         }
     };
     
-    const reactionSummary = (message.reactions || []).reduce((acc: Record<string, number>, reaction: Reaction) => {
+    // FIX: Explicitly type the initial value for reduce to ensure correct type inference for reactionSummary.
+    const reactionSummary = (message.reactions || []).reduce((acc, reaction) => {
         acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
         return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
   return (
     <div className={`flex items-end gap-2 group ${isCurrentUser ? 'flex-row-reverse' : ''}`}>

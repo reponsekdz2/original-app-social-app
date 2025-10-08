@@ -1,4 +1,4 @@
-export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'activity' | 'premium' | 'admin' | 'changePassword' | 'blockedUsers' | 'loginActivity' | 'accountStatus' | 'help' | 'support_inbox' | 'faq' | 'privacy' | 'tag' | 'livestreams' | 'createHighlight';
+export type View = 'home' | 'explore' | 'reels' | 'messages' | 'profile' | 'settings' | 'saved' | 'archive' | 'activity' | 'premium' | 'admin' | 'changePassword' | 'blockedUsers' | 'loginActivity' | 'accountStatus' | 'help' | 'support_inbox' | 'faq' | 'privacy' | 'tag' | 'livestreams' | 'createHighlight' | 'closeFriends';
 
 export interface User {
   id: string;
@@ -33,16 +33,16 @@ export interface Media {
 }
 
 export interface PollOption {
-  id: number;
+  id: string;
   text: string;
   votes: number;
 }
 
 export interface Poll {
-  id: string; // Changed to string to match UUIDs
+  id: string; 
   question: string;
   options: PollOption[];
-  userVote: number | null;
+  userVote: string | null;
 }
 
 export interface Post {
@@ -56,9 +56,11 @@ export interface Post {
   comments: Comment[];
   isSaved: boolean;
   isArchived?: boolean;
+  is_pinned?: boolean;
   timestamp: string;
   poll?: Poll;
   tags?: string[];
+  collaborators?: User[];
 }
 
 export interface Reel {
@@ -94,6 +96,7 @@ export interface Story {
   user: User;
   items: StoryItem[];
   created_at: string;
+  for_close_friends_only?: boolean;
 }
 
 export interface StoryHighlight {
@@ -160,7 +163,7 @@ export interface FeedActivity {
 }
 
 export interface SponsoredContent {
-    id: number;
+    id: string;
     company: string;
     logo_url: string;
     media_url: string;
@@ -170,13 +173,13 @@ export interface SponsoredContent {
 }
 
 export interface TrendingTopic {
-    id: number;
+    id: string;
     topic: string;
     post_count: number;
 }
 
 export interface AuthCarouselImage {
-    id: number;
+    id: string;
     image_url: string;
 }
 
@@ -201,7 +204,7 @@ export interface AnalyticsData {
 }
 
 export interface Report {
-    id: number;
+    id: string;
     reporter_id: string;
     reported_entity_id: string;
     entity_type: 'user' | 'post' | 'comment' | 'reel';
@@ -210,7 +213,7 @@ export interface Report {
 }
 
 export interface SupportTicket {
-    id: number;
+    id: string;
     user_id: string;
     user_username: string;
 
@@ -222,15 +225,15 @@ export interface SupportTicket {
 }
 
 export interface AdminReply {
-    id: number;
-    ticket_id: number;
+    id: string;
+    ticket_id: string;
     admin_user_id: string;
     message: string;
     created_at: string;
 }
 
 export interface Announcement {
-    id: number;
+    id: string;
     title: string;
     content: string;
     type: 'info' | 'warning' | 'success';
@@ -239,7 +242,7 @@ export interface Announcement {
 
 export interface AccountStatusInfo {
     status: 'active' | 'suspended' | 'banned';
-    warnings: { id: number; reason: string; created_at: string }[];
+    warnings: { id: string; reason: string; created_at: string }[];
 }
 
 export interface LiveStream {

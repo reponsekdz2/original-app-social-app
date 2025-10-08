@@ -8,21 +8,27 @@ const router = Router();
 export default (upload) => {
     // GET /api/stories - Fetch stories for the main feed
     router.get('/', isAuthenticated, async (req, res) => {
+        const userId = req.session.userId;
         try {
-            // This query gets users who have stories in the last 24 hours, prioritizing the current user
             const [storyUsers] = await pool.query(`
                 SELECT DISTINCT
                     u.id as user_id,
                     u.username,
                     u.avatar_url,
-                    s.created_at
+                    s.created_at,
+                    s.for_close_friends_only
                 FROM stories s
                 JOIN users u ON s.user_id = u.id
                 WHERE
                     (s.user_id = ? OR s.user_id IN (SELECT following_id FROM followers WHERE follower_id = ?))
                     AND s.created_at >= NOW() - INTERVAL 1 DAY
+                    AND (
+                        s.for_close_friends_only = 0
+                        OR s.user_id = ?
+                        OR (s.for_close_friends_only = 1 AND EXISTS (SELECT 1 FROM close_friends cf WHERE cf.user_id = s.user_id AND cf.friend_id = ?))
+                    )
                 ORDER BY (s.user_id = ?) DESC, s.created_at DESC;
-            `, [req.session.userId, req.session.userId, req.session.userId]);
+            `, [userId, userId, userId, userId, userId]);
 
             const resultStories = [];
             for (const user of storyUsers) {
@@ -48,7 +54,8 @@ export default (upload) => {
                             avatar_url: user.avatar_url,
                         },
                         items: items,
-                        created_at: user.created_at
+                        created_at: user.created_at,
+                        for_close_friends_only: !!user.for_close_friends_only,
                     });
                 }
             }
@@ -62,6 +69,7 @@ export default (upload) => {
     // POST /api/stories - Create a new story
     router.post('/', isAuthenticated, upload.single('media'), async (req, res) => {
         const file = req.file;
+        const { forCloseFriendsOnly } = req.body;
         const userId = req.session.userId;
 
         if (!file) {
@@ -72,7 +80,8 @@ export default (upload) => {
         try {
             await connection.beginTransaction();
 
-            const [newStory] = await connection.query('INSERT INTO stories (user_id) VALUES (?)', [userId]);
+            const isForCloseFriends = forCloseFriendsOnly === 'true';
+            const [newStory] = await connection.query('INSERT INTO stories (user_id, for_close_friends_only) VALUES (?, ?)', [userId, isForCloseFriends]);
             const storyId = newStory.insertId;
 
             const mediaUrl = `/uploads/${file.filename}`;

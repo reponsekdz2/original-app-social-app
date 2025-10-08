@@ -14,6 +14,7 @@ import commentsRouter from './comments.js';
 import tagsRouter from './tags.js';
 import callsRouter from './calls.js';
 import livestreamsRouter from './livestreams.js';
+import aiRouter from './ai.js';
 
 
 export default (upload) => {
@@ -34,6 +35,7 @@ export default (upload) => {
     router.use('/tags', tagsRouter);
     router.use('/calls', callsRouter);
     router.use('/livestreams', livestreamsRouter);
+    router.use('/ai', aiRouter(upload));
 
     return router;
 };

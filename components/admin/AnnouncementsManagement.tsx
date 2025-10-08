@@ -34,13 +34,15 @@ const AnnouncementsManagement: React.FC = () => {
     
     const handleToggleActive = async (announcement: Announcement) => {
         const updated = { ...announcement, is_active: !announcement.is_active };
-        await api.updateAnnouncement(announcement.id, updated);
+        // FIX: The announcement ID is a string, but the API expects a number. Parse it.
+        await api.updateAnnouncement(parseInt(announcement.id, 10), updated);
         setAnnouncements(prev => prev.map(a => a.id === announcement.id ? updated : a));
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm("Delete this announcement?")) {
-            await api.deleteAnnouncement(id);
+            // FIX: The announcement ID from the type is a string, but the API expects a number. Parse it.
+            await api.deleteAnnouncement(parseInt(id, 10));
             setAnnouncements(prev => prev.filter(a => a.id !== id));
         }
     };

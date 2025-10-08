@@ -1,61 +1,61 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import * as api from './services/apiService.ts';
 import { socketService } from './services/socketService.ts';
 import { webRTCManager } from './services/WebRTCManager.ts';
 import type { User, View, Post, Reel, Story, Conversation, Message, Notification, AuthCarouselImage, ToastMessage, Announcement, StoryItem } from './types.ts';
 
-// Import Views
-import AuthView from './components/AuthView.tsx';
-import HomeView from './components/HomeView.tsx';
-import ExploreView from './components/ExploreView.tsx';
-import ReelsView from './components/ReelsView.tsx';
-import MessagesView from './components/MessagesView.tsx';
-import ProfileView from './components/ProfileView.tsx';
-import SettingsView from './components/SettingsView.tsx';
-import SavedView from './components/SavedView.tsx';
-import ArchiveView from './components/ArchiveView.tsx';
-import AdminView from './components/AdminView.tsx';
-import ChangePasswordModal from './components/ChangePasswordModal.tsx';
-import BlockedUsersView from './components/BlockedUsersView.tsx';
-import LoginActivityView from './components/LoginActivityView.tsx';
-import AccountStatusView from './components/AccountStatusView.tsx';
-import HelpCenterView from './components/HelpCenterView.tsx';
-import SupportInboxView from './components/SupportInboxView.tsx';
-import TagView from './components/TagView.tsx';
-import LiveStreamsView from './components/LiveStreamsView.tsx';
-
 // Import Components
 import LeftSidebar from './components/LeftSidebar.tsx';
 import Header from './components/Header.tsx';
 import BottomNav from './components/BottomNav.tsx';
-import StoryViewer from './components/StoryViewer.tsx';
-import PostModal from './components/PostModal.tsx';
-import CreatePostModal from './components/CreatePostModal.tsx';
-import CreateReelModal from './components/CreateReelModal.tsx';
-import CreateStoryModal from './components/CreateStoryModal.tsx';
-import ShareModal from './components/ShareModal.tsx';
-import PostWithOptionsModal from './components/PostWithOptionsModal.tsx';
-import FollowListModal from './components/FollowListModal.tsx';
-import ViewLikesModal from './components/ViewLikesModal.tsx';
-import EditProfileModal from './components/EditProfileModal.tsx';
-import AccountSwitcherModal from './components/AccountSwitcherModal.tsx';
-import NotificationsPanel from './components/NotificationsPanel.tsx';
-import SearchView from './components/SearchView.tsx';
-import ReportModal from './components/ReportModal.tsx';
 import Toast from './components/Toast.tsx';
-import WelcomeOnboardingModal from './components/WelcomeOnboardingModal.tsx';
-import NewSupportRequestModal from './components/NewSupportRequestModal.tsx';
 import AnnouncementBanner from './components/AnnouncementBanner.tsx';
-import LiveStreamView from './components/LiveStreamView.tsx';
-import GoLiveModal from './components/GoLiveModal.tsx';
-import IncomingCallModal from './components/IncomingCallModal.tsx';
-import CallModal from './components/CallModal.tsx';
-import CreateChoiceModal from './components/CreateChoiceModal.tsx';
-import Sidebar from './components/Sidebar.tsx';
-import ReelViewerModal from './components/ReelViewerModal.tsx';
-import ReelCommentsModal from './components/ReelCommentsModal.tsx';
-import CreateHighlightModal from './components/CreateHighlightModal.tsx';
-import EditPostModal from './components/EditPostModal.tsx';
+
+// Lazy load views for better performance
+const AuthView = React.lazy(() => import('./components/AuthView.tsx'));
+const HomeView = React.lazy(() => import('./components/HomeView.tsx'));
+const ExploreView = React.lazy(() => import('./components/ExploreView.tsx'));
+const ReelsView = React.lazy(() => import('./components/ReelsView.tsx'));
+const MessagesView = React.lazy(() => import('./components/MessagesView.tsx'));
+const ProfileView = React.lazy(() => import('./components/ProfileView.tsx'));
+const SettingsView = React.lazy(() => import('./components/SettingsView.tsx'));
+const SavedView = React.lazy(() => import('./components/SavedView.tsx'));
+const ArchiveView = React.lazy(() => import('./components/ArchiveView.tsx'));
+const AdminView = React.lazy(() => import('./components/AdminView.tsx'));
+const ChangePasswordModal = React.lazy(() => import('./components/ChangePasswordModal.tsx'));
+const BlockedUsersView = React.lazy(() => import('./components/BlockedUsersView.tsx'));
+const LoginActivityView = React.lazy(() => import('./components/LoginActivityView.tsx'));
+const AccountStatusView = React.lazy(() => import('./components/AccountStatusView.tsx'));
+const HelpCenterView = React.lazy(() => import('./components/HelpCenterView.tsx'));
+const SupportInboxView = React.lazy(() => import('./components/SupportInboxView.tsx'));
+const TagView = React.lazy(() => import('./components/TagView.tsx'));
+const LiveStreamsView = React.lazy(() => import('./components/LiveStreamsView.tsx'));
+const StoryViewer = React.lazy(() => import('./components/StoryViewer.tsx'));
+const PostModal = React.lazy(() => import('./components/PostModal.tsx'));
+const CreatePostModal = React.lazy(() => import('./components/CreatePostModal.tsx'));
+const CreateReelModal = React.lazy(() => import('./components/CreateReelModal.tsx'));
+const CreateStoryModal = React.lazy(() => import('./components/CreateStoryModal.tsx'));
+const ShareModal = React.lazy(() => import('./components/ShareModal.tsx'));
+const PostWithOptionsModal = React.lazy(() => import('./components/PostWithOptionsModal.tsx'));
+const FollowListModal = React.lazy(() => import('./components/FollowListModal.tsx'));
+const ViewLikesModal = React.lazy(() => import('./components/ViewLikesModal.tsx'));
+const EditProfileModal = React.lazy(() => import('./components/EditProfileModal.tsx'));
+const AccountSwitcherModal = React.lazy(() => import('./components/AccountSwitcherModal.tsx'));
+const NotificationsPanel = React.lazy(() => import('./components/NotificationsPanel.tsx'));
+const SearchView = React.lazy(() => import('./components/SearchView.tsx'));
+const ReportModal = React.lazy(() => import('./components/ReportModal.tsx'));
+const WelcomeOnboardingModal = React.lazy(() => import('./components/WelcomeOnboardingModal.tsx'));
+const NewSupportRequestModal = React.lazy(() => import('./components/NewSupportRequestModal.tsx'));
+const LiveStreamView = React.lazy(() => import('./components/LiveStreamView.tsx'));
+const GoLiveModal = React.lazy(() => import('./components/GoLiveModal.tsx'));
+const IncomingCallModal = React.lazy(() => import('./components/IncomingCallModal.tsx'));
+const CallModal = React.lazy(() => import('./components/CallModal.tsx'));
+const CreateChoiceModal = React.lazy(() => import('./components/CreateChoiceModal.tsx'));
+const Sidebar = React.lazy(() => import('./components/Sidebar.tsx'));
+const ReelViewerModal = React.lazy(() => import('./components/ReelViewerModal.tsx'));
+const ReelCommentsModal = React.lazy(() => import('./components/ReelCommentsModal.tsx'));
+const CreateHighlightModal = React.lazy(() => import('./components/CreateHighlightModal.tsx'));
+const EditPostModal = React.lazy(() => import('./components/EditPostModal.tsx'));
 
 
 type ModalState = 
@@ -85,6 +85,12 @@ type ModalState =
     | { type: 'call', data: { user: User, status: 'calling' | 'connected', type: 'video' | 'audio' } }
     | { type: 'reelViewer', data: Reel }
     | { type: 'reelComments', data: Reel };
+
+const LoadingSpinner: React.FC = () => (
+    <div className="flex items-center justify-center h-screen bg-black">
+        <div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div>
+    </div>
+);
 
 
 const App: React.FC = () => {
@@ -413,32 +419,34 @@ const App: React.FC = () => {
     };
 
     if (isLoading) {
-        return <div className="flex items-center justify-center h-screen bg-black"><div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div></div>;
+        return <LoadingSpinner />;
     }
 
     return (
         <div className="bg-black text-white min-h-screen">
-            {!currentUser ? (
-                <AuthView onLoginSuccess={handleLoginSuccess} />
-            ) : (
-                <div className="flex">
-                    <LeftSidebar currentView={currentView} onNavigate={handleNavigate} onCreate={() => handleOpenModal('createChoice')} onShowNotifications={() => handleOpenModal('notifications')} onShowSearch={() => handleOpenModal('search')} onLogout={handleLogout} />
-                    <div className="flex-1 md:ml-20 xl:ml-64">
-                         {announcement && <AnnouncementBanner announcement={announcement} onClose={() => setAnnouncement(null)} />}
-                         <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => handleOpenModal('accountSwitcher')} onCreatePost={() => handleOpenModal('createChoice')} onShowNotifications={() => handleOpenModal('notifications')} onLogout={handleLogout} />
-                        <main className="lg:flex">
-                           <div className="w-full lg:w-[630px] xl:w-[700px] mx-auto">
-                             {renderView()}
-                           </div>
-                           <div className="flex-1 hidden lg:block">
-                             <Sidebar currentUser={currentUser} onViewProfile={(u) => handleNavigate('profile', u)} onFollow={handleFollowUser} onUnfollow={handleUnfollowUser} onSwitchAccount={() => handleOpenModal('accountSwitcher')}/>
-                           </div>
-                        </main>
-                        <BottomNav currentView={currentView} onNavigate={handleNavigate} onCreate={() => handleOpenModal('createChoice')} currentUser={currentUser} />
+            <Suspense fallback={<LoadingSpinner />}>
+                {!currentUser ? (
+                    <AuthView onLoginSuccess={handleLoginSuccess} />
+                ) : (
+                    <div className="flex">
+                        <LeftSidebar currentView={currentView} onNavigate={handleNavigate} onCreate={() => handleOpenModal('createChoice')} onShowNotifications={() => handleOpenModal('notifications')} onShowSearch={() => handleOpenModal('search')} onLogout={handleLogout} />
+                        <div className="flex-1 md:ml-20 xl:ml-64">
+                            {announcement && <AnnouncementBanner announcement={announcement} onClose={() => setAnnouncement(null)} />}
+                            <Header currentUser={currentUser} onNavigate={handleNavigate} onSwitchAccount={() => handleOpenModal('accountSwitcher')} onCreatePost={() => handleOpenModal('createChoice')} onShowNotifications={() => handleOpenModal('notifications')} onLogout={handleLogout} />
+                            <main className="lg:flex">
+                            <div className="w-full lg:w-[630px] xl:w-[700px] mx-auto">
+                                {renderView()}
+                            </div>
+                            <div className="flex-1 hidden lg:block">
+                                <Sidebar currentUser={currentUser} onViewProfile={(u) => handleNavigate('profile', u)} onFollow={handleFollowUser} onUnfollow={handleUnfollowUser} onSwitchAccount={() => handleOpenModal('accountSwitcher')}/>
+                            </div>
+                            </main>
+                            <BottomNav currentView={currentView} onNavigate={handleNavigate} onCreate={() => handleOpenModal('createChoice')} currentUser={currentUser} />
+                        </div>
                     </div>
-                </div>
-            )}
-            {renderModal()}
+                )}
+                {renderModal()}
+            </Suspense>
             <div className="fixed bottom-5 right-5 z-[100] space-y-2">
                  {toasts.map(toast => (
                     <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToasts(p => p.filter(t => t.id !== toast.id))} />
