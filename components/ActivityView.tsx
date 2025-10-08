@@ -25,12 +25,12 @@ const ActivityView: React.FC<ActivityViewProps> = ({ activities }) => {
 
   return (
     <div className="p-4 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Activity</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-900">Activity</h1>
       <div className="space-y-2">
         {activities.map(activity => (
-          <div key={activity.id} className="flex items-center gap-3 p-2 hover:bg-gray-900 rounded-lg">
+          <div key={activity.id} className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg">
             <img src={activity.actor.avatar_url} alt={activity.actor.username} className="w-11 h-11 rounded-full object-cover" />
-            <p className="text-sm flex-1">
+            <p className="text-sm flex-1 text-gray-800">
                 <span className="font-bold">{activity.actor.username}</span> {renderActivityText(activity)}
                 <span className="text-gray-500"> · {new Date(activity.timestamp).toLocaleDateString()}</span>
             </p>

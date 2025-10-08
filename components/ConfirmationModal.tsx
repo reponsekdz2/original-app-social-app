@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface ConfirmationModalProps {
@@ -17,13 +16,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ title, message, c
     : 'bg-blue-600 hover:bg-blue-700';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={onCancel}>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={onCancel}>
       <div 
-        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm border border-gray-700 text-center p-6"
+        className="bg-white rounded-lg shadow-xl w-full max-w-sm border border-gray-200 text-center p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-2">{title}</h2>
-        <p className="text-gray-400 text-sm mb-6">{message}</p>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">{title}</h2>
+        <p className="text-gray-500 text-sm mb-6">{message}</p>
         <div className="flex flex-col gap-2">
           <button
             onClick={onConfirm}
@@ -33,7 +32,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ title, message, c
           </button>
           <button
             onClick={onCancel}
-            className="w-full py-2.5 font-semibold bg-gray-600 hover:bg-gray-500 text-white rounded-md"
+            className="w-full py-2.5 font-semibold bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md"
           >
             {cancelText}
           </button>

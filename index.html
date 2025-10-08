@@ -145,6 +145,14 @@
         .btn-gradient:hover {
             background-color: #166FE5;
         }
+
+        /* Typing effect cursor */
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .animate-blink {
+            animation: blink 1s step-start infinite;
+        }
     </style>
 </head>
 <body>
@@ -176,7 +184,8 @@
     "vite": "https://aistudiocdn.com/vite@^7.1.7",
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4",
     "helmet": "https://aistudiocdn.com/helmet@^8.1.0",
-    "express-rate-limit": "https://aistudiocdn.com/express-rate-limit@^8.1.0"
+    "express-rate-limit": "https://aistudiocdn.com/express-rate-limit@^8.1.0",
+    "crypto": "https://aistudiocdn.com/crypto@^1.0.1"
   }
 }
 </script>

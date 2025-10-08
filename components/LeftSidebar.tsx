@@ -27,7 +27,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onCr
         <aside className="fixed top-0 left-0 h-full z-40 hidden md:flex flex-col w-20 xl:w-64 bg-white border-r border-gray-200 p-3">
             <div className="text-blue-600 mb-8 py-2">
                 <Icon className="w-8 h-8 xl:hidden"><path fill="currentColor" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.321h5.367a.563.563 0 01.321.988l-4.338 3.14a.563.563 0 00-.184.55l1.637 5.111a.563.563 0 01-.812.622l-4.338-3.14a.563.563 0 00-.576 0l-4.338 3.14a.563.563 0 01-.812-.622l1.637-5.111a.563.563 0 00-.184-.55l-4.338-3.14a.563.563 0 01.321-.988h5.367a.563.563 0 00.475-.321L11.48 3.5z" /></Icon>
-                <span className="hidden xl:block text-2xl font-bold">InstaFire</span>
+                <span className="hidden xl:block text-2xl font-bold">talka</span>
             </div>
             <nav className="flex-1 space-y-2">
                  {navItems.map(item => (
@@ -40,11 +40,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ currentView, onNavigate, onCr
             </nav>
             <div className="mt-auto">
                  <button onClick={() => onNavigate('settings')} className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 text-gray-800">
-                    <Icon className="w-7 h-7"><path d="M9.594 3.94c.09-.542.56-1.002 1.11-1.212l1.173-.42c.328-.118.665-.118.993 0l1.173.42c.55.198 1.02.67 1.11 1.212l.245 1.488a8.13 8.13 0 01.702.308l1.357-.549c.42-.17.905-.025 1.15.35l.805 1.393c.246.426-.11-1.004-.265-1.32l-1.095.845a7.51 7.51 0 010 1.344l1.095.845c.375.29.51.865-.265-1.32l-.805 1.393c-.245.426-.73.52-1.15.35l-1.357-.549a8.13 8.13 0 01-.702.308l-.245 1.488c-.09.542-.56-1.002-1.11-1.212l-1.173.42c-.328-.118-.665-.118-.993 0l-1.173-.42c-.55-.198-1.02-.67-1.11-1.212l-.245-1.488a8.13 8.13 0 01-.702-.308l-1.357.549c-.42.17-.905-.025-1.15-.35l-.805-1.393c-.246.426-.11-1.004-.265-1.32l1.095-.845a7.51 7.51 0 010 1.344l-1.095-.845c-.375-.29-.51-.865-.265-1.32l.805 1.393c.245.426.73.52 1.15.35l1.357.549a8.13 8.13 0 01.702.308l.245-1.488zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" /></Icon>
+                    <Icon className="w-7 h-7"><path d="M9.594 3.94c.09-.542.56-1.002 1.11-1.212l1.173-.42c.328-.118.665-.118.993 0l1.173.42c.55.198 1.02.67 1.11 1.212l.245 1.488a8.13 8.13 0 01.702.308l1.357-.549c.42-.17.905-.025 1.15.35l.805 1.393c.246.426-.11-1.004-.265-1.32l-1.095.845a7.51 7.51 0 010 1.344l1.095.845c.375.29.51.865-.265-1.32l-.805 1.393c-.245.426-.73.52-1.15.35l-1.357-.549a8.13 8.13 0 01-.702.308l-.245 1.488c-.09.542-.56-1.002-1.11-1.212l-1.173.42c-.328-.118-.665-.118-.993 0l-1.173-.42c-.55-.198-1.02-.67-1.11-1.212l-.245-1.488a8.13 8.13 0 01-.702-.308l-1.357.549c-.42.17-.905-.025-1.15-.35l-.805-1.393c-.246.426-.11-1.004.265-1.32l1.095-.845a7.51 7.51 0 010 1.344l-1.095-.845c-.375-.29-.51-.865-.265-1.32l.805 1.393c.245.426.73.52 1.15.35l1.357.549a8.13 8.13 0 01.702.308l.245-1.488zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" /></Icon>
                     <span className="hidden xl:block">Settings</span>
                 </button>
                  <button onClick={onLogout} className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 text-gray-800">
-                    <Icon className="w-7 h-7"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></Icon>
+                    <Icon className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></Icon>
                     <span className="hidden xl:block">Log Out</span>
                 </button>
             </div>

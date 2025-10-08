@@ -27,30 +27,30 @@ const SupportInboxView: React.FC<SupportInboxViewProps> = ({ onBack, onNewReques
         fetchTickets();
     }, []);
     
-    const statusStyles = {
-        Open: 'bg-blue-500/20 text-blue-400',
-        Pending: 'bg-yellow-500/20 text-yellow-400',
-        Resolved: 'bg-green-500/20 text-green-400',
+    const statusStyles: { [key in SupportTicket['status']]: string } = {
+        Open: 'bg-blue-100 text-blue-800',
+        Pending: 'bg-yellow-100 text-yellow-800',
+        Resolved: 'bg-green-100 text-green-800',
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-4xl mx-auto">
+        <div className="p-4 md:p-8 max-w-4xl mx-auto text-gray-800">
              <div className="flex items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 hover:bg-gray-800 rounded-full">
+                    <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
                         <Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></Icon>
                     </button>
                     <h1 className="text-2xl font-bold">Support Inbox</h1>
                 </div>
-                <button onClick={onNewRequest} className="bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-2 px-4 rounded-md">
+                <button onClick={onNewRequest} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-2 px-4 rounded-md">
                     New Request
                 </button>
             </div>
             
             {isLoading ? <p>Loading tickets...</p> : tickets.length > 0 ? (
-                <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
+                <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-200">
                     {tickets.map(ticket => (
-                        <div key={ticket.id} className="p-4 hover:bg-gray-700/50 cursor-pointer">
+                        <div key={ticket.id} className="p-4 hover:bg-gray-50 cursor-pointer">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-semibold">{ticket.subject}</p>
@@ -62,7 +62,7 @@ const SupportInboxView: React.FC<SupportInboxViewProps> = ({ onBack, onNewReques
                     ))}
                 </div>
             ) : (
-                 <p className="text-center text-gray-400 py-16">You have no support tickets.</p>
+                 <p className="text-center text-gray-500 py-16">You have no support tickets.</p>
             )}
         </div>
     );

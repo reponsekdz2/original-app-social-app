@@ -103,6 +103,13 @@ export default (upload) => {
         const [tickets] = await pool.query('SELECT st.*, u.username as user_username FROM support_tickets st JOIN users u ON st.user_id = u.id ORDER BY st.updated_at DESC');
         res.json(tickets);
     });
+    
+    // GET /api/admin/support/tickets/:id/replies
+    router.get('/support/tickets/:id/replies', async (req, res) => {
+        const [replies] = await pool.query('SELECT * FROM support_ticket_replies WHERE ticket_id = ? ORDER BY created_at ASC', [req.params.id]);
+        res.json(replies);
+    });
+
 
     // POST /api/admin/support/tickets/:id/reply
     router.post('/support/tickets/:id/reply', async (req, res) => {

@@ -3,11 +3,11 @@ import type { Story, Post, User } from '../types.ts';
 import * as api from '../services/apiService.ts';
 import StoryBubble from './StoryBubble.tsx';
 import PostComponent from './Post.tsx';
-import Sidebar from './Sidebar.tsx';
 
 interface HomeViewProps {
   stories: Story[];
   initialPosts: Post[];
+  initialForYouPosts: Post[];
   currentUser: User;
   onViewStory: (stories: Story[], initialIndex: number) => void;
   onViewPost: (post: Post) => void;
@@ -42,65 +42,105 @@ const PostSkeleton: React.FC = () => (
 );
 
 const HomeView: React.FC<HomeViewProps> = (props) => {
-  const {
-    stories,
-    initialPosts,
-    currentUser,
-    onViewStory,
-    onViewPost,
-    onLikePost,
-    onUnlikePost,
-    onSavePost,
-    onCommentOnPost,
-    onSharePost,
-    onOptionsForPost,
-    onViewProfile,
-    onViewLikes,
-    onVote,
-    onViewTag,
-  } = props;
+  const { stories, initialPosts, initialForYouPosts, currentUser, onViewStory, ...postProps } = props;
   
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [page, setPage] = useState(2); // Start from page 2 since initial posts are page 1
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const observer = useRef<IntersectionObserver>();
+  const [activeFeed, setActiveFeed] = useState<'following' | 'foryou'>('following');
+  
+  // State for Following Feed
+  const [followingPosts, setFollowingPosts] = useState<Post[]>(initialPosts);
+  const [followingPage, setFollowingPage] = useState(2);
+  const [hasMoreFollowing, setHasMoreFollowing] = useState(initialPosts.length > 0);
+  const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
+  const followingObserver = useRef<IntersectionObserver>();
 
-  const loadMorePosts = useCallback(async () => {
-    setIsLoading(true);
+  // State for For You Feed
+  const [forYouPosts, setForYouPosts] = useState<Post[]>(initialForYouPosts);
+  const [forYouPage, setForYouPage] = useState(2);
+  const [hasMoreForYou, setHasMoreForYou] = useState(initialForYouPosts.length > 0);
+  const [isLoadingForYou, setIsLoadingForYou] = useState(false);
+  const forYouObserver = useRef<IntersectionObserver>();
+
+  // Infinite scroll for "Following"
+  const loadMoreFollowingPosts = useCallback(async () => {
+    setIsLoadingFollowing(true);
     try {
-        // FIX: Pass page number to fetch next set of posts.
-        const newPosts = await api.getFeedPosts(page);
+        const newPosts = await api.getFeedPosts(followingPage);
         if (newPosts && newPosts.length > 0) {
-            setPosts(prev => [...prev, ...newPosts]);
-            setPage(prev => prev + 1);
+            setFollowingPosts(prev => [...prev, ...newPosts]);
+            setFollowingPage(prev => prev + 1);
         } else {
-            setHasMore(false);
+            setHasMoreFollowing(false);
         }
     } catch (error) {
         console.error("Failed to load more posts", error);
-        setHasMore(false);
+        setHasMoreFollowing(false);
     } finally {
-        setIsLoading(false);
+        setIsLoadingFollowing(false);
     }
-  }, [page]);
+  }, [followingPage]);
   
-  const lastPostElementRef = useCallback(node => {
-    if (isLoading) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting && hasMore) {
-           loadMorePosts();
+  // Infinite scroll for "For You"
+  const loadMoreForYouPosts = useCallback(async () => {
+    setIsLoadingForYou(true);
+    try {
+        const newPosts = await api.getForYouPosts(forYouPage);
+        if (newPosts && newPosts.length > 0) {
+            setForYouPosts(prev => [...prev, ...newPosts]);
+            setForYouPage(prev => prev + 1);
+        } else {
+            setHasMoreForYou(false);
+        }
+    } catch (error) {
+        console.error("Failed to load more 'For You' posts", error);
+        setHasMoreForYou(false);
+    } finally {
+        setIsLoadingForYou(false);
+    }
+  }, [forYouPage]);
+
+  const lastFollowingPostRef = useCallback(node => {
+    if (isLoadingFollowing) return;
+    if (followingObserver.current) followingObserver.current.disconnect();
+    followingObserver.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting && hasMoreFollowing) {
+           loadMoreFollowingPosts();
         }
     });
-    if (node) observer.current.observe(node);
-  }, [isLoading, hasMore, loadMorePosts]);
+    if (node) followingObserver.current.observe(node);
+  }, [isLoadingFollowing, hasMoreFollowing, loadMoreFollowingPosts]);
+
+  const lastForYouPostRef = useCallback(node => {
+    if (isLoadingForYou) return;
+    if (forYouObserver.current) forYouObserver.current.disconnect();
+    forYouObserver.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting && hasMoreForYou) {
+           loadMoreForYouPosts();
+        }
+    });
+    if (node) forYouObserver.current.observe(node);
+  }, [isLoadingForYou, hasMoreForYou, loadMoreForYouPosts]);
   
   useEffect(() => {
-      setPosts(initialPosts); // Reset posts when initialPosts change
-      setPage(2);
-      setHasMore(initialPosts.length > 0);
-  }, [initialPosts]);
+      setFollowingPosts(initialPosts);
+      setForYouPosts(initialForYouPosts);
+      setFollowingPage(2);
+      setForYouPage(2);
+      setHasMoreFollowing(initialPosts.length > 0);
+      setHasMoreForYou(initialForYouPosts.length > 0);
+  }, [initialPosts, initialForYouPosts]);
+
+  const renderFeed = (posts: Post[], ref: (node: any) => void, hasMore: boolean, isLoading: boolean) => (
+    <div className="space-y-2">
+      {posts.map((post, index) => (
+        <div ref={index === posts.length - 1 ? ref : null} key={`${activeFeed}-${post.id}`}>
+           <PostComponent post={post} currentUser={currentUser} {...postProps} />
+        </div>
+      ))}
+      {isLoading && Array.from({ length: 2 }).map((_, i) => <PostSkeleton key={`skeleton-${i}`} />)}
+      {!hasMore && posts.length > 0 && <p className="text-center text-gray-500 py-8">You've reached the end!</p>}
+      {!hasMore && posts.length === 0 && !isLoading && <p className="text-center text-gray-500 py-16">No posts to show.</p>}
+    </div>
+  );
 
   return (
     <div className="pb-16 md:pb-0">
@@ -111,29 +151,17 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
         ))}
       </div>
 
-      {/* Posts */}
-      <div className="space-y-2">
-        {posts.map((post, index) => (
-          <div ref={index === posts.length - 1 ? lastPostElementRef : null} key={post.id}>
-             <PostComponent 
-                post={post} 
-                currentUser={currentUser} 
-                onLike={onLikePost}
-                onUnlike={onUnlikePost}
-                onSave={onSavePost}
-                onComment={onCommentOnPost}
-                onShare={onSharePost}
-                onOptions={onOptionsForPost}
-                onViewProfile={onViewProfile}
-                onViewLikes={onViewLikes}
-                onVote={onVote}
-                onViewTag={onViewTag}
-             />
-          </div>
-        ))}
-        {isLoading && Array.from({ length: 2 }).map((_, i) => <PostSkeleton key={`skeleton-${i}`} />)}
-        {!hasMore && posts.length > 0 && <p className="text-center text-gray-500 py-8">You've reached the end!</p>}
+      {/* Feed Tabs */}
+      <div className="flex border-b border-gray-200 bg-white sticky top-0 md:top-16 z-20">
+        <button onClick={() => setActiveFeed('following')} className={`flex-1 py-3 font-semibold text-center text-sm transition-colors ${activeFeed === 'following' ? 'border-b-2 border-gray-800 text-gray-800' : 'text-gray-500 hover:bg-gray-100'}`}>Following</button>
+        <button onClick={() => setActiveFeed('foryou')} className={`flex-1 py-3 font-semibold text-center text-sm transition-colors ${activeFeed === 'foryou' ? 'border-b-2 border-gray-800 text-gray-800' : 'text-gray-500 hover:bg-gray-100'}`}>For You</button>
       </div>
+
+      {/* Posts */}
+      {activeFeed === 'following'
+        ? renderFeed(followingPosts, lastFollowingPostRef, hasMoreFollowing, isLoadingFollowing)
+        : renderFeed(forYouPosts, lastForYouPostRef, hasMoreForYou, isLoadingForYou)
+      }
     </div>
   );
 };

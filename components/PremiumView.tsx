@@ -1,14 +1,12 @@
-
-
 import React from 'react';
 import Icon from './Icon.tsx';
 
 const PremiumFeature: React.FC<{ title: string; description: string; icon: React.ReactNode }> = ({ title, description, icon }) => (
   <div className="flex items-start gap-4">
-    <div className="bg-red-500/10 text-red-400 p-3 rounded-lg">{icon}</div>
+    <div className="bg-blue-100 text-blue-600 p-3 rounded-lg">{icon}</div>
     <div>
-      <h3 className="font-semibold">{title}</h3>
-      <p className="text-sm text-gray-400">{description}</p>
+      <h3 className="font-semibold text-gray-800">{title}</h3>
+      <p className="text-sm text-gray-500">{description}</p>
     </div>
   </div>
 );
@@ -17,8 +15,8 @@ const PremiumView: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8">
       <div className="text-center">
-        <h1 className="text-4xl font-bold">Unlock Premium Features</h1>
-        <p className="text-lg text-gray-400 mt-2">Get the most out of our platform with an exclusive membership.</p>
+        <h1 className="text-4xl font-bold text-gray-900">Unlock Premium Features</h1>
+        <p className="text-lg text-gray-500 mt-2">Get the most out of our platform with an exclusive membership.</p>
       </div>
 
       <div className="mt-10 grid md:grid-cols-2 gap-8 items-center">
@@ -39,10 +37,10 @@ const PremiumView: React.FC = () => {
             icon={<Icon className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-3.182-3.182m3.182 3.182v4.995A2.25 2.25 0 0119.5 19.5h-4.995" /></Icon>}
           />
         </div>
-        <div className="bg-gray-800/50 p-8 rounded-lg border border-gray-700 text-center">
-            <h2 className="text-xl font-bold">Monthly Plan</h2>
-            <p className="text-4xl font-extrabold my-4">$9.99<span className="text-base font-normal text-gray-400">/month</span></p>
-            <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg">
+        <div className="bg-white p-8 rounded-lg border border-gray-200 shadow-lg text-center">
+            <h2 className="text-xl font-bold text-gray-900">Monthly Plan</h2>
+            <p className="text-4xl font-extrabold my-4 text-gray-900">$9.99<span className="text-base font-normal text-gray-500">/month</span></p>
+            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
                 Subscribe Now
             </button>
             <p className="text-xs text-gray-500 mt-4">Billed monthly. Cancel anytime.</p>

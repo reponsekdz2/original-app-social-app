@@ -15,6 +15,7 @@ CREATE TABLE `users` (
   `is_premium` TINYINT(1) NOT NULL DEFAULT 0,
   `is_private` TINYINT(1) NOT NULL DEFAULT 0,
   `is_2fa_enabled` TINYINT(1) NOT NULL DEFAULT 0,
+  `two_factor_secret` VARCHAR(255) DEFAULT NULL,
   `is_admin` TINYINT(1) NOT NULL DEFAULT 0,
   `status` ENUM('active','suspended','banned') NOT NULL DEFAULT 'active',
   `wallet_balance` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -35,6 +36,14 @@ CREATE TABLE `followers` (
   FOREIGN KEY (`following_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
+-- Password Resets
+CREATE TABLE `password_resets` (
+  `email` VARCHAR(100) NOT NULL,
+  `token` VARCHAR(255) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`email`, `token`)
+);
+
 -- Posts Table
 CREATE TABLE `posts` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
@@ -43,6 +52,7 @@ CREATE TABLE `posts` (
   `location` VARCHAR(255) DEFAULT NULL,
   `is_archived` TINYINT(1) NOT NULL DEFAULT 0,
   `is_pinned` TINYINT(1) NOT NULL DEFAULT 0,
+  `view_count` INT UNSIGNED NOT NULL DEFAULT 0,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   INDEX `idx_post_user_id` (`user_id`)
@@ -381,7 +391,7 @@ CREATE TABLE `call_history` (
 );
 
 CREATE TABLE `announcements` (
-    `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
     `title` VARCHAR(255) NOT NULL,
     `content` TEXT NOT NULL,
     `type` ENUM('info', 'warning', 'success') NOT NULL DEFAULT 'info',
@@ -396,7 +406,7 @@ CREATE TABLE `app_settings` (
 );
 
 CREATE TABLE `sponsored_content` (
-    `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
     `company` VARCHAR(100) NOT NULL,
     `logo_url` VARCHAR(255) NOT NULL,
     `media_url` VARCHAR(255) NOT NULL,
@@ -406,7 +416,7 @@ CREATE TABLE `sponsored_content` (
 );
 
 CREATE TABLE `trending_topics` (
-    `id` VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
     `topic` VARCHAR(100) NOT NULL UNIQUE,
     `post_count` INT NOT NULL DEFAULT 0
 );

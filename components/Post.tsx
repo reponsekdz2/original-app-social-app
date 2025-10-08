@@ -126,6 +126,7 @@ const Post: React.FC<PostProps> = (props) => {
             <button onClick={handleSaveToggle} className="ml-auto"><Icon className="w-7 h-7" fill={isSaved ? 'currentColor' : 'none'}><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.5 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></Icon></button>
         </div>
         {likeCount > 0 && <button onClick={() => onViewLikes(post.likedBy)} className="font-semibold text-sm mt-2">{likeCount.toLocaleString()} likes</button>}
+        {post.view_count && post.view_count > 0 && <p className="text-sm text-gray-500">{post.view_count.toLocaleString()} views</p>}
         <p className="text-sm mt-1"><span className="font-semibold">{post.user.username}</span> {parseCaption(post.caption)}</p>
         {post.poll && <div className="mt-3"><Poll poll={post.poll} onVote={(optionId) => onVote(post.poll!.id, optionId)} /></div>}
         {post.comments.length > 0 && <button onClick={() => onComment(post)} className="text-sm text-gray-500 mt-1">View all {post.comments.length} comments</button>}

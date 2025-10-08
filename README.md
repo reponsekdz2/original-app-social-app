@@ -16,6 +16,11 @@ You can access a live, interactive version of this application here:
 
 This application is more than a simple clone; it's a feature-rich platform with a wide array of capabilities, all powered by a live backend and database:
 
+**🌐 Modern UI & UX:**
+*   **Dynamic Landing Page:** An engaging, modern authentication screen with dynamic typing effects to welcome users.
+*   **Responsive Design:** A seamless experience across mobile, tablet, and desktop devices.
+*   **Light & Dark Modes:** (Currently Light) Theme support for user preference.
+
 **👤 User & Profile Management:**
 *   **Authentication:** Secure session-based login, registration, and session management.
 *   **Profiles:** Customizable user profiles with avatars, bios, highlights, and real-time follower/following counts.
@@ -24,15 +29,15 @@ This application is more than a simple clone; it's a feature-rich platform with 
 *   **Close Friends:** Curate a private list of users for exclusive story sharing.
 
 **📰 Content & Feeds:**
+*   **Dual-Feed System:** Switch between a chronological "Following" feed and an algorithmic "For You" feed for content discovery.
 *   **AI-Powered Captions:** Generate contextual caption suggestions for new posts using the Gemini API.
-*   **Posts:** Create, edit, delete, and archive posts. Supports multi-image/video carousels and location tagging.
+*   **Posts:** Create, edit, delete, and archive posts. Supports multi-image/video carousels, location tagging, and view counts.
 *   **Post Collaborations:** Invite other users to be co-authors on a post.
 *   **Pinned Posts:** Pin up to three posts to the top of your profile for added visibility.
 *   **Interactive Polls:** Attach polls to posts for community engagement.
-*   **Reels:** A dedicated vertical video feed for short-form content.
+*   **Enhanced Reels:** An immersive, full-screen vertical video feed with interactive controls like a volume slider and mute/unmute.
 *   **Stories:** Ephemeral photo and video stories that last for 24 hours, with support for "Close Friends" only sharing.
 *   **Highlights:** Save and categorize stories permanently on your profile.
-*   **Feeds:** Chronological home feed, an algorithm-free "Explore" page, and dedicated "Saved" (bookmarks) and "Archived" views.
 
 **💬 Real-Time Communication & Engagement:**
 *   **Direct Messaging:** Private one-on-one and group chats.

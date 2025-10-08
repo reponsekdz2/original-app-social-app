@@ -45,6 +45,20 @@ export const checkSession = () => {
     return request('/auth/session');
 };
 
+export const forgotPassword = (email: string) => {
+    return request('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+    });
+};
+
+export const resetPassword = (email: string, token: string, password: string) => {
+    return request('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ email, token, password }),
+    });
+};
+
 
 // --- Users ---
 export const getUserProfile = (username: string) => request(`/users/profile/${username}`);
@@ -59,6 +73,7 @@ export const updateCloseFriends = (friendIds: string[]) => request('/users/close
 
 // --- Posts ---
 export const getFeedPosts = (page = 1) => request(`/posts/feed?page=${page}`);
+export const getForYouPosts = (page = 1) => request(`/posts/foryou?page=${page}`);
 export const getExplorePosts = () => request('/posts/explore');
 export const createPost = (formData: FormData) => fetch(`${API_BASE_URL}/posts`, { method: 'POST', body: formData }).then(res => res.json());
 export const likePost = (postId: string) => request(`/posts/${postId}/like`, { method: 'POST' });
@@ -71,6 +86,7 @@ export const deletePost = (postId: string) => request(`/posts/${postId}`, { meth
 export const createComment = (postId: string, text: string) => request('/posts/comment', { method: 'POST', body: JSON.stringify({ postId, text }) });
 export const pinPost = (postId: string) => request(`/posts/${postId}/pin`, { method: 'POST' });
 export const sendTip = (postId: string, amount: number) => request(`/posts/${postId}/tip`, { method: 'POST', body: JSON.stringify({ amount }) });
+export const incrementPostView = (postId: string) => request(`/posts/${postId}/view`, { method: 'POST' });
 
 
 export const likeComment = (commentId: string) => {
@@ -129,10 +145,13 @@ export const generateCaptionSuggestions = async (formData: FormData) => {
 // --- Search & Misc ---
 export const search = (query: string) => request(`/search?q=${query}`);
 export const getFeedActivity = () => request('/misc/activity');
-export const getSponsoredContent = () => request('/misc/sponsored');
 export const getCarouselImages = () => request('/misc/carousel');
 export const getStickers = () => request('/misc/stickers');
+// FIX: Add missing getSponsoredContent function
+export const getSponsoredContent = () => request('/misc/sponsored');
+// FIX: Add missing getActiveAnnouncement function
 export const getActiveAnnouncement = () => request('/misc/announcements/active');
+
 
 // --- Settings & Privacy ---
 export const changePassword = (oldPassword: string, newPassword: string) => request('/users/password', { method: 'PUT', body: JSON.stringify({ oldPassword, newPassword }) });

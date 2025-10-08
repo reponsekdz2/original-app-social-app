@@ -61,6 +61,7 @@ export interface Post {
   poll?: Poll;
   tags?: string[];
   collaborators?: User[];
+  view_count?: number;
 }
 
 export interface Reel {

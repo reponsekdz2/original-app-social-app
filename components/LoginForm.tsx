@@ -51,7 +51,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-4xl font-bold text-center mb-2 text-blue-600 animate-slide-fade-in">InstaFire</h2>
+      <h2 className="text-4xl font-bold text-center mb-2 text-blue-600 animate-slide-fade-in">talka</h2>
       <p className="text-center text-gray-500 mb-6 text-sm animate-slide-fade-in" style={{ animationDelay: '100ms' }}>Sign in to see photos and videos from your friends.</p>
       
       <div className="flex gap-4 mb-4 animate-slide-fade-in" style={{ animationDelay: '200ms' }}>

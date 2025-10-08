@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Post as PostType, User, Comment as CommentType } from '../types.ts';
 import Icon from './Icon.tsx';
 import VerifiedBadge from './VerifiedBadge.tsx';
@@ -23,6 +23,11 @@ const PostModal: React.FC<PostModalProps> = (props) => {
 
   const [commentText, setCommentText] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+
+  useEffect(() => {
+    // Increment view count when modal opens
+    api.incrementPostView(post.id).catch(console.error);
+  }, [post.id]);
 
   const isLiked = post.likedBy.some(u => u.id === currentUser.id);
   const isSaved = post.isSaved;
@@ -102,6 +107,7 @@ const PostModal: React.FC<PostModalProps> = (props) => {
               <button onClick={() => onSave(post.id)} className="ml-auto"><Icon className="w-7 h-7" fill={isSaved ? 'currentColor' : 'none'}><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.5 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></Icon></button>
             </div>
             {post.likes > 0 && <button onClick={() => onViewLikes(post.likedBy)} className="font-semibold text-sm">{post.likes.toLocaleString()} likes</button>}
+            {post.view_count && post.view_count > 0 && <p className="text-sm text-gray-500">{post.view_count.toLocaleString()} views</p>}
             <p className="text-xs text-gray-500 uppercase">{formatTimestamp(post.timestamp)}</p>
             <form onSubmit={handleCommentSubmit} className="flex items-center gap-2 border-t border-gray-200 pt-3">
               <input type="text" value={commentText} onChange={e => setCommentText(e.target.value)} placeholder="Add a comment..." className="bg-transparent w-full focus:outline-none text-sm"/>

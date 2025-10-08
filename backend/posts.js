@@ -5,11 +5,34 @@ import { isAuthenticated } from './middleware/authMiddleware.js';
 const router = Router();
 const POSTS_PER_PAGE = 10;
 
-const parseTags = (caption) => {
-    const regex = /#([a-zA-Z0-9_]+)/g;
-    const tags = caption.match(regex);
-    return tags ? tags.map(tag => tag.substring(1)) : [];
+const populatePostDetails = async (posts, userId) => {
+    for (const post of posts) {
+        const [media] = await pool.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [post.id]);
+        const [likes] = await pool.query('SELECT user_id FROM post_likes WHERE post_id = ?', [post.id]);
+        const [comments] = await pool.query('SELECT c.*, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? ORDER BY c.created_at ASC LIMIT 2', [post.id]);
+        const [[{ is_saved }]] = await pool.query('SELECT COUNT(*) > 0 as is_saved FROM post_saves WHERE post_id = ? AND user_id = ?', [post.id, userId]);
+        const [[poll]] = await pool.query('SELECT * FROM polls WHERE post_id = ?', [post.id]);
+        const [collaborators] = await pool.query('SELECT u.id, u.username, u.avatar_url FROM users u JOIN post_collaborators pc ON u.id = pc.user_id WHERE pc.post_id = ?', [post.id]);
+        
+        if (poll) {
+            const [options] = await pool.query('SELECT po.id, po.text, COUNT(pv.user_id) as votes FROM poll_options po LEFT JOIN poll_votes pv ON po.id = pv.option_id WHERE po.poll_id = ? GROUP BY po.id', [poll.id]);
+            const [[userVote]] = await pool.query('SELECT option_id FROM poll_votes WHERE poll_id = ? AND user_id = ?', [poll.id, userId]);
+            poll.options = options;
+            poll.userVote = userVote ? userVote.option_id : null;
+        }
+
+        post.media = media;
+        post.likedBy = likes.map(l => ({ id: l.user_id }));
+        post.likes = likes.length;
+        post.comments = comments.map(c => ({...c, user: { id: c.user_id, username: c.username, avatar_url: c.avatar_url } }));
+        post.isSaved = !!is_saved;
+        post.poll = poll || null;
+        post.user = { id: post.user_id, username: post.username, avatar_url: post.avatar_url, isVerified: !!post.is_verified };
+        post.collaborators = collaborators;
+    }
+    return posts;
 };
+
 
 export default (upload) => {
 
@@ -31,34 +54,38 @@ export default (upload) => {
                 LIMIT ? OFFSET ?
             `, [userId, userId, userId, POSTS_PER_PAGE, offset]);
             
-            for (const post of posts) {
-                const [media] = await pool.query('SELECT id, media_url as url, media_type as type FROM post_media WHERE post_id = ? ORDER BY sort_order ASC', [post.id]);
-                const [likes] = await pool.query('SELECT user_id FROM post_likes WHERE post_id = ?', [post.id]);
-                const [comments] = await pool.query('SELECT c.*, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? ORDER BY c.created_at ASC LIMIT 2', [post.id]);
-                const [[{ is_saved }]] = await pool.query('SELECT COUNT(*) > 0 as is_saved FROM post_saves WHERE post_id = ? AND user_id = ?', [post.id, req.session.userId]);
-                const [[poll]] = await pool.query('SELECT * FROM polls WHERE post_id = ?', [post.id]);
-                const [collaborators] = await pool.query('SELECT u.id, u.username, u.avatar_url FROM users u JOIN post_collaborators pc ON u.id = pc.user_id WHERE pc.post_id = ?', [post.id]);
-                
-                if (poll) {
-                    const [options] = await pool.query('SELECT po.id, po.text, COUNT(pv.user_id) as votes FROM poll_options po LEFT JOIN poll_votes pv ON po.id = pv.option_id WHERE po.poll_id = ? GROUP BY po.id', [poll.id]);
-                    const [[userVote]] = await pool.query('SELECT option_id FROM poll_votes WHERE poll_id = ? AND user_id = ?', [poll.id, req.session.userId]);
-                    poll.options = options;
-                    poll.userVote = userVote ? userVote.option_id : null;
-                }
-
-                post.media = media;
-                post.likedBy = likes.map(l => ({ id: l.user_id }));
-                post.likes = likes.length;
-                post.comments = comments.map(c => ({...c, user: { id: c.user_id, username: c.username, avatar_url: c.avatar_url } }));
-                post.isSaved = !!is_saved;
-                post.poll = poll || null;
-                post.user = { id: post.user_id, username: post.username, avatar_url: post.avatar_url, isVerified: !!post.is_verified };
-                post.collaborators = collaborators;
-            }
-
-            res.json(posts);
+            const detailedPosts = await populatePostDetails(posts, userId);
+            res.json(detailedPosts);
         } catch(e) {
             console.error("Feed error:", e)
+            res.status(500).json({message: 'server error'});
+        }
+    });
+    
+    router.get('/foryou', isAuthenticated, async (req, res) => {
+        const page = parseInt(req.query.page) || 1;
+        const offset = (page - 1) * POSTS_PER_PAGE;
+        const userId = req.session.userId;
+
+        try {
+            const [posts] = await pool.query(`
+                SELECT p.*, u.username, u.avatar_url, u.is_verified,
+                       (
+                           (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) +
+                           ((SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 2) +
+                           (p.view_count / 10)
+                       ) / (POWER(TIMESTAMPDIFF(HOUR, p.created_at, NOW()), 1.5) + 2) as score
+                FROM posts p
+                JOIN users u ON p.user_id = u.id
+                WHERE u.is_private = 0 AND p.is_archived = 0 AND p.user_id != ?
+                ORDER BY score DESC
+                LIMIT ? OFFSET ?
+            `, [userId, POSTS_PER_PAGE, offset]);
+            
+            const detailedPosts = await populatePostDetails(posts, userId);
+            res.json(detailedPosts);
+        } catch (e) {
+            console.error("For You feed error:", e);
             res.status(500).json({message: 'server error'});
         }
     });
@@ -67,7 +94,7 @@ export default (upload) => {
         try {
             const [posts] = await pool.query(`
                 SELECT 
-                    p.id, p.caption,
+                    p.id, p.caption, p.view_count,
                     (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) as likes_count,
                     (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
                 FROM posts p
@@ -155,6 +182,7 @@ export default (upload) => {
                 comments: [],
                 isSaved: false,
                 is_pinned: false,
+                view_count: 0,
                 timestamp: new Date().toISOString(),
                 poll: null, // Simplified for now
                 collaborators: collaboratorUsers,
@@ -190,6 +218,17 @@ export default (upload) => {
             res.sendStatus(200);
         } catch (error) {
             res.status(500).json({ message: 'Error liking post' });
+        }
+    });
+    
+    router.post('/:id/view', isAuthenticated, async (req, res) => {
+        const { id: postId } = req.params;
+        try {
+            await pool.query('UPDATE posts SET view_count = view_count + 1 WHERE id = ?', [postId]);
+            res.sendStatus(200);
+        } catch (error) {
+            console.error("Error incrementing view count:", error);
+            res.status(500).json({ message: 'Server error' });
         }
     });
     

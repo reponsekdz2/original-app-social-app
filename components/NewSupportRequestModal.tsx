@@ -33,27 +33,27 @@ const NewSupportRequestModal: React.FC<NewSupportRequestModalProps> = ({ onClose
     };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg border border-gray-700 flex flex-col"
+        className="bg-white rounded-lg shadow-xl w-full max-w-lg border border-gray-200 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-center p-4 border-b border-gray-700 relative">
-          <h2 className="text-lg font-semibold">New Support Request</h2>
-          <button onClick={onClose} className="absolute top-3 right-3"><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
+        <div className="flex items-center justify-center p-4 border-b border-gray-200 relative">
+          <h2 className="text-lg font-semibold text-gray-800">New Support Request</h2>
+          <button onClick={onClose} className="absolute top-3 right-3 text-gray-500"><Icon className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></Icon></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {error && <p className="text-red-500 text-sm bg-red-100 p-2 rounded-md">{error}</p>}
             <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Subject</label>
-                <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className="w-full bg-gray-700 p-2 rounded-md" />
+                <label className="block text-sm font-medium text-gray-600 mb-1">Subject</label>
+                <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className="w-full bg-gray-100 p-2 rounded-md border border-gray-300" />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
-                <textarea value={description} onChange={e => setDescription(e.target.value)} rows={6} className="w-full bg-gray-700 p-2 rounded-md resize-none" />
+                <label className="block text-sm font-medium text-gray-600 mb-1">Description</label>
+                <textarea value={description} onChange={e => setDescription(e.target.value)} rows={6} className="w-full bg-gray-100 p-2 rounded-md resize-none border border-gray-300" />
             </div>
             <div className="pt-2">
-                 <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-600" disabled={isLoading}>
+                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-blue-400" disabled={isLoading}>
                     {isLoading ? 'Submitting...' : 'Submit Request'}
                 </button>
             </div>

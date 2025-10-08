@@ -127,7 +127,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-4xl font-bold text-center mb-2 text-blue-600">InstaFire</h2>
+      <h2 className="text-4xl font-bold text-center mb-2 text-blue-600">talka</h2>
       <p className="text-center text-gray-500 mb-4 text-sm">Sign up to see photos and videos from your friends.</p>
       
        <div className="mb-4 px-2">

@@ -103,6 +103,7 @@ const App: React.FC = () => {
     // Data states
     const [stories, setStories] = useState<Story[]>([]);
     const [feedPosts, setFeedPosts] = useState<Post[]>([]);
+    const [forYouPosts, setForYouPosts] = useState<Post[]>([]);
     const [reels, setReels] = useState<Reel[]>([]);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -121,9 +122,10 @@ const App: React.FC = () => {
     
     const fetchData = useCallback(async () => {
         try {
-            const [storiesData, postsData, reelsData, convosData, usersData, notificationsData, announcementData, savedData, archivedData, archivedStoriesData] = await Promise.all([
+            const [storiesData, postsData, forYouData, reelsData, convosData, usersData, notificationsData, announcementData, savedData, archivedData, archivedStoriesData] = await Promise.all([
                 api.getStories(),
                 api.getFeedPosts(),
+                api.getForYouPosts(),
                 api.getReels(),
                 api.getConversations(),
                 api.getAllUsers(),
@@ -135,6 +137,7 @@ const App: React.FC = () => {
             ]);
             setStories(storiesData);
             setFeedPosts(postsData);
+            setForYouPosts(forYouData);
             setReels(reelsData);
             setConversations(convosData);
             setAllUsers(usersData);
@@ -364,7 +367,7 @@ const App: React.FC = () => {
     const renderView = () => {
         if (!currentUser) return null;
         switch (currentView) {
-            case 'home': return <HomeView stories={stories} initialPosts={feedPosts} currentUser={currentUser} onViewStory={(s, i) => handleOpenModal('story', { stories: s, initialIndex: i })} onViewPost={p => handleOpenModal('post', p)} onLikePost={handleLikeUnlikePost} onUnlikePost={handleLikeUnlikePost} onSavePost={handleSavePost} onCommentOnPost={p => handleOpenModal('post', p)} onSharePost={p => handleOpenModal('share', p)} onOptionsForPost={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} onVote={api.voteOnPoll} onViewTag={(tag) => handleNavigate('tag', tag)} />;
+            case 'home': return <HomeView stories={stories} initialPosts={feedPosts} initialForYouPosts={forYouPosts} currentUser={currentUser} onViewStory={(s, i) => handleOpenModal('story', { stories: s, initialIndex: i })} onViewPost={p => handleOpenModal('post', p)} onLikePost={handleLikeUnlikePost} onUnlikePost={handleLikeUnlikePost} onSavePost={handleSavePost} onCommentOnPost={p => handleOpenModal('post', p)} onSharePost={p => handleOpenModal('share', p)} onOptionsForPost={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} onVote={api.voteOnPoll} onViewTag={(tag) => handleNavigate('tag', tag)} />;
             case 'explore': return <ExploreView onViewPost={p => handleOpenModal('post', p)} />;
             case 'reels': return <ReelsView initialReels={reels} currentUser={currentUser} onLikeReel={api.likeReel} onCommentOnReel={(r) => handleOpenModal('reelComments', r)} onShareReel={p => handleOpenModal('share', p)} />;
             case 'messages': return <MessagesView currentUser={currentUser} conversations={conversations} allUsers={allUsers} onSelectConversation={() => {}} onNewConversation={(c) => setConversations(prev => [...prev, c])} />;
@@ -381,7 +384,7 @@ const App: React.FC = () => {
             case 'support_inbox': return <SupportInboxView onBack={() => setCurrentView('help')} onNewRequest={() => handleOpenModal('newSupportRequest')} />;
             case 'tag': return <TagView tag={activeTag!} onViewPost={p => handleOpenModal('post', p)} />;
             case 'livestreams': return <LiveStreamsView onViewStream={(s) => handleOpenModal('liveStream', s)} />;
-            default: return <HomeView stories={stories} initialPosts={feedPosts} currentUser={currentUser} onViewStory={(s, i) => handleOpenModal('story', { stories: s, initialIndex: i })} onViewPost={p => handleOpenModal('post', p)} onLikePost={handleLikeUnlikePost} onUnlikePost={handleLikeUnlikePost} onSavePost={handleSavePost} onCommentOnPost={p => handleOpenModal('post', p)} onSharePost={p => handleOpenModal('share', p)} onOptionsForPost={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} onVote={api.voteOnPoll} onViewTag={(tag) => handleNavigate('tag', tag)} />;
+            default: return <HomeView stories={stories} initialPosts={feedPosts} initialForYouPosts={forYouPosts} currentUser={currentUser} onViewStory={(s, i) => handleOpenModal('story', { stories: s, initialIndex: i })} onViewPost={p => handleOpenModal('post', p)} onLikePost={handleLikeUnlikePost} onUnlikePost={handleLikeUnlikePost} onSavePost={handleSavePost} onCommentOnPost={p => handleOpenModal('post', p)} onSharePost={p => handleOpenModal('share', p)} onOptionsForPost={p => handleOpenModal('postOptions', p)} onViewProfile={u => handleNavigate('profile', u)} onViewLikes={u => handleOpenModal('viewLikes', u)} onVote={api.voteOnPoll} onViewTag={(tag) => handleNavigate('tag', tag)} />;
         }
     };
     
