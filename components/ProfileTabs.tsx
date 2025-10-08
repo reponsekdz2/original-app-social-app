@@ -16,13 +16,13 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ activeTab, setActiveTab }) =>
   ];
 
   return (
-    <div className="border-t border-gray-800 mt-4">
+    <div className="border-t border-gray-200 mt-4">
       <div className="flex justify-center">
         {tabItems.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as ProfileTab)}
-            className={`flex-1 sm:flex-none sm:px-8 md:px-16 py-3 text-sm font-semibold uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === tab.id ? 'text-white border-t-2 border-white' : 'text-gray-500'}`}
+            className={`flex-1 sm:flex-none sm:px-8 md:px-16 py-3 text-sm font-semibold uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === tab.id ? 'text-blue-600 border-t-2 border-blue-600' : 'text-gray-500'}`}
           >
             <Icon className="w-5 h-5">{tab.icon}</Icon>
             <span className="hidden sm:inline">{tab.label}</span>

@@ -24,19 +24,19 @@ interface HomeViewProps {
 }
 
 const PostSkeleton: React.FC = () => (
-    <div className="border-b border-gray-800 py-4 animate-pulse">
+    <div className="border-b border-gray-200 py-4 animate-pulse bg-white">
         <div className="flex items-center px-4 pb-3">
-            <div className="w-9 h-9 rounded-full bg-gray-700"></div>
+            <div className="w-9 h-9 rounded-full bg-gray-200"></div>
             <div className="ml-3 space-y-2">
-                <div className="h-4 w-24 bg-gray-700 rounded"></div>
-                <div className="h-3 w-16 bg-gray-700 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                <div className="h-3 w-16 bg-gray-200 rounded"></div>
             </div>
         </div>
-        <div className="w-full aspect-square bg-gray-700"></div>
+        <div className="w-full aspect-square bg-gray-200"></div>
         <div className="px-4 pt-3 space-y-2">
-            <div className="h-4 w-1/4 bg-gray-700 rounded"></div>
-            <div className="h-4 w-full bg-gray-700 rounded"></div>
-            <div className="h-4 w-3/4 bg-gray-700 rounded"></div>
+            <div className="h-4 w-1/4 bg-gray-200 rounded"></div>
+            <div className="h-4 w-full bg-gray-200 rounded"></div>
+            <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
         </div>
     </div>
 );
@@ -105,14 +105,14 @@ const HomeView: React.FC<HomeViewProps> = (props) => {
   return (
     <div className="pb-16 md:pb-0">
       {/* Stories */}
-      <div className="flex space-x-4 p-4 overflow-x-auto scrollbar-hide border-b border-gray-800">
+      <div className="flex space-x-4 p-4 overflow-x-auto scrollbar-hide border-b border-gray-200 bg-white">
         {stories.map((story, index) => (
           <StoryBubble key={story.id} story={story} onView={() => onViewStory(stories, index)} />
         ))}
       </div>
 
       {/* Posts */}
-      <div className="divide-y divide-gray-800">
+      <div className="space-y-2">
         {posts.map((post, index) => (
           <div ref={index === posts.length - 1 ? lastPostElementRef : null} key={post.id}>
              <PostComponent 

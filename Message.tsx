@@ -72,7 +72,8 @@ const Message: React.FC<MessageProps> = ({ message, currentUser, onReact, onRepl
         {Object.keys(reactionSummary).length > 0 && (
             <div className={`absolute -bottom-3 flex gap-1 ${isCurrentUser ? 'right-2' : 'left-2'}`}>
                 {Object.entries(reactionSummary).map(([emoji, count]) => (
-                    <span key={emoji} className="bg-gray-800 text-xs px-1.5 py-0.5 rounded-full border border-gray-900">{emoji} {count > 1 && count}</span>
+                    // FIX: Cast count to a number to satisfy TypeScript's strict type checking.
+                    <span key={emoji} className="bg-gray-800 text-xs px-1.5 py-0.5 rounded-full border border-gray-900">{emoji} {(count as number) > 1 && count}</span>
                 ))}
             </div>
         )}

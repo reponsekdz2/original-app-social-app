@@ -40,12 +40,12 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onNavigate, onSwitchAccoun
     ];
 
     return (
-        <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-md hidden md:block">
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md hidden md:block">
             <div className="container mx-auto px-4">
-                <div className="flex items-center justify-end h-16 border-b border-gray-800">
+                <div className="flex items-center justify-end h-16 border-b border-gray-200">
                     <div className="flex items-center gap-4">
                         {actionItems.map(item => (
-                            <button key={item.label} onClick={item.action} className="text-white hover:text-gray-300 p-2 rounded-full hover:bg-gray-800">
+                            <button key={item.label} onClick={item.action} className="text-gray-800 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100">
                                 <Icon className="w-7 h-7">{item.icon}</Icon>
                             </button>
                         ))}
@@ -57,18 +57,18 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onNavigate, onSwitchAccoun
                                 onClick={() => setDropdownOpen(prev => !prev)}
                             />
                             {isDropdownOpen && (
-                                <div className="absolute right-0 top-12 w-60 bg-gray-800 rounded-lg shadow-lg border border-gray-700 py-2">
+                                <div className="absolute right-0 top-12 w-60 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
                                     {menuItems.map(item => (
-                                        <button key={item.label} onClick={() => { item.action(); setDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-3">
+                                        <button key={item.label} onClick={() => { item.action(); setDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 flex items-center gap-3">
                                             <Icon className="w-5 h-5">{item.icon}</Icon>
                                             <span>{item.label}</span>
                                         </button>
                                     ))}
-                                    <div className="border-t border-gray-700 my-2"></div>
-                                    <button onClick={() => { onSwitchAccount(); setDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700">
+                                    <div className="border-t border-gray-200 my-2"></div>
+                                    <button onClick={() => { onSwitchAccount(); setDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                         Switch Accounts
                                     </button>
-                                    <button onClick={onLogout} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-700">
+                                    <button onClick={onLogout} className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
                                         Log Out
                                     </button>
                                 </div>

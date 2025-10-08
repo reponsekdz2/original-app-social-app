@@ -77,14 +77,14 @@ const Post: React.FC<PostProps> = (props) => {
         return parts.map((part, index) => {
             if (part.startsWith('#')) {
                 const tag = part.substring(1);
-                return <button key={index} onClick={() => onViewTag(tag)} className="text-red-400 hover:underline">{part}</button>;
+                return <button key={index} onClick={() => onViewTag(tag)} className="text-blue-500 hover:underline">{part}</button>;
             }
             return part;
         });
     };
 
   return (
-    <article className="border-b border-gray-800 py-4">
+    <article className="border-b border-gray-200 py-4 bg-white">
       <header className="flex items-center px-4 pb-3">
         <img src={post.user.avatar_url} alt={post.user.username} className="w-9 h-9 rounded-full object-cover cursor-pointer" onClick={() => onViewProfile(post.user)} />
         <div className="ml-3">
@@ -92,13 +92,13 @@ const Post: React.FC<PostProps> = (props) => {
           {post.user.isVerified && <VerifiedBadge className="w-3 h-3 ml-1 inline-block" />}
           {post.location && <span className="text-xs text-gray-400 block">{post.location}</span>}
         </div>
-        <button onClick={() => onOptions(post)} className="ml-auto p-1 text-white">
+        <button onClick={() => onOptions(post)} className="ml-auto p-1 text-gray-800">
           <Icon className="w-5 h-5"><path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></Icon>
         </button>
       </header>
       
-      <div className="relative w-full aspect-square bg-black" onClick={handleMediaClick}>
-        {showHeart && <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"><Icon className="w-24 h-24 text-white/90 animate-heart-pulse"><path fill="currentColor" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon></div>}
+      <div className="relative w-full aspect-square bg-gray-100" onClick={handleMediaClick}>
+        {showHeart && <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"><Icon className="w-24 h-24 text-blue-600/90 animate-heart-pulse"><path fill="currentColor" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon></div>}
         {post.media.map((media, index) => (
             <div key={media.id} className={`absolute inset-0 transition-opacity duration-300 ${index === currentMediaIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                  {media.type === 'video' 
@@ -120,7 +120,7 @@ const Post: React.FC<PostProps> = (props) => {
 
       <footer className="px-4 pt-3">
         <div className="flex items-center gap-4">
-            <button onClick={handleLikeToggle}><Icon className={`w-7 h-7 ${isLiked ? 'text-red-500' : ''}`} fill={isLiked ? 'currentColor' : 'none'}><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon></button>
+            <button onClick={handleLikeToggle}><Icon className={`w-7 h-7 ${isLiked ? 'text-blue-600' : ''}`} fill={isLiked ? 'currentColor' : 'none'}><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></Icon></button>
             <button onClick={() => onComment(post)}><Icon className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.056 3 11.625c0 4.556 4.03 8.25 9 8.25zM12 16.5a.75.75 0 000-1.5H8.625a.75.75 0 000 1.5H12zM15.375 12a.75.75 0 000-1.5H8.625a.75.75 0 000 1.5h6.75z" /></Icon></button>
             <button onClick={() => onShare(post)}><Icon className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.875L6 12z" /></Icon></button>
             <button onClick={handleSaveToggle} className="ml-auto"><Icon className="w-7 h-7" fill={isSaved ? 'currentColor' : 'none'}><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.5 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></Icon></button>

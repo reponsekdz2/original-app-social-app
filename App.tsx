@@ -87,7 +87,7 @@ type ModalState =
     | { type: 'reelComments', data: Reel };
 
 const LoadingSpinner: React.FC = () => (
-    <div className="flex items-center justify-center h-screen bg-black">
+    <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="sk-chase"><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div><div className="sk-chase-dot"></div></div>
     </div>
 );
@@ -423,7 +423,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="bg-black text-white min-h-screen">
+        <div className="bg-gray-100 text-gray-900 min-h-screen">
             <Suspense fallback={<LoadingSpinner />}>
                 {!currentUser ? (
                     <AuthView onLoginSuccess={handleLoginSuccess} />

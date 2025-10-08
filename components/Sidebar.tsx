@@ -48,18 +48,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, onViewProfile, onFollow,
             <div className="flex items-center gap-4 cursor-pointer" onClick={() => onViewProfile(currentUser)}>
                 <img src={currentUser.avatar_url} alt={currentUser.username} className="w-14 h-14 rounded-full" />
                 <div>
-                    <p className="font-semibold">{currentUser.username}</p>
-                    <p className="text-sm text-gray-400">{currentUser.name}</p>
+                    <p className="font-semibold text-gray-800">{currentUser.username}</p>
+                    <p className="text-sm text-gray-500">{currentUser.name}</p>
                 </div>
             </div>
-            <button onClick={onSwitchAccount} className="text-xs font-semibold text-red-500">Switch</button>
+            <button onClick={onSwitchAccount} className="text-xs font-semibold text-blue-600">Switch</button>
         </div>
         
         {/* Suggestions */}
         <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-sm text-gray-400">Suggested for you</h3>
-                <button className="text-xs font-semibold">See All</button>
+                <h3 className="font-semibold text-sm text-gray-500">Suggested for you</h3>
+                <button className="text-xs font-semibold text-gray-800">See All</button>
             </div>
             <div className="space-y-3">
                 {suggestions.slice(0, 5).map(user => (
@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, onViewProfile, onFollow,
         {/* Activity Feed */}
         {activity.length > 0 && (
             <div className="mb-4">
-                <h3 className="font-semibold text-sm text-gray-400 mb-2">Recent Activity</h3>
+                <h3 className="font-semibold text-sm text-gray-500 mb-2">Recent Activity</h3>
                 <div className="space-y-2">
                     {activity.slice(0, 3).map(act => <ActivityFeedItem key={act.id} activity={act} onViewProfile={onViewProfile} />)}
                 </div>
@@ -90,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, onViewProfile, onFollow,
         {/* Sponsored Content */}
         {ads.length > 0 && (
              <div className="mb-4">
-                <h3 className="font-semibold text-sm text-gray-400 mb-2">Sponsored</h3>
+                <h3 className="font-semibold text-sm text-gray-500 mb-2">Sponsored</h3>
                 <div className="space-y-3">
                     {ads.map(ad => <SponsoredPost key={ad.id} ad={ad} />)}
                 </div>

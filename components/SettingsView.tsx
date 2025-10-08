@@ -7,9 +7,9 @@ interface SettingsViewProps {
 }
 
 const SettingsLink: React.FC<{ label: string, description: string, onClick: () => void }> = ({ label, description, onClick }) => (
-    <button onClick={onClick} className="w-full text-left p-4 hover:bg-gray-800/50 rounded-lg">
-        <p className="font-semibold">{label}</p>
-        <p className="text-sm text-gray-400">{description}</p>
+    <button onClick={onClick} className="w-full text-left p-4 hover:bg-gray-100 rounded-lg">
+        <p className="font-semibold text-gray-800">{label}</p>
+        <p className="text-sm text-gray-500">{description}</p>
     </button>
 );
 
@@ -21,8 +21,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onNavigate }) => 
 
             <div className="space-y-6">
                 <div>
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</h2>
-                    <div className="bg-gray-800 rounded-lg">
+                    <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Account</h2>
+                    <div className="bg-white rounded-lg border border-gray-200">
                         <SettingsLink label="Change Password" description="Update your password for better security." onClick={() => onNavigate('changePassword')} />
                         <SettingsLink label="Close Friends" description="Manage your list for private stories." onClick={() => onNavigate('closeFriends')} />
                         <SettingsLink label="Blocked Accounts" description="Manage the accounts you have blocked." onClick={() => onNavigate('blockedUsers')} />
@@ -31,17 +31,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onNavigate }) => 
                 </div>
 
                 <div>
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Support & About</h2>
-                     <div className="bg-gray-800 rounded-lg">
+                    <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Support & About</h2>
+                     <div className="bg-white rounded-lg border border-gray-200">
                         <SettingsLink label="Account Status" description="View any warnings or violations." onClick={() => onNavigate('accountStatus')} />
                         <SettingsLink label="Help Center" description="Get help with your account." onClick={() => onNavigate('help')} />
                         <SettingsLink label="Privacy Policy" description="Read our privacy guidelines." onClick={() => {}} />
                     </div>
                 </div>
                  <div>
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Logins</h2>
-                     <div className="bg-gray-800 rounded-lg">
-                        <button onClick={onLogout} className="w-full text-left p-4 text-red-500 hover:bg-gray-800/50 rounded-lg">
+                    <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Logins</h2>
+                     <div className="bg-white rounded-lg border border-gray-200">
+                        <button onClick={onLogout} className="w-full text-left p-4 text-blue-600 hover:bg-gray-100 rounded-lg font-semibold">
                            Log Out
                         </button>
                     </div>

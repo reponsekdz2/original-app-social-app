@@ -44,15 +44,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
   };
   
     const SocialButton: React.FC<{ provider: 'Google' | 'Apple', className?: string }> = ({ provider, className }) => (
-        <button type="button" className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-md font-semibold text-sm border border-gray-700 hover:bg-gray-800 transition-colors ${className}`}>
+        <button type="button" className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-md font-semibold text-sm border border-gray-300 hover:bg-gray-100 transition-colors ${className}`}>
            {provider}
         </button>
     );
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-4xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400 animate-slide-fade-in">InstaFire</h2>
-      <p className="text-center text-gray-400 mb-6 text-sm animate-slide-fade-in" style={{ animationDelay: '100ms' }}>Sign in to see photos and videos from your friends.</p>
+      <h2 className="text-4xl font-bold text-center mb-2 text-blue-600 animate-slide-fade-in">InstaFire</h2>
+      <p className="text-center text-gray-500 mb-6 text-sm animate-slide-fade-in" style={{ animationDelay: '100ms' }}>Sign in to see photos and videos from your friends.</p>
       
       <div className="flex gap-4 mb-4 animate-slide-fade-in" style={{ animationDelay: '200ms' }}>
         <SocialButton provider="Google" className="social-btn-google" />
@@ -60,9 +60,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
       </div>
 
       <div className="flex items-center my-2 animate-slide-fade-in" style={{ animationDelay: '300ms' }}>
-        <div className="flex-grow border-t border-gray-700"></div>
-        <span className="flex-shrink mx-4 text-gray-500 text-xs">OR</span>
-        <div className="flex-grow border-t border-gray-700"></div>
+        <div className="flex-grow border-t border-gray-200"></div>
+        <span className="flex-shrink mx-4 text-gray-400 text-xs">OR</span>
+        <div className="flex-grow border-t border-gray-200"></div>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,7 +77,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
                 placeholder="Username, email, or phone"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-md pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-md pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
             />
         </div>
@@ -91,7 +91,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-md pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-md pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
             />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -105,18 +105,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onLoginNeeds2FA, 
         </div>
         
         <div className="flex items-center justify-between animate-slide-fade-in" style={{ animationDelay: '600ms' }}>
-            <label className="flex items-center text-xs text-gray-400">
-                <input type="checkbox" className="w-4 h-4 mr-2 bg-gray-700 border-gray-600 rounded" />
+            <label className="flex items-center text-xs text-gray-500">
+                <input type="checkbox" className="w-4 h-4 mr-2 bg-gray-200 border-gray-300 rounded text-blue-600 focus:ring-blue-500" />
                 Remember Me
             </label>
-            <button onClick={onForgotPassword} type="button" className="text-xs text-gray-400 hover:underline">
+            <button onClick={onForgotPassword} type="button" className="text-xs text-gray-500 hover:underline">
               Forgot password?
             </button>
         </div>
 
         <button
           type="submit"
-          className="w-full btn-gradient text-white font-semibold py-2.5 px-4 rounded-md disabled:bg-gray-700 flex items-center justify-center transition-colors animate-slide-fade-in"
+          className="w-full btn-gradient text-white font-semibold py-2.5 px-4 rounded-md disabled:opacity-70 flex items-center justify-center transition-colors animate-slide-fade-in"
           style={{ animationDelay: '700ms' }}
           disabled={isLoading}
         >

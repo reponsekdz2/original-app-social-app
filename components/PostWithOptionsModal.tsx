@@ -29,9 +29,9 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
 
   const options = [
     // --- Destructive/Moderation Actions ---
-    !isCurrentUserPost && { label: 'Report', action: () => onReport(post), className: 'text-red-500 font-bold' },
-    isCurrentUserPost && { label: 'Delete', action: () => onDelete(post), className: 'text-red-500 font-bold' },
-    !isCurrentUserPost && isFollowing && { label: 'Unfollow', action: () => onUnfollow(post.user.id), className: 'text-red-500 font-bold' },
+    !isCurrentUserPost && { label: 'Report', action: () => onReport(post), className: 'text-blue-600 font-bold' },
+    isCurrentUserPost && { label: 'Delete', action: () => onDelete(post), className: 'text-blue-600 font-bold' },
+    !isCurrentUserPost && isFollowing && { label: 'Unfollow', action: () => onUnfollow(post.user.id), className: 'text-blue-600 font-bold' },
 
     // --- User-Specific Actions ---
     isCurrentUserPost && { label: post.is_pinned ? 'Unpin from profile' : 'Pin to profile', action: () => onPinPost(post.id) },
@@ -51,9 +51,9 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
   ].filter(Boolean);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" onClick={onClose}>
       <div 
-        className="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm border border-gray-700"
+        className="bg-white rounded-lg shadow-xl w-full max-w-sm border border-gray-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col">
@@ -61,12 +61,12 @@ const PostWithOptionsModal: React.FC<PostWithOptionsModalProps> = (props) => {
             <button 
               key={index} 
               onClick={() => { if(option && option.action) option.action(); onClose(); }} 
-              className={`w-full py-3 text-sm hover:bg-gray-700/50 border-b border-gray-700 last:border-b-0 transition-colors ${option ? option.className || '' : ''}`}
+              className={`w-full py-3 text-sm hover:bg-gray-100 border-b border-gray-200 last:border-b-0 transition-colors ${option ? option.className || '' : ''}`}
             >
               {option ? option.label : ''}
             </button>
           ))}
-           <button onClick={onClose} className="w-full py-3 text-sm hover:bg-gray-700/50 transition-colors">
+           <button onClick={onClose} className="w-full py-3 text-sm hover:bg-gray-100 transition-colors">
             Cancel
           </button>
         </div>

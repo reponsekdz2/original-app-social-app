@@ -37,13 +37,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen text-white flex items-center justify-center p-4 overflow-hidden">
-      <div className="auth-bg">
-        <div className="aurora aurora-1"></div>
-        <div className="aurora aurora-2"></div>
-        <div className="aurora aurora-3"></div>
-      </div>
-
+    <div className="min-h-screen text-gray-800 flex items-center justify-center p-4 overflow-hidden bg-gray-100">
       <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center justify-center w-full animate-slide-fade-in">
         
         {/* Carousel (Left) - Visible on large screens */}
@@ -52,8 +46,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
         </div>
 
         {/* Form (Right) */}
-        <div className="w-full max-w-md mx-auto animate-float">
-          <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-xl backdrop-blur-sm max-h-[95vh] h-auto overflow-y-auto scrollbar-hide">
+        <div className="w-full max-w-md mx-auto">
+          <div className="bg-white border border-gray-200 p-8 rounded-xl shadow-lg max-h-[95vh] h-auto overflow-y-auto scrollbar-hide">
             <div className="relative h-auto">
               <div className={`transition-opacity duration-500 ease-in-out ${isLoginView ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
                  <LoginForm 
@@ -72,10 +66,10 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
             </div>
           </div>
           
-           <div className="mt-4 bg-gray-900/50 border border-gray-800 p-4 rounded-xl backdrop-blur-sm text-center text-sm">
+           <div className="mt-4 bg-white border border-gray-200 p-4 rounded-xl shadow-lg text-center text-sm">
               <p>
                 {isLoginView ? "Don't have an account?" : "Have an account?"}{' '}
-                <button onClick={() => setIsLoginView(!isLoginView)} className="font-semibold text-red-500 hover:underline">
+                <button onClick={() => setIsLoginView(!isLoginView)} className="font-semibold text-blue-600 hover:underline">
                   {isLoginView ? "Sign up" : "Log in"}
                 </button>
               </p>

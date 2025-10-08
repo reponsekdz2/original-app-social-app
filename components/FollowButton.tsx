@@ -50,14 +50,14 @@ const FollowButton: React.FC<FollowButtonProps> = ({ user, currentUser, onFollow
       {isFollowing ? (
         <button
           onClick={handleUnfollow}
-          className={`text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-white py-1 px-4 rounded-md ${className}`}
+          className={`text-sm font-semibold bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-4 rounded-md ${className}`}
         >
           Following
         </button>
       ) : (
         <button
           onClick={handleFollow}
-          className={`text-sm font-semibold bg-red-600 hover:bg-red-700 text-white py-1 px-4 rounded-md ${className}`}
+          className={`text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white py-1 px-4 rounded-md ${className}`}
         >
           Follow
         </button>

@@ -8,8 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            background-color: #000;
-            color: #fff;
+            background-color: #f0f2f5;
+            color: #1c1e21;
         }
         /* For custom scrollbars */
         .scrollbar-hide::-webkit-scrollbar {
@@ -39,7 +39,7 @@
             display: block;
             width: 25%;
             height: 25%;
-            background-color: #fff;
+            background-color: #1877F2;
             border-radius: 100%;
             animation: sk-chase-dot-before 2.0s infinite ease-in-out both; 
         }
@@ -84,79 +84,14 @@
             animation: modal-intro 0.3s ease-out forwards;
         }
 
-        /* Story gradient pulse */
-        @keyframes gradient-pulse {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+        /* Story border pulse */
         .animate-gradient-pulse {
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradient-pulse 5s ease infinite;
+            border: 2px solid #1877F2;
         }
 
         /* Story green gradient pulse for close friends */
-        @keyframes green-gradient-pulse {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
         .animate-green-gradient-pulse {
-            background: linear-gradient(-45deg, #23d5ab, #23a6d5, #5af7b2, #23d5ab);
-            background-size: 400% 400%;
-            animation: green-gradient-pulse 5s ease infinite;
-        }
-        
-        /* Advanced Auth Page Background */
-        .auth-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background-color: #000;
-            overflow: hidden;
-            z-index: -1;
-        }
-        .aurora {
-            position: absolute;
-            width: 800px;
-            height: 800px;
-            border-radius: 50%;
-            filter: blur(100px);
-            mix-blend-mode: screen;
-            opacity: 0.4;
-        }
-        .aurora-1 {
-            background: radial-gradient(circle, #b122e2, transparent 60%);
-            top: -20%;
-            left: -20%;
-            animation: move1 25s infinite alternate;
-        }
-        .aurora-2 {
-            background: radial-gradient(circle, #ff5757, transparent 60%);
-            top: 20%;
-            right: -30%;
-            animation: move2 30s infinite alternate;
-        }
-        .aurora-3 {
-            background: radial-gradient(circle, #57a7ff, transparent 60%);
-            bottom: -20%;
-            left: 20%;
-            animation: move3 28s infinite alternate;
-        }
-        @keyframes move1 {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(100px, 150px) scale(1.2); }
-        }
-        @keyframes move2 {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(-150px, -100px) scale(0.8); }
-        }
-        @keyframes move3 {
-            0% { transform: translate(0, 0) scale(1.2); }
-            100% { transform: translate(50px, -150px) scale(1); }
+            border: 2px solid #31A24C;
         }
         
         @keyframes float {
@@ -199,17 +134,16 @@
             color: white;
         }
         .social-btn-apple {
-            background-color: #FFFFFF;
-            color: #000000;
+            background-color: #000000;
+            color: #FFFFFF;
         }
         
         .btn-gradient {
-            background: linear-gradient(90deg, #ef4444, #f97316);
-            background-size: 200% 200%;
-            transition: background-position 0.5s ease;
+            background-color: #1877F2;
+            transition: background-color 0.3s ease;
         }
         .btn-gradient:hover {
-            background-position: right center;
+            background-color: #166FE5;
         }
     </style>
 </head>
